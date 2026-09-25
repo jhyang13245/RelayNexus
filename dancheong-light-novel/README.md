@@ -23,7 +23,9 @@ npm run dev
 
 [최신 전체 소스 다운로드](https://dancheong-light-novel.juno12345.chatgpt.site/downloads/dancheong-light-novel-source.zip)
 
-v13.1 소스에는 원본 Cortex, VN 화면과 연출·인물·스트리밍 모듈, API 라우트, 설정·빌드 파일, 의존성 잠금 파일, 테스트와 변경 문서가 포함됩니다. `SOURCE-MANIFEST.json`에서 파일별 SHA-256을 확인할 수 있습니다. 너름·지음은 위의 공유 서비스를 사용하므로 해당 서비스의 별도 서버 소스나 작품 패키지는 이 ZIP에 포함되지 않습니다. 사용자 API 키, 기기별 저장 데이터, 설치된 `node_modules`는 포함하지 않습니다.
+v13.8 소스에는 원본 Cortex, VN 화면과 연출·인물·스트리밍 모듈, API 라우트, 설정·빌드 파일, 의존성 잠금 파일, 테스트와 변경 문서가 포함됩니다. `SOURCE-MANIFEST.json`에서 파일별 SHA-256을 확인할 수 있습니다. 너름·지음은 위의 공유 서비스를 사용하므로 해당 서비스의 별도 서버 소스나 작품 패키지는 이 ZIP에 포함되지 않습니다. 사용자 API 키, 기기별 저장 데이터, 설치된 `node_modules`는 포함하지 않습니다.
+
+v13.2는 얼굴 부분 합성을 제거하고 동일 인물을 참조해 얼굴 전체를 다시 그립니다. 뚜렷한 감정 변화에만 표정을 교체하도록 연출 기준과 근거 검사를 적용하며, 같은 장소·인물·표정은 재사용합니다. [표정 재작화·이미지 재사용 변경 내용](docs/v13.2-expression-redraw.md).
 
 `npm run source:zip`으로 현재 소스를 다시 묶을 수 있으며, `npm run build`도 다운로드 ZIP을 자동 생성합니다. 결과는 `public/downloads/dancheong-light-novel-source.zip`입니다. Git 저장소 없이 압축을 푼 소스만으로도 실행·빌드·ZIP 재생성이 가능합니다. 로컬 개발 중 다운로드 링크를 사용하려면 먼저 `npm run source:zip`을 실행하세요.
 
@@ -49,3 +51,17 @@ v13은 연출·무대·캐릭터 디자인을 개선했습니다. 기존 인물 
 - `app/api/openai`: 방문자의 키로 요청하는 제한된 OpenAI API 프록시.
 
 실제 유료 OpenAI 호출은 배포 검사에서 수행하지 않습니다. API 키가 없는 상태의 읽기, 작품 가져오기, 화면 진행, 프록시 입력 검사를 수행합니다.
+
+ v13.3은 Nano Banana 2 REST 요청의 비율·해상도 enum 값을 수정하고, 키·권한·할당량·요청 형식 오류를 구분합니다. [변경 내용](docs/v13.3-gemini-request.md).
+
+v13.4는 Nano Banana 2 인물의 크로마키 잔테를 보정합니다. 이미 저장한 인물도 기기에서 보정하며 추가 이미지 API 호출은 하지 않습니다. [변경 내용](docs/v13.4-sprite-edges.md).
+
+v13.5는 본문 상황으로 자연스러운 표정을 해석합니다. [변경 내용](docs/v13.5-story-expressions.md).
+
+
+v13.6은 화자 신원을 확인하고 도착한 본문의 인물 이미지를 미리 준비하며 문장 끝에 대기 표시를 제공합니다. [변경 내용](docs/v13.6-cast-prefetch-buffer.md).
+
+
+v13.7은 배경·인물 모델을 따로 선택하고 Gemini 인물의 초록 테두리와 가장자리 투명도를 보정합니다. [변경 내용](docs/v13.7-image-routing-edges.md).
+
+v13.8은 저장 실패로 진행이 잠겼을 때 원인과 복구·백업 버튼을 플레이 화면에 표시하고, 거절된 선택 요청과 입력을 보존합니다. [변경 내용](docs/v13.8-save-recovery.md).

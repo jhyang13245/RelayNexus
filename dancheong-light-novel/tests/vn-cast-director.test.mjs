@@ -24,7 +24,7 @@ test('request contains published names and beats, never private biography or ass
   assert.ok(request.text.format.schema);
   assert.ok(!request.input.includes('DO NOT SEND'));
   assert.ok(!request.input.includes('han.webp'));
-  assert.ok(!request.input.includes('PUBLIC PROFILE'));
+  assert.ok(request.input.includes('PUBLIC PROFILE'));
   assert.ok(!request.input.includes('missing-grandmother'));
   assert.equal(castRequest(scene(), 'muse-spark-1.3-contributor').text, undefined);
 });
@@ -97,4 +97,46 @@ test('legacy scenes preserve their candidate set after a resolved view is passed
   const cast = director(), first = await cast.prepare(sc, { page: sc.castPages[1] });
   assert.equal(castKey(sc), castKey(first));
   assert.deepEqual(cast.view(first, sc.castPages[0]).characters, []);
+});
+
+test('an unregistered professor cannot borrow the missing grandmother identity or cached portrait', async () => {
+  const text = '교수가 학생들을 바라보며 말했다. “오늘 토론은 여기까지 하겠습니다.”';
+  const sc = { ...scene(), previousText: '한명진은 일 년 전 실종된 외할머니였다.', publicText: text,
+    castPages: [{ start: 0, text }], candidates: [{ ...han, publicProfile: '고문서 복원가인 외할머니. 1년 전 실종되었다.' }] };
+  const bad = { beats: [{ beat: 'P0', speaker: 'C0', speakerLabel: '교수', speakerEvidence: '교수가 학생들을 바라보며 말했다.',
+    onStage: [{ candidate: 'C0', evidence: '교수가 학생들을 바라보며 말했다.', identityEvidence: sc.previousText }] }] };
+  const beat = validateCast(sc, bad)[0];
+  assert.deepEqual(beat.characters, []); assert.equal(beat.speakerId, ''); assert.equal(beat.speakerName, '교수');
+  const requests = [], reads = [];
+  const assets = createStageAssets({ castDirector: director({ fetchDecision: async () => response(bad) }), getKey: () => 'fixture', getQuality: () => 'low', getReferences: () => [], onChange() {},
+    read: async key => { reads.push(key); return null; }, write: async () => {}, fetchImage: async (_url, init) => { requests.push(JSON.parse(init.body)); return Response.json({ imageUrl: 'data:image/png;base64,Ymc=' }); } });
+  await assets.prepare(sc, sc.castPages[0]);
+  assert.equal(assets.view(sc, sc.castPages[0]).speakerName, '교수');
+  assert.deepEqual(requests.map(row => row.purpose), ['background']);
+  assert.ok(!reads.includes(portraitKey(sc.scope, han)));
+  assert.ok(castRequest(sc, 'gpt-5.6-luna').input.includes('고문서 복원가인 외할머니'));
+});
+
+test('identity must be named outside quotation; a missing person can return in current prose', () => {
+  const sc = { ...scene(), candidates: [han], castPages: [{ start: 0, text: '“한명진을 찾고 있어.”' }], publicText: '“한명진을 찾고 있어.”' };
+  const value = { beats: [{ beat: 'P0', speaker: 'C0', onStage: [{ candidate: 'C0', evidence: sc.publicText, identityEvidence: sc.publicText }] }] };
+  assert.deepEqual(validateCast(sc, value)[0].characters, []);
+  sc.publicText = '한명진이 돌아와 내 앞에 섰다. “오랜만이구나.”'; sc.castPages[0].text = sc.publicText;
+  value.beats[0].onStage[0] = { candidate: 'C0', evidence: sc.publicText, identityEvidence: '한명진이 돌아와 내 앞에 섰다.' };
+  assert.equal(validateCast(sc, value)[0].speakerId, han.id);
+});
+
+test('old name-only cast decisions are rechecked without clearing image records', async () => {
+  let calls = 0;
+  const cast = director({ read: async () => ({ policy: 'PUBLIC_CAST_DIRECTION_V4', decision: decision() }), fetchDecision: async () => { calls++; return response(decision()); } });
+  await cast.prepare(scene()); await cast.prepare(scene()); assert.equal(calls, 1);
+});
+
+test('switching works while cast preparation is pending prevents subsequent image and reference requests', async () => {
+  let active = true, release, images = 0, references = 0;
+  const wait = new Promise(resolve => release = resolve);
+  const assets = createStageAssets({ castDirector: director({ fetchDecision: async () => { await wait; return response(decision()); } }),
+    getKey: () => 'fixture', getQuality: () => 'low', getReferences: () => { references++; return []; }, onChange() {}, read: async () => null, write: async () => {}, fetchImage: async () => { images++; return Response.json({ imageUrl: 'fixture' }); } });
+  const pending = assets.prepare(scene(), scene().castPages[1], { active: () => active }); active = false; release(); await pending;
+  assert.equal(images, 0); assert.equal(references, 0);
 });

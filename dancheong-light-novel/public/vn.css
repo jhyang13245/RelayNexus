@@ -297,3 +297,14 @@ dialog.vn-internal-import::backdrop { background:transparent; }
 .vn-dialogue-wait { margin-top: 20px; display: flex; align-items: center; gap: 16px; color: #ded8cf; font-size: 14px; }
 .vn-dialogue-wait[hidden] { display: none; }
 .vn-dialogue-wait button { padding: 8px 12px; border: 1px solid #b7a18177; background: #111827b3; color: #e8dfd4; cursor: pointer; }
+/* Engine save/recovery notices belong to the visible reader as well. */
+#vn-root .vn-engine-recovery { position:fixed; z-index:45; top:76px; left:50%; transform:translateX(-50%); width:min(620px,calc(100vw - 32px)); max-height:calc(100dvh - 110px); overflow:auto; padding:22px; border:1px solid #d7b581; background:#121c2bf5; box-shadow:0 16px 60px #0009; color:#f5efe4; font:15px/1.75 system-ui,sans-serif; box-sizing:border-box; }
+#vn-root .vn-engine-recovery[hidden] { display:none; }
+#vn-root .vn-engine-recovery > strong { display:block; font-size:18px; color:#f6d6a8; }
+#vn-root .vn-recovery-detail { color:#d4dce7; margin:10px 0; }
+#vn-root #recoveryNotice { position:static; margin:12px 0 0; padding:0; color:inherit; background:none; border:0; font:inherit; }
+#vn-root #recoveryNotice p { margin:10px 0; }
+#vn-root #recoveryNotice button { display:inline-block; min-height:44px; margin:8px 8px 0 0; padding:10px 14px; border:1px solid #b2c4dd; border-radius:2px; color:#f5f8fc; background:#263c57; font:inherit; cursor:pointer; }
+#vn-root #recoveryNotice button:focus-visible { outline:2px solid #f6d6a8; outline-offset:3px; }
+#vn-root #recoveryNotice button:disabled { opacity:.5; cursor:wait; }
+@media(max-width:600px) { #vn-root .vn-engine-recovery { top:68px; padding:16px; font-size:14px; } #vn-root #recoveryNotice button { width:100%; margin-right:0; } }

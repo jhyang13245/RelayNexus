@@ -10,11 +10,9 @@ export function environmentKey(scope, world) {
   return JSON.stringify(['vn-environment-1', scope, clean(world?.location), lightFor(world?.time), clean(world?.weather)]);
 }
 export const expressions = {
-  neutral: 'calm neutral expression, relaxed eyebrows and mouth',
-  smile: 'gentle happy smile', angry: 'angry expression with furrowed eyebrows',
-  sad: 'sad downcast expression', surprised: 'surprised wide eyes and slightly open mouth',
-  worried: 'worried tense expression', blush: 'embarrassed expression with a subtle blush',
-  closed: 'eyes peacefully closed', serious: 'composed serious expression',
+  // Legacy labels for reuse/transition bookkeeping, not image drawing recipes.
+  neutral: 'neutral', smile: 'smile', angry: 'angry', sad: 'sad',
+  surprised: 'surprised', worried: 'worried', blush: 'blush', closed: 'closed', serious: 'serious',
 };
 const cues = [
   ['smile', /미소|웃었|웃음(?:을|이)|웃으며|웃는다|웃었다|빙긋|싱긋|방긋|smil/giu],

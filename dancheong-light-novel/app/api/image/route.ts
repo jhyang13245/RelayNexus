@@ -8,7 +8,7 @@ function failure(message: string, status: number) {
   return Response.json({ error: { message } }, { status, headers: { 'Cache-Control': 'no-store' } });
 }
 
-type ImageRequest = { model?: unknown; prompt?: unknown; purpose?: unknown; quality?: unknown; aspect?: unknown; referenceImages?: unknown };
+type ImageRequest = { model?: unknown; prompt?: unknown; purpose?: unknown; quality?: unknown; aspect?: unknown; referenceImages?: unknown; strictModel?: unknown };
 type ImageResult = { data?: Array<{ b64_json?: string }>; usage?: unknown; error?: { code?: string; message?: string } };
 
 function modelUnavailable(status: number, result: ImageResult) {
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     const body = JSON.parse(new TextDecoder().decode(bytes)) as ImageRequest;
     if (!body || typeof body !== 'object' || Array.isArray(body)) return failure('요청 형식이 올바르지 않습니다.', 400);
     if (body.model && body.model !== PRIMARY) return failure('지원하지 않는 이미지 모델입니다.', 400);
+    if (body.strictModel !== undefined && typeof body.strictModel !== 'boolean') return failure('모델 고정 설정이 올바르지 않습니다.', 400);
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     if (prompt.length < 10 || prompt.length > 16000) return failure('이미지 프롬프트는 10~16,000자여야 합니다.', 400);
     if (body.quality !== undefined && !['low', 'medium'].includes(String(body.quality))) return failure('이미지 품질이 올바르지 않습니다.', 400);
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     let model = PRIMARY;
     let upstream = await send(model);
     let result = await upstream.json() as ImageResult;
-    if (!upstream.ok && modelUnavailable(upstream.status, result)) {
+    if (!upstream.ok && body.strictModel !== true && modelUnavailable(upstream.status, result)) {
       model = FALLBACK;
       upstream = await send(model);
       result = await upstream.json() as ImageResult;

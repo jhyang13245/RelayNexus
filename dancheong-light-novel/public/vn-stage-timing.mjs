@@ -23,3 +23,55 @@ export function dialogueWait(page, view, { enabled, decoded = false, bypass = fa
   if (!view.speakerId) return false;
   return !view.portraits.some(person => person.id === view.speakerId) || !decoded;
 }
+
+// Presentation attribution comes from the verified cast pass, never a stale
+// writer annotation that may have guessed the nearest registered character.
+export function resolvedSpeaker(page, view) {
+  if (!page?.quoted && page?.kind !== 'dialogue') return page;
+  const ready = view?.castStatus === 'ready';
+  const speaker = ready ? view.speakerName || '' : '';
+  return { ...page, speaker, characterId: ready ? view.speakerId || '' : '', speakerResolved: ready,
+    kind: speaker ? 'dialogue' : 'narration', text: page.rawText || page.text };
+}
+
+export function preparationPages(pages, cursor) {
+  const current = pages[cursor], latest = pages.at(-1);
+  if (!current) return [];
+  // Prepare all already-published beats of the incoming turn, even while the
+  // reader is still on an older turn. Draft text is never part of this input.
+  return pages.filter((page, index) => index >= cursor && (page.turnId === current.turnId || page.turnId === latest.turnId));
+}
+
+export function nextWaitReason({ complete, blocked, loading, nextPage, nextView, imagesEnabled }) {
+  if (!complete || blocked) return '';
+  if (!nextPage) return loading ? '다음 문장 준비 중' : '';
+  if (imagesEnabled && dialogueWait(nextPage, nextView, { enabled: true, decoded: true })) return '다음 대사의 인물 준비 중';
+  return '';
+}
+
+export function createPreparationQueue({ concurrency = 3, onError = () => {} } = {}) {
+  const waiting = new Map(), running = new Map();
+  let epoch = 0;
+  function pump() {
+    while (running.size < concurrency && waiting.size) {
+      const [key, job] = waiting.entries().next().value; waiting.delete(key);
+      const token = {}, generation = epoch; running.set(token, { key, generation });
+      Promise.resolve().then(() => generation === epoch && job(() => generation === epoch)).catch(onError).finally(() => { running.delete(token); pump(); });
+    }
+  }
+  return {
+    add(key, job) { if (!waiting.has(key) && ![...running.values()].some(row => row.key === key && row.generation === epoch)) waiting.set(key, job); pump(); },
+    clear() { epoch++; waiting.clear(); },
+  };
+}
+
+// Only cast inference occupies the paragraph queue. Waiting for a shared slow
+// background must not stop checking/generating a later paragraph's speaker.
+export async function prepareAhead({ scene, pages, castDirector, assets, active, generate, preload }) {
+  await castDirector.prepare(scene, { generate, page: pages[0] });
+  if (!active()) return { completion: Promise.resolve() };
+  const completion = Promise.all(pages.map(page => assets.prepare(scene, page, { active, generate }))).then(async () => {
+    if (active()) await Promise.all(pages.flatMap(page => assets.view(scene, page)?.portraits || []).map(person => preload(person.url)));
+  });
+  return { completion };
+}

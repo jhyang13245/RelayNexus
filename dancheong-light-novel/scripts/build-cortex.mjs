@@ -11,7 +11,7 @@ if (actualSha256 !== expectedSha256) throw new Error('Cortex source changed; rev
 const original = bytes.toString('utf8');
 const bootHead = await readFile(new URL('../public/vn-boot.html', import.meta.url), 'utf8');
 if (!original.includes('</head>') || !original.includes('</body>')) throw new Error('Unexpected Cortex HTML structure.');
-const modules = ['vn-core.mjs', 'vn-key-vault.mjs', 'vn-scene.mjs', 'vn-cast.mjs', 'vn-stage-timing.mjs', 'vn-reader.mjs', 'vn-direction.mjs', 'vn-stage.mjs', 'vn-sprite.mjs', 'vn-audio.mjs', 'vn-chroma.mjs', 'vn-assets.mjs', 'vn-cost-core.mjs', 'vn-costs.mjs', 'vn.js'];
+const modules = ['vn-core.mjs', 'vn-key-vault.mjs', 'vn-image-routing.mjs', 'vn-progress.mjs', 'vn-scene.mjs', 'vn-cast.mjs', 'vn-stage-timing.mjs', 'vn-reader.mjs', 'vn-direction.mjs', 'vn-stage.mjs', 'vn-sprite.mjs', 'vn-audio.mjs', 'vn-chroma.mjs', 'vn-assets.mjs', 'vn-cost-core.mjs', 'vn-costs.mjs', 'vn.js'];
 const shellHash = createHash('sha256').update(await readFile(new URL('../public/vn.css', import.meta.url)));
 shellHash.update(bootHead);
 shellHash.update(await readFile(new URL('../public/vn-reader.css', import.meta.url)));

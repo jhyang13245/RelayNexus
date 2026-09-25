@@ -1,10 +1,12 @@
 import { backgroundFor, pagesForTurn, readableTurnPages } from './vn-core.mjs';
 import { loadDeviceKeys, storeDeviceKeys } from './vn-key-vault.mjs';
+import { imageRoutingKey, readImageRouting, imageProviderFor } from './vn-image-routing.mjs';
+import { storageProblem, submitEngineTurn } from './vn-progress.mjs';
 import { captureScene, sceneVersion } from './vn-scene.mjs';
 import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice } from './vn-assets.mjs';
 import { installCostMeter } from './vn-costs.mjs';
 import { createCastDirector } from './vn-cast.mjs';
-import { publishedUnit, dialogueWait } from './vn-stage-timing.mjs';
+import { publishedUnit, dialogueWait, resolvedSpeaker, preparationPages, nextWaitReason, createPreparationQueue, prepareAhead } from './vn-stage-timing.mjs';
 import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, readDelay } from './vn-reader.mjs';
 import { directionAt, transitionFor, createSound } from './vn-direction.mjs';
 import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs';
@@ -16,7 +18,6 @@ const nexusBase = 'https://relay-novel-nexus.juno12345.chatgpt.site';
 const apiBase = `${location.origin}/api/openai`;
 const providerKey = 'dancheong-ln-text-provider-v1';
 const effortKey = 'dancheong-ln-muse-effort-v1';
-const imageProviderKey = 'dancheong-ln-image-provider-v1';
 const providerModels = { openai: 'gpt-5.6-luna', muse: 'muse-spark-1.3-contributor', 'go-luna': 'gpt-5.6-luna' };
 const root = document.createElement('div');
 root.id = 'vn-root';
@@ -31,7 +32,7 @@ root.innerHTML = `
     <section id="vn-library" class="vn-library" aria-labelledby="vn-library-title">
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.1 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.8 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -90,22 +91,42 @@ const connectionPanel = document.createElement('div'); connectionPanel.id = 'vn-
 for (const selector of ['.vn-provider-grid', '.vn-settings-fields', '.vn-settings-help', '.vn-settings-footer']) connectionPanel.append(settingsForm.querySelector(selector));
 connectionPanel.querySelector('.vn-settings-help').textContent = '공개된 문단에서 실제 현장 인물을 확인하고 다음 대사의 이미지를 미리 준비합니다. 처음 만드는 인물은 준비된 뒤 대사와 함께 표시됩니다. 같은 배경·인물·표정과 확인한 인물 배치는 재사용합니다. 새 인물 배치 확인에는 선택한 본문 모델을, 새 이미지에는 선택한 이미지 모델을 사용하며 호출은 사용량·비용에 기록됩니다. 키는 이 기기에 암호화해 보관합니다.';
 const imageProviderFields = document.createElement('fieldset');
-imageProviderFields.className = 'vn-provider-grid vn-image-provider-grid';
-imageProviderFields.innerHTML = '<legend>이미지 생성 모델</legend><label><input type="radio" name="vn-image-provider" value="openai"><strong>GPT Image 2.5 Flare</strong><span>OpenAI API 키</span></label><label><input type="radio" name="vn-image-provider" value="gemini"><strong>Nano Banana 2</strong><span>Gemini API 키 · 배경·인물·표정</span></label>';
+imageProviderFields.className = 'vn-image-routing';
+imageProviderFields.innerHTML = '<legend>이미지 생성 모델</legend><div class="vn-image-routing-grid"><label for="vn-background-provider"><strong>배경</strong><small>장소·풍경</small><select id="vn-background-provider"><option value="openai">OpenAI 2.5 Flare</option><option value="gemini">Nano Banana 2</option></select></label><label for="vn-character-provider"><strong>인물·표정</strong><small>캐릭터·표정 변화</small><select id="vn-character-provider"><option value="openai">OpenAI 2.5 Flare</option><option value="gemini">Nano Banana 2</option></select></label></div><p class="vn-image-routing-help">사건 CG는 인물 모델을 사용합니다. 선택은 새로 생성하는 이미지부터 적용되며, 기존 이미지는 재사용합니다.</p>';
 connectionPanel.querySelector('.vn-provider-grid').after(imageProviderFields);
 const geminiKeyField = document.createElement('label');
-geminiKeyField.innerHTML = 'Nano Banana 2 · Gemini API 키 <small>입력하면 이미지 모델이 Nano Banana 2로 선택됩니다</small><input id="vn-gemini-key" type="password" autocomplete="off" maxlength="512" placeholder="Google AI Studio에서 발급한 API 키"><a class="vn-key-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Gemini API 키 발급 ↗</a>';
+geminiKeyField.innerHTML = 'Nano Banana 2 · Gemini API 키 <small>위에서 Nano Banana 2를 선택한 이미지에 사용합니다</small><input id="vn-gemini-key" type="password" autocomplete="off" maxlength="512" placeholder="Google AI Studio에서 발급한 API 키"><a class="vn-key-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Gemini API 키 발급 ↗</a>';
 connectionPanel.querySelector('#vn-openai-key').closest('label').after(geminiKeyField);
 connectionPanel.querySelector('#vn-openai-key').closest('label').querySelector('small').textContent = 'GPT 이미지 · OpenAI 본문 모드';
 const imageQualityHelp = document.createElement('small'); imageQualityHelp.id = 'vn-image-quality-help';
 connectionPanel.querySelector('#vn-image-quality').after(imageQualityHelp);
 const readingFields = document.createElement('fieldset'); readingFields.className = 'vn-reading-settings';
-readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>표정 교체<select id="vn-face-blend"><option value="face">얼굴만 교체 · 권장</option><option value="full">생성된 전체 이미지</option></select></label><label>사건 CG<select id="vn-cg-setting"><option value="off">끔</option><option value="on">켬 · 이미지 비용 추가</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 사건 CG는 절정 장면에만, 문단당 최대 1장 생성합니다.</p>';
+readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>사건 CG<select id="vn-cg-setting"><option value="off">끔</option><option value="on">켬 · 이미지 비용 추가</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 표정은 뚜렷한 감정 변화 때만 본문 상황을 읽고 자연스럽게 새로 그리며, 배경은 장소·시간대·날씨가 바뀔 때만 교체합니다. 같은 이미지는 재사용합니다. 기존 표정은 처음 필요할 때 한 번 새 방식으로 생성합니다(이미지 비용 발생). 사건 CG는 절정 장면에만, 문단당 최대 1장 생성합니다.</p>';
 connectionPanel.querySelector('.vn-settings-help').before(readingFields);
 settingsForm.append(connectionPanel);
 const costPanel = document.createElement('div'); costPanel.id = 'vn-cost-panel'; costPanel.hidden = true; costPanel.setAttribute('role', 'tabpanel'); costPanel.setAttribute('aria-labelledby', 'vn-cost-tab'); settingsForm.append(costPanel);
 
 const $ = (id) => document.getElementById(id);
+// Keep the engine's original recovery controls and their handlers, but put them
+// inside the visible VN shell. The legacy app is intentionally hidden.
+const recoveryPanel = document.createElement('aside');
+recoveryPanel.className = 'vn-engine-recovery'; recoveryPanel.hidden = true;
+recoveryPanel.setAttribute('aria-label', '진행 안내');
+const recoveryHeading = document.createElement('strong'); recoveryHeading.textContent = '진행 안내';
+const recoveryDetail = document.createElement('p'); recoveryDetail.className = 'vn-recovery-detail';
+recoveryPanel.append(recoveryHeading, recoveryDetail);
+const engineNotice = $('recoveryNotice');
+if (engineNotice) recoveryPanel.append(engineNotice);
+root.append(recoveryPanel);
+function syncRecovery() {
+  const problem = storageProblem(state.api);
+  recoveryPanel.hidden = !problem && (!engineNotice || engineNotice.hidden);
+  recoveryHeading.textContent = problem ? '현재 진행을 저장하지 못했습니다' : '진행 안내';
+  const detail = problem ? `${problem.reason} 새로고침 전에 아래 버튼으로 현재 진행을 보존해 주세요.` : '';
+  if (recoveryDetail.textContent !== detail) recoveryDetail.textContent = detail;
+  recoveryDetail.hidden = !detail;
+  return problem;
+}
 const state = { api: null, catalog: [], activeSlug: localStorage.getItem(activeKey) || '', pages: [], cursor: 0, following: true, startAtFirst: false, actions: false, customInputOpen: false, screen: 'library', renderKey: '', backgroundUrl: '', backgroundSide: 'a', media: [], openingArt: '', switching: false, provider: localStorage.getItem(providerKey) || 'openai', effort: localStorage.getItem(effortKey) || 'low', keys: { openai: '', go: '' }, reveal: { key: '', text: '', length: 0, timer: 0 } };
 globalThis.NexusVNHandlesTextReveal = true;
 state.reveal = createTextRevealer({
@@ -116,11 +137,11 @@ state.reveal = createTextRevealer({
 state.openingScene = null;
 state.preparedScenePage = '';
 state.stageScenes = new Map(); state.preparedBeats = new Set(); state.dialogueBypass = new Set(); state.dialogueWaiting = false;
-state.imageProvider = localStorage.getItem(imageProviderKey) === 'gemini' ? 'gemini' : 'openai';
+state.imageRouting = readImageRouting(localStorage);
 const readingPrefsKey = 'dancheong-vn-reading-prefs-v1';
 let storedReading = {}; try { storedReading = JSON.parse(localStorage.getItem(readingPrefsKey) || '{}'); } catch { /* Defaults remain usable. */ }
 state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off',
-  ambience: storedReading?.ambience === 'on' ? 'on' : 'off', faceBlend: storedReading?.faceBlend === 'full' ? 'full' : 'face', cg: storedReading?.cg === 'on' ? 'on' : 'off' };
+  ambience: storedReading?.ambience === 'on' ? 'on' : 'off', cg: storedReading?.cg === 'on' ? 'on' : 'off' };
 const artStyleKey = slug => `dancheong-vn-art-style-v1:${slug}`;
 function loadArtStyle(slug) { try { return localStorage.getItem(artStyleKey(slug)) || ''; } catch { return ''; } }
 state.artStyle = loadArtStyle(state.activeSlug);
@@ -132,9 +153,10 @@ root.dataset.motion = state.reading.motion;
 const meter = installCostMeter({ context: () => ({ slug: state.activeSlug, title: currentWork()?.title || '' }), onChange: () => { if ($('vn-settings-dialog').open && !$('vn-cost-panel').hidden) void renderCosts(); } });
 const castDirector = createCastDirector({ getConnection: () => ({ key: textKey(), model: providerModels[state.provider], endpoint: state.provider === 'openai' ? '/api/openai/responses' : '/api/go/responses' }), read: readAsset, write: writeAsset,
   onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
-const assets = createStageAssets({ castDirector, getKey: imageKey, getProvider: () => state.imageProvider, getStyle: () => state.artStyle, getCgEnabled: () => state.reading.cg === 'on', getQuality: () => state.api?._settings()?.imageQuality === 'medium' ? 'medium' : 'low',
+const assets = createStageAssets({ castDirector, getKey: imageKey, getProvider: purpose => imageProviderFor(state.imageRouting, purpose), getStyle: () => state.artStyle, getCgEnabled: () => state.reading.cg === 'on', getQuality: () => state.api?._settings()?.imageQuality === 'medium' ? 'medium' : 'low',
   getReferences: person => window.CortexTurnExperience.selectImageReferences({ visualReferences: [{ characterId: person.id, name: person.name, mode: person.referenceMode, allowedAssetRefs: person.allowedAssetRefs, primaryAssetRef: person.primaryAssetRef }] }, state.media).map(row => row.dataUrl),
   onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
+const preparationQueue = createPreparationQueue({ concurrency: 3, onError: error => toast(error?.message || '장면 준비 오류') });
 let toastTimer = 0;
 
 function toast(message) {
@@ -145,7 +167,8 @@ function toast(message) {
 }
 
 function textKey() { return state.provider === 'openai' ? state.keys.openai : state.keys.go; }
-function imageKey() { return state.keys[state.imageProvider] || ''; }
+function imageKey(purpose = 'background') { return state.keys[imageProviderFor(state.imageRouting, purpose)] || ''; }
+function hasImageKey() { return Boolean(imageKey('background') || imageKey('portrait')); }
 function applyProvider() {
   if (!(state.provider in providerModels)) state.provider = 'openai';
   if (!['low', 'medium', 'high'].includes(state.effort)) state.effort = 'low';
@@ -154,12 +177,13 @@ function applyProvider() {
   globalThis.NexusCortexTextModel = providerModels[state.provider];
   globalThis.NexusCortexTextApiKey = textKey();
   globalThis.NexusCortexTextEndpoint = '/api/go/responses';
-  globalThis.NexusCortexImageEndpoint = imageProviders[state.imageProvider].endpoint;
-  globalThis.NexusCortexImageModel = imageProviders[state.imageProvider].model;
-  globalThis.NexusCortexImageApiKey = imageKey();
+  const sceneProvider = imageProviderFor(state.imageRouting, 'scene');
+  globalThis.NexusCortexImageEndpoint = imageProviders[sceneProvider].endpoint;
+  globalThis.NexusCortexImageModel = imageProviders[sceneProvider].model;
+  globalThis.NexusCortexImageApiKey = imageKey('scene');
   globalThis.NexusRequireImageApiKey = () => {
-    if (imageKey()) return true;
-    toast(`이미지를 생성하려면 설정에서 ${imageProviders[state.imageProvider].label} API 키를 입력해 주세요.`);
+    if (imageKey('scene')) return true;
+    toast(`이미지를 생성하려면 설정에서 ${imageProviders[sceneProvider].label} API 키를 입력해 주세요.`);
     openSettings();
     return false;
   };
@@ -360,7 +384,7 @@ async function renderMetCast() {
     const card = document.createElement('figure'); card.className = 'vn-title-cast-card';
     if (person.url) {
       const image = document.createElement('img'); image.alt = person.name; image.src = person.url;
-      void displaySprite(person.url, person.url).then(url => { image.src = url; });
+      void displaySprite(person.url).then(url => { image.src = url; });
       card.append(image);
     } else { const ghost = document.createElement('div'); ghost.className = 'vn-title-cast-ghost'; ghost.setAttribute('aria-hidden', 'true'); card.append(ghost); }
     const name = document.createElement('figcaption'); name.textContent = person.name;
@@ -463,12 +487,14 @@ function setPortraits(view, speakerId) {
       if (!slot.querySelector('.vn-ghost')) { const ghost = document.createElement('div'); ghost.className = 'vn-ghost'; const label = document.createElement('span'); label.textContent = person.name; ghost.append(label); slot.append(ghost); }
       continue;
     }
-    // The shown image depends on the edit, its neutral base and the blend mode.
-    const url = person.url, faceOnly = state.reading.faceBlend !== 'full', displayKey = `${faceOnly}\n${person.base || ''}\n${url}`;
+    // Keep the already visible face while a needed new expression is being made.
+    if (person.expressionReady === false && slot.dataset.ready && slot.vnBaseKey === person.baseKey) continue;
+    slot.vnBaseKey = person.baseKey;
+    const url = person.url, displayKey = url;
     // Kept as a property: data-URL keys are too large for DOM attributes.
     if (slot.vnDisplayKey === displayKey) continue;
     slot.vnDisplayKey = displayKey;
-    void displaySprite(person.base || url, url, { faceOnly }).then(src => {
+    void displaySprite(url).then(src => {
       if (slot.vnDisplayKey !== displayKey) return;
       const incoming = document.createElement('img'); incoming.src = src; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
       const previous = [...slot.children];
@@ -531,14 +557,14 @@ function renderActions() {
     const button = document.createElement('button'); button.type = 'button';
     button.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><strong></strong><i>↗</i>`;
     button.querySelector('strong').textContent = row.label;
-    button.disabled = busy() || state.awaitingTurn;
+    button.disabled = busy() || state.awaitingTurn || Boolean(storageProblem(state.api));
     button.addEventListener('click', () => { sound.play('choice'); void submit(row.label); }); list.append(button);
   }
   $('vn-compose').hidden = !state.customInputOpen;
   $('vn-custom-toggle').hidden = state.customInputOpen;
   $('vn-custom-toggle').textContent = '직접 행동이나 대사 입력';
-  $('vn-continue').disabled = busy();
-  $('vn-send').disabled = busy();
+  $('vn-continue').disabled = busy() || state.awaitingTurn || Boolean(storageProblem(state.api));
+  $('vn-send').disabled = $('vn-continue').disabled;
   const page = state.pages[state.cursor], scene = pageScene(page), view = assets.view(scene, page);
   $('vn-retry-image').textContent = '이미지 생성 재시도';
   $('vn-retry-image').hidden = !scene || (view?.status !== 'error' && view?.cgStatus !== 'error');
@@ -546,6 +572,7 @@ function renderActions() {
 
 function resetReader() {
   stopPlayback(); state.reveal.reset(); state.reveal.frameKey = '';
+  preparationQueue.clear();
   state.stageScenes.clear(); state.preparedBeats.clear(); state.dialogueBypass.clear(); state.dialogueWaiting = false;
   state.pages = []; state.cursor = 0; state.readThrough = -1;
   state.lastDirectionKey = ''; state.lastScene = null; state.awaitingTurn = false;
@@ -564,6 +591,7 @@ function revealComplete() {
   if (state.dialogueWaiting) return;
   if (!state.pages[state.cursor]?.isGrowing) state.readThrough = Math.max(state.readThrough, state.cursor);
   $('vn-stage').classList.remove('is-revealing');
+  updateNextBuffer();
   saveReadingPosition(); schedulePlayback();
 }
 function finishReveal() {
@@ -580,8 +608,8 @@ function renderRevealedText(page) {
   const surface = $('vn-dialogue-text');
   // NVL keeps each line's speaker: a small label above spoken lines, in a
   // stable per-person accent, remembered once the cast check names them.
-  if (page.kind === 'dialogue' && page.speaker) state.speakerNames.set(key, { name: page.speaker, id: page.characterId || page.speaker });
-  const speakerOf = row => row.page.kind === 'dialogue' || row.page.quoted ? state.speakerNames.get(pageKey(row.page)) || (row.page.speaker ? { name: row.page.speaker, id: row.page.characterId || row.page.speaker } : null) : null;
+  if (page.speakerResolved) state.speakerNames.set(key, page.speaker ? { name: page.speaker, id: page.characterId || page.speaker } : null);
+  const speakerOf = row => row.page.kind === 'dialogue' || row.page.quoted ? state.speakerNames.get(pageKey(row.page)) || null : null;
   if (frameKey !== reveal.frameKey) {
     surface.replaceChildren(); reveal.frameKey = frameKey;
     for (const [index, row] of frame.entries()) {
@@ -591,13 +619,19 @@ function renderRevealedText(page) {
       const copy = document.createElement('span'); copy.className = 'vn-line-text';
       copy.textContent = index === frame.length - 1 ? '' : row.text;
       line.append(label, copy); surface.append(line);
-      if (index === frame.length - 1) reveal.element = copy;
+      if (index === frame.length - 1) {
+        reveal.element = copy;
+        const buffer = document.createElement('span'); buffer.className = 'vn-inline-buffer'; buffer.hidden = true;
+        buffer.setAttribute('role', 'status'); buffer.setAttribute('aria-label', '다음 문장 준비 중');
+        for (let dot = 0; dot < 3; dot++) { const item = document.createElement('i'); item.setAttribute('aria-hidden', 'true'); buffer.append(item); }
+        line.append(buffer);
+      }
     }
   }
   for (const [index, row] of frame.entries()) {
     const line = surface.children[index], speaker = speakerOf(row);
     line.classList.toggle('is-spoken', Boolean(speaker) || row.page.kind === 'dialogue');
-    const label = line.firstElementChild, copy = line.lastElementChild;
+    const label = line.firstElementChild, copy = line.querySelector('.vn-line-text');
     label.hidden = !speaker;
     if (speaker && label.textContent !== speaker.name) label.textContent = speaker.name;
     if (speaker) line.style.setProperty('--speaker-hue', String(speakerHue(speaker.id)));
@@ -606,6 +640,20 @@ function renderRevealedText(page) {
   reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed,
     immediate: !state.dialogueWaiting && (state.cursor <= state.readThrough || state.playback === 'skip') });
   $('vn-stage').classList.toggle('is-revealing', reveal.length < reveal.glyphs.length);
+  updateNextBuffer();
+}
+function updateNextBuffer() {
+  const indicator = $('vn-dialogue-text').querySelector('.vn-inline-buffer');
+  if (!indicator || !state.api) return;
+  const next = state.pages[state.cursor + 1];
+  const nextScene = next ? pageScene(next) : null;
+  const reason = nextWaitReason({ complete: state.reveal.length >= state.reveal.glyphs.length && state.reveal.length > 0,
+    blocked: state.dialogueWaiting || state.actions || state.screen !== 'stage', loading: state.awaitingTurn || busy(),
+    nextPage: next, nextView: nextScene ? assets.view(nextScene, next) : null, imagesEnabled: Boolean(imageKey('portrait')) });
+  indicator.hidden = !reason;
+  indicator.setAttribute('aria-label', reason || '다음 문장 준비 중');
+  indicator.title = reason;
+  $('vn-stage').classList.toggle('is-buffering-next', Boolean(reason));
 }
 function stopPlayback() {
   clearTimeout(state.playbackTimer); state.playbackTimer = 0; state.playback = 'manual';
@@ -701,7 +749,7 @@ function renderPage() {
   const turns = state.api._turns();
   const scenario = state.api._scenario();
   const scene = pageScene(page), visualPage = presentationPage(scene, page), view = assets.view(scene, visualPage);
-  if (view?.speakerId && (page.quoted || page.kind === 'dialogue')) page = { ...page, characterId: view.speakerId, speaker: page.speaker || view.speakerName, kind: 'dialogue' };
+  page = resolvedSpeaker(page, view);
   root.dataset.font = state.reading.font; root.dataset.motion = state.reading.motion;
   $('vn-stage').classList.toggle('is-nvl', state.reading.layout === 'nvl');
   $('vn-stage').classList.toggle('is-adv', state.reading.layout === 'adv');
@@ -717,8 +765,8 @@ function renderPage() {
   if (met !== state.met) { state.met = met; try { localStorage.setItem(state.metKey, JSON.stringify(met)); } catch { /* Kept for this tab. */ } }
   ambience.update(state.ambienceTarget);
   const speakingPortrait = view?.portraits.find(person => person.id === view.speakerId);
-  const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && slot.dataset.ready === speakingPortrait.url));
-  state.dialogueWaiting = dialogueWait(page, view, { enabled: Boolean(imageKey()), decoded, bypass: state.dialogueBypass.has(pageKey(page)) });
+  const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && (slot.dataset.ready === speakingPortrait.url || speakingPortrait.expressionReady === false && slot.dataset.ready && slot.vnBaseKey === speakingPortrait.baseKey)));
+  state.dialogueWaiting = dialogueWait(page, view, { enabled: Boolean(imageKey('portrait')), decoded, bypass: state.dialogueBypass.has(pageKey(page)) });
   $('vn-dialogue-wait').hidden = !state.dialogueWaiting;
   const selectedTurn = turns[page.turnIndex];
   renderRevealedText(page, selectedTurn);
@@ -739,7 +787,7 @@ function renderPage() {
   $('vn-scene-title').textContent = scenario?.event?.title || '현재 장면';
   $('vn-scene-place').textContent = [scene?.world?.location || scenario?.world?.location, scene?.world?.time || $('worldClock')?.textContent].filter(Boolean).join(' · ');
   $('vn-scene-counter').textContent = page.turnIndex < 0 ? 'OPENING' : `BEAT ${String(page.turnIndex + 1).padStart(2, '0')}`;
-  const notice = imageNotice(view, Boolean(imageKey()));
+  const notice = imageNotice(view, hasImageKey());
   visualStatus.hidden = !notice; visualStatus.disabled = notice?.action === 'wait';
   visualStatus.dataset.action = notice?.action || '';
   visualStatus.dataset.keyKind = notice?.keyKind || 'image';
@@ -755,27 +803,37 @@ function renderPage() {
 
 function maybeAutoGenerate() {
   if (state.screen !== 'stage' || state.switching) return;
-  // Prepare the current paragraph and the next one as soon as they are public,
-  // while the reader is still revealing earlier lines. No COMMITTED barrier.
-  const units = new Set();
-  for (const page of state.pages.slice(state.cursor)) {
+  const units = new Map();
+  for (const page of preparationPages(state.pages, state.cursor)) {
     const scene = pageScene(page);
-    if (!scene) continue;
-    units.add(scene.unitKey);
-    if (units.size > 2) break;
-    if (scene.castPending) continue;
-    const key = `${scene.unitKey}:${page.start}:${Boolean(imageKey())}:${Boolean(textKey())}`;
+    if (!scene || scene.castPending) continue;
+    if (!units.has(scene.unitKey)) units.set(scene.unitKey, { scene, pages: [] });
+    units.get(scene.unitKey).pages.push(page);
+  }
+  // Process the whole published incoming turn from its first narration. A
+  // bounded queue avoids flooding the provider; it never uses writer drafts.
+  for (const { scene, pages } of units.values()) {
+    const key = `${scene.unitKey}:${state.imageRouting.background}:${state.imageRouting.character}:${Boolean(imageKey('background'))}:${Boolean(imageKey('portrait'))}:${Boolean(textKey())}`;
     if (state.preparedBeats.has(key)) continue;
     state.preparedBeats.add(key);
-    void assets.prepare(scene, page).catch(error => toast(error?.message || '장면 준비 오류'));
+    const scope = sceneScope();
+    preparationQueue.add(key, async current => {
+      const active = () => current() && state.screen === 'stage' && sceneScope() === scope;
+      try {
+        if (!active()) return;
+        const { completion } = await prepareAhead({ scene, pages, castDirector, assets, active, generate: hasImageKey(), preload: displaySprite });
+        void completion.catch(error => toast(error?.message || '장면 준비 오류')).finally(() => { if (!active()) state.preparedBeats.delete(key); });
+      } finally { if (!active()) state.preparedBeats.delete(key); }
+    });
   }
 }
 
 function sync(force = false) {
+  const storage = syncRecovery();
   if (!state.api || state.screen !== 'stage') return;
   const turns = state.api._turns();
   const last = turns.at(-1);
-  const key = [turns.length, last?.id, last?.status, last?.displayText?.length, last?.text?.length, last?.imageStatus, Boolean(last?.imageUrl), last?.displayTyping, state.actions, state.awaitingTurn, busy()].join('|');
+  const key = [turns.length, last?.id, last?.status, last?.displayText?.length, last?.text?.length, last?.imageStatus, Boolean(last?.imageUrl), last?.displayTyping, state.actions, state.awaitingTurn, busy(), Boolean(storage)].join('|');
   if (force || key !== state.renderKey) {
     const previous = state.pages, next = collectPages();
     const arrived = state.awaitingTurn && next.at(-1)?.turnId !== state.submittedTurnId && next.at(-1)?.turnId !== 'opening';
@@ -813,18 +871,19 @@ function prevPage() {
 }
 
 async function submit(value, auto = false) {
+  const problem = syncRecovery();
+  if (problem) return toast(problem.message);
   if (busy() || state.awaitingTurn) return toast('장면이 완성된 뒤 진행해 주세요.');
   if (!textKey()) { openSettings(); return toast('본문 생성을 위한 API 키를 설정해 주세요.'); }
   const text = String(value || '').trim();
   if (!auto && !text) return toast('행동이나 대사를 입력해 주세요.');
+  if (!auto) $('vn-input').value = text;
   stopPlayback();
   state.submittedTurnId = state.pages.at(-1)?.turnId || 'opening';
   state.awaitingTurn = true; state.generationStarted = Date.now();
   state.actions = false; state.following = false; renderPage();
   try {
-    if (auto) await state.api._continue();
-    else { state.api._setInput(text); await state.api.runTurnV1111(); }
-    if (state.api._turns().at(-1)?.status === 'REJECTED') throw new Error('다음 장면을 완성하지 못했습니다. 입력을 확인하고 다시 진행해 주세요.');
+    await submitEngineTurn(state.api, { input: text, auto, notice: () => engineNotice && !engineNotice.hidden ? engineNotice.textContent : '' });
     $('vn-input').value = '';
     sync(true);
   } catch (error) { state.actions = true; toast(error?.message || '이야기를 진행하지 못했습니다.'); }
@@ -838,7 +897,8 @@ function openSettings() {
   $('vn-openai-key').value = state.keys.openai;
   $('vn-go-key').value = state.keys.go;
   $('vn-gemini-key').value = state.keys.gemini || '';
-  dialog.querySelector(`input[name="vn-image-provider"][value="${state.imageProvider}"]`).checked = true;
+  $('vn-background-provider').value = state.imageRouting.background;
+  $('vn-character-provider').value = state.imageRouting.character;
   updateImageProviderFields();
   $('vn-muse-effort').value = state.effort;
   $('vn-style-guide').value = state.api?._settings()?.styleGuide || '';
@@ -850,7 +910,6 @@ function openSettings() {
   $('vn-motion').value = state.reading.motion;
   $('vn-sound').value = state.reading.sound;
   $('vn-ambience').value = state.reading.ambience;
-  $('vn-face-blend').value = state.reading.faceBlend;
   $('vn-cg-setting').value = state.reading.cg;
   $('vn-art-style').value = state.artStyle;
   $('vn-art-style').disabled = !state.activeSlug;
@@ -859,11 +918,12 @@ function openSettings() {
 }
 
 function updateImageProviderFields() {
-  const gemini = $('vn-settings-dialog').querySelector('input[name="vn-image-provider"]:checked')?.value === 'gemini';
+  const gemini = $('vn-background-provider').value === 'gemini' || $('vn-character-provider').value === 'gemini';
+  const mixed = $('vn-background-provider').value !== $('vn-character-provider').value;
   const options = $('vn-image-quality').options;
-  options[0].textContent = gemini ? '1K · 기본' : 'Low';
-  options[1].textContent = gemini ? '2K · 고해상도' : 'Medium';
-  $('vn-image-quality-help').textContent = gemini ? '이미지 출력 약 $0.067 / $0.101 + 입력·텍스트 비용' : '';
+  options[0].textContent = gemini ? '절약·빠르게' : 'Low';
+  options[1].textContent = mixed ? '고해상도 · Medium / 2K' : gemini ? '2K · 고해상도' : 'Medium';
+  $('vn-image-quality-help').textContent = gemini ? 'Nano Banana 2 절약 설정: 배경 0.5K, 인물·표정·사건 CG 1K. 고해상도는 2K입니다. OpenAI는 Low / Medium을 사용합니다. 실제 모델별 사용량·예상 비용은 비용 탭에서 확인하세요.' : '';
 }
 
 async function renderCosts() { await meter.render($('vn-cost-panel'), state.activeSlug); }
@@ -879,21 +939,21 @@ async function saveSettings() {
   const openai = $('vn-openai-key').value.trim();
   const go = $('vn-go-key').value.trim();
   const gemini = $('vn-gemini-key').value.trim();
-  const imageProvider = $('vn-settings-dialog').querySelector('input[name="vn-image-provider"]:checked')?.value === 'gemini' ? 'gemini' : 'openai';
+  const imageRouting = { background: $('vn-background-provider').value === 'gemini' ? 'gemini' : 'openai', character: $('vn-character-provider').value === 'gemini' ? 'gemini' : 'openai' };
   if ([openai, go, gemini].some(key => key && !/^\S{1,512}$/u.test(key))) return toast('API 키에 공백이 있거나 길이가 너무 깁니다.');
   $('vn-settings-save').disabled = true;
   try {
     await storeDeviceKeys({ openai, go, gemini });
-    if (state.imageProvider !== imageProvider || imageKey() !== ({ openai, gemini })[imageProvider]) assets.resetFailures();
+    if (JSON.stringify(state.imageRouting) !== JSON.stringify(imageRouting) || state.keys.openai !== openai || state.keys.gemini !== gemini) assets.resetFailures();
     state.keys = { openai, go, gemini };
-    state.imageProvider = imageProvider;
-    localStorage.setItem(imageProviderKey, state.imageProvider);
+    state.imageRouting = imageRouting;
+    localStorage.setItem(imageRoutingKey, JSON.stringify(state.imageRouting));
     state.provider = provider in providerModels ? provider : 'openai';
     state.effort = $('vn-muse-effort').value;
     localStorage.setItem(providerKey, state.provider);
     localStorage.setItem(effortKey, state.effort);
     state.reading = { layout: $('vn-reading-layout').value, pace: $('vn-auto-pace').value, font: $('vn-font-size').value, motion: $('vn-motion').value, sound: $('vn-sound').value,
-      ambience: $('vn-ambience').value, faceBlend: $('vn-face-blend').value, cg: $('vn-cg-setting').value };
+      ambience: $('vn-ambience').value, cg: $('vn-cg-setting').value };
     if (state.activeSlug) {
       state.artStyle = $('vn-art-style').value.trim().slice(0, 600);
       try { if (state.artStyle) localStorage.setItem(artStyleKey(state.activeSlug), state.artStyle); else localStorage.removeItem(artStyleKey(state.activeSlug)); } catch { /* Style stays for this tab. */ }
@@ -903,7 +963,8 @@ async function saveSettings() {
     state.reveal.key = ''; state.lastDirectionKey = '';
     applyProvider();
     state.api._setSettings({ styleGuide: $('vn-style-guide').value.trim(), typingSpeed: $('vn-typing-speed').value, imageQuality: $('vn-image-quality').value });
-    await state.api.persist();
+    const saved = await state.api.persist();
+    if (!saved?.ok) { $('vn-settings-dialog').close(); sync(true); throw new Error('연결 키는 보관했지만 작품 설정을 저장하지 못했습니다. 진행 안내에서 현재 기록을 보존해 주세요.'); }
     $('vn-settings-dialog').close();
     state.preparedScenePage = ''; state.preparedBeats.clear(); assets.resetFailures();
     sync(true);
@@ -926,6 +987,9 @@ function renderHistory() {
 }
 
 $('vn-home').addEventListener('click', () => { saveReadingPosition(); showScreen('library'); renderCatalog(); });
+window.addEventListener('beforeunload', event => {
+  if (storageProblem(state.api)) { event.preventDefault(); event.returnValue = ''; }
+});
 $('vn-title-start').addEventListener('click', startFromTitle);
 $('vn-title-settings').addEventListener('click', openSettings);
 $('vn-title-library').addEventListener('click', () => { showScreen('library'); renderCatalog(); });
@@ -942,10 +1006,6 @@ $('vn-settings-close').addEventListener('click', () => $('vn-settings-dialog').c
 $('vn-settings-cancel').addEventListener('click', () => $('vn-settings-dialog').close());
 $('vn-settings-save').addEventListener('click', () => void saveSettings());
 imageProviderFields.addEventListener('change', updateImageProviderFields);
-$('vn-gemini-key').addEventListener('input', () => {
-  if ($('vn-gemini-key').value.trim()) imageProviderFields.querySelector('[value="gemini"]').checked = true;
-  updateImageProviderFields();
-});
 $('vn-settings-dialog').querySelector('form').addEventListener('submit', event => { event.preventDefault(); void saveSettings(); });
 $('vn-history-toggle').addEventListener('click', openHistory);
 $('vn-dialogue-bypass').addEventListener('click', () => { state.dialogueBypass.add(pageKey(state.pages[state.cursor])); state.dialogueWaiting = false; renderPage(); });
@@ -953,7 +1013,7 @@ $('vn-history-close').addEventListener('click', () => { $('vn-history').hidden =
 $('vn-reader-log').addEventListener('click', openHistory);
 $('vn-reader-settings').addEventListener('click', openSettings);
 visualStatus.addEventListener('click', () => {
-  if (visualStatus.dataset.action === 'settings') { openSettings(); $(visualStatus.dataset.keyKind === 'text' ? state.provider === 'openai' ? 'vn-openai-key' : 'vn-go-key' : state.imageProvider === 'gemini' ? 'vn-gemini-key' : 'vn-openai-key').focus(); }
+  if (visualStatus.dataset.action === 'settings') { openSettings(); $(visualStatus.dataset.keyKind === 'text' ? state.provider === 'openai' ? 'vn-openai-key' : 'vn-go-key' : visualStatus.dataset.keyKind === 'gemini' ? 'vn-gemini-key' : 'vn-openai-key').focus(); }
   else if (visualStatus.dataset.action === 'retry') {
     const page = state.pages[state.cursor], scene = pageScene(page);
     if (scene) void assets.retry(scene, page);
@@ -985,7 +1045,7 @@ $('vn-send').addEventListener('click', () => void submit($('vn-input').value));
 $('vn-continue').addEventListener('click', () => void submit('', true));
 $('vn-custom-toggle').addEventListener('click', () => { state.customInputOpen = true; renderActions(); $('vn-input').focus(); });
 $('vn-retry-image').addEventListener('click', () => {
-  if (!imageKey()) return openSettings();
+  if (!hasImageKey()) return openSettings();
   const page = state.pages[state.cursor], scene = pageScene(page);
   if (scene) void assets.retry(scene, page);
 });

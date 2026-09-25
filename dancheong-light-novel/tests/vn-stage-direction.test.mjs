@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, mergeDirection } from '../public/vn-stage.mjs';
-import { alphaBounds, headCentre, compositeFace, normalisedFrame } from '../public/vn-sprite.mjs';
+import { alphaBounds, headCentre, normalisedFrame } from '../public/vn-sprite.mjs';
 import { ambienceFor } from '../public/vn-audio.mjs';
 import { castRequest, validateCast, directionFor, createCastDirector } from '../public/vn-cast.mjs';
 import { createStageAssets, emotionsFor, styledKey, artDirection, ART_DIRECTION, cgKey } from '../public/vn-assets.mjs';
@@ -80,22 +80,6 @@ test('alpha bounds and head centre find the figure, not the canvas', () => {
   assert.equal(alphaBounds(new Uint8ClampedArray(16), 2, 2), null);
 });
 
-test('face composite keeps the body pixel-identical and aligns a shifted edit', () => {
-  const base = sprite(80, 100, { top: 12 });
-  const edit = sprite(80, 100, { top: 14, shiftX: 2, face: [255, 120, 120] });
-  const out = compositeFace(base, edit, 80, 100);
-  assert.ok(out);
-  const px = (data, x, y) => [...data.slice((y * 80 + x) * 4, (y * 80 + x) * 4 + 4)];
-  assert.deepEqual(px(out, 40, 80), px(base, 40, 80), 'torso stays the neutral sprite');
-  assert.deepEqual(px(out, 40, 24), [255, 120, 120, 255], 'face centre comes from the aligned edit');
-});
-
-test('face composite refuses edits that resized or moved the figure', () => {
-  const base = sprite(80, 100, { top: 12 });
-  assert.equal(compositeFace(base, sprite(80, 100, { top: 40 }), 80, 100), null);
-  assert.equal(compositeFace(base, sprite(80, 100, { top: 12, shiftX: 20 }), 80, 100), null);
-});
-
 test('normalised frame puts the hair near the top and keeps a cropped edge flush', () => {
   const frame = normalisedFrame({ left: 10, right: 70, top: 30, bottom: 999, width: 61, height: 970 }, 40, 1000);
   assert.equal(frame.y + 970, frame.outHeight, 'mid-thigh crop stays on the frame edge');
@@ -104,13 +88,13 @@ test('normalised frame puts the hair near the top and keeps a cropped edge flush
 });
 
 const nadia = { id: 'visitor', name: '나디아', referenceMode: 'PRIMARY', primaryAssetRef: 'nadia.webp' };
-const scene = () => ({ scope: 'dir', environmentKey: 'room', world: { location: '방', time: '21:00' }, publicText: '나디아가 내 앞에 섰다. “안녕.” 문이 쾅 닫혔다.', candidates: [nadia],
-  castPages: [{ start: 0, text: '나디아가 내 앞에 섰다.' }, { start: 13, text: '“안녕.”' }, { start: 18, text: '문이 쾅 닫혔다.' }] });
+const scene = () => ({ scope: 'dir', environmentKey: 'room', world: { location: '방', time: '21:00' }, publicText: '나디아가 내 앞에 섰다. 나디아는 미소 지었다. “안녕.” 나디아는 깜짝 놀랐다. 문이 쾅 닫혔다. 나디아는 불안해졌다.', candidates: [nadia],
+  castPages: [{ start: 0, text: '나디아가 내 앞에 섰다. 나디아는 미소 지었다.' }, { start: 13, text: '“안녕.” 나디아는 깜짝 놀랐다.' }, { start: 18, text: '문이 쾅 닫혔다. 나디아는 불안해졌다.' }] });
 const beat = (start, extra = {}) => ({ beat: `P${start}`, speaker: '', onStage: [{ candidate: 'C0', evidence: '나디아가 내 앞에 섰다.' }], ...extra });
 const directed = () => ({ beats: [
-  beat(0, { expressions: [{ candidate: 'C0', expression: 'smile' }], focus: 'C0', shot: 'medium', transition: 'none', fx: 'none', mood: 'warm', cg: false }),
-  beat(13, { speaker: 'C0', expressions: [{ candidate: 'C0', expression: 'surprised' }], focus: 'C0', shot: 'close', transition: 'none', fx: 'none', mood: 'tense', cg: true }),
-  beat(18, { expressions: [{ candidate: 'C0', expression: 'worried' }], focus: '', shot: 'medium', transition: 'none', fx: 'heavy_shake', mood: 'tense', cg: false }),
+  beat(0, { expressions: [{ candidate: 'C0', expression: 'smile', evidence: '나디아는 미소 지었다.' }], focus: 'C0', shot: 'medium', transition: 'none', fx: 'none', mood: 'warm', cg: false }),
+  beat(13, { speaker: 'C0', expressions: [{ candidate: 'C0', expression: 'surprised', evidence: '나디아는 깜짝 놀랐다.' }], focus: 'C0', shot: 'close', transition: 'none', fx: 'none', mood: 'tense', cg: true }),
+  beat(18, { expressions: [{ candidate: 'C0', expression: 'worried', evidence: '나디아는 불안해졌다.' }], focus: '', shot: 'medium', transition: 'none', fx: 'heavy_shake', mood: 'tense', cg: false }),
 ] });
 
 test('cast request asks for direction with closed vocabularies; legacy decisions still validate', () => {
@@ -136,6 +120,17 @@ test('model expressions override text cues for on-stage people', () => {
   assert.equal(emotionsFor({ ...sc, direction: null }, { end: 5 }).visitor, 'sad');
 });
 
+test('faces hold without new evidence and never change for a future beat or old ungrounded guesses', () => {
+  const decision = directed();
+  decision.beats[1].expressions = [{ candidate: 'C0', expression: 'worried', evidence: '나디아는 불안해졌다.' }];
+  decision.beats[2].expressions = [{ candidate: 'C0', expression: 'serious' }];
+  const rows = validateCast(scene(), decision);
+  assert.deepEqual(rows.map(row => row.direction.expressions.visitor), ['smile', 'smile', 'smile']);
+  const legacy = directed();
+  for (const row of legacy.beats) delete row.expressions[0].evidence;
+  assert.ok(validateCast(scene(), legacy).every(row => !Object.keys(row.direction.expressions).length));
+});
+
 test('default art direction keeps legacy cache keys; a custom style gets its own keys', () => {
   assert.equal(styledKey('k'), 'k');
   assert.notEqual(styledKey('k', '수채화'), 'k');
@@ -153,7 +148,8 @@ test('direction-driven expressions are generated, and one event CG references th
   const sc = scene();
   for (const page of sc.castPages) await assets.prepare(sc, page);
   const expressions = requests.filter(row => row.purpose === 'expression').map(row => row.prompt);
-  assert.ok(expressions.some(prompt => prompt.includes('surprised')), 'dialogue beat uses the model expression');
+  assert.ok(expressions[1].includes('나디아는 깜짝 놀랐다.'), 'the image model receives the beat situation');
+  assert.ok(!expressions[0].includes('나디아는 깜짝 놀랐다.'), 'later reactions are not sent to an earlier image');
   assert.ok(requests.every(row => row.purpose === 'expression' || row.prompt.startsWith(ART_DIRECTION)), 'new images share one art direction');
   const cgs = requests.filter(row => row.purpose === 'scene');
   assert.equal(cgs.length, 1, 'at most one CG per paragraph');

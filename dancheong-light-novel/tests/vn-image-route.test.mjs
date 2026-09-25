@@ -2,6 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POST } from '../app/api/image/route.ts';
 
+test('strict image comparison never substitutes GPT Image 2 after a model access failure', async t => {
+  const upstream=t.mock.method(globalThis,'fetch',async()=>Response.json({error:{code:'model_not_found',message:'Model unavailable'}},{status:404}));
+  const req=strictModel=>new Request('https://local/api/image',{method:'POST',headers:{Authorization:'Bearer fixture-key','Content-Type':'application/json'},body:JSON.stringify({strictModel,prompt:'A battle expression on the same reference character.'})});
+  assert.equal((await POST(req(true))).status,404);assert.equal(upstream.mock.callCount(),1);
+  assert.equal((await POST(req('true'))).status,400);assert.equal(upstream.mock.callCount(),1);
+});
+
 test('표정 편집은 참조 이미지·투명 PNG·세로 구도를 OpenAI로 전송한다', async t => {
   const calls = [];
   t.mock.method(globalThis, 'fetch', async (url, init) => { calls.push({ url, init }); return Response.json({ data: [{ b64_json: 'aW1hZ2U=' }], usage: { input_tokens: 10, output_tokens: 20 } }); });

@@ -187,3 +187,32 @@
 #vn-root[data-motion="reduced"] .vn-title,#vn-root[data-motion="reduced"] .vn-title * { transition:none !important; animation:none !important; }
 .vn-title-cast-ghost { height:300px; aspect-ratio:3/4.4; background:radial-gradient(ellipse 17% 12% at 50% 13%,#dfe8f230 98%,transparent 100%),radial-gradient(ellipse 34% 62% at 50% 80%,#dfe8f224 98%,transparent 100%); }
 @media(max-width:760px) { .vn-title-cast-ghost { height:220px; } }
+/* V136: inline waiting indicator appended after .vn-line-text inside .vn-current-line. */
+.vn-inline-buffer { display:inline-flex; align-items:center; gap:.32em; height:.65em; margin-left:.5em; padding:0; vertical-align:baseline; white-space:nowrap; line-height:1; color:inherit; }
+.vn-inline-buffer[hidden] { display:none !important; }
+.vn-inline-buffer i { width:.34em; height:.34em; min-width:4px; min-height:4px; border-radius:50%; background:currentColor; opacity:.28; animation:vn-inline-buffer-dot 1.2s ease-in-out infinite; }
+.vn-inline-buffer i:nth-child(2) { animation-delay:.2s; }
+.vn-inline-buffer i:nth-child(3) { animation-delay:.4s; }
+@keyframes vn-inline-buffer-dot { 0%,100% { opacity:.22; } 50% { opacity:.92; } }
+@media(prefers-reduced-motion:reduce) { .vn-inline-buffer i { animation:none !important; opacity:.85 !important; } }
+#vn-root[data-motion="reduced"] .vn-inline-buffer i { animation:none !important; opacity:.85 !important; }
+
+.vn-stage.is-buffering-next #vn-next::after { opacity:0; animation:none; }
+/* V137: image model routing in the settings dialog. Scoped to new classes only. */
+.vn-image-routing { margin:18px 0 0; padding:16px 16px 14px; border:1px solid #dce4eb2e; background:#0a14228c; }
+.vn-image-routing legend { padding:0 8px; font-size:14px; line-height:1.5; color:#dce8fa; }
+.vn-image-routing-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:0; padding:2px 0 0; }
+.vn-image-routing-grid label { display:grid; gap:6px; align-content:start; margin:0; padding:12px 12px 13px; border:1px solid #dce4eb2e; background:#141c29b8; font-size:14px; line-height:1.5; color:#e8edf1; cursor:pointer; }
+.vn-image-routing-grid label:focus-within { border-color:#d5e8ff; }
+.vn-image-routing-grid strong { display:block; font-size:14px; font-weight:600; line-height:1.5; color:#f1f5f9; }
+.vn-image-routing-grid small { display:block; font-size:14px; line-height:1.6; color:#acb8c5; }
+.vn-image-routing-grid select { width:100%; min-height:44px; padding:10px 12px; border:1px solid #c7d4df66; border-radius:0; background:#090f19; color:#ffffff; font:14px/1.4 Pretendard,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
+.vn-image-routing-grid select option { background:#0b111b; color:#ffffff; }
+.vn-image-routing-grid select:hover { border-color:#d5e8ff; }
+.vn-image-routing-grid select:focus-visible { outline:2px solid #d5e8ff; outline-offset:2px; border-color:#d5e8ff; }
+.vn-image-routing-help { margin:12px 0 0; font-size:14px; line-height:1.7; color:#c1cad3; }
+@media(max-width:760px) {
+  .vn-image-routing { padding:14px 12px 12px; }
+  .vn-image-routing-grid { grid-template-columns:1fr; }
+  .vn-image-routing-grid label { min-height:0; }
+}
