@@ -28,10 +28,16 @@ export function dialogueWait(page, view, { enabled, decoded = false, bypass = fa
 // writer annotation that may have guessed the nearest registered character.
 export function resolvedSpeaker(page, view) {
   if (!page?.quoted && page?.kind !== 'dialogue') return page;
-  const ready = view?.castStatus === 'ready';
-  const speaker = ready ? view.speakerName || '' : '';
-  return { ...page, speaker, characterId: ready ? view.speakerId || '' : '', speakerResolved: ready,
-    kind: speaker ? 'dialogue' : 'narration', text: page.rawText || page.text };
+  const text = page.rawText || page.text;
+  if (view?.castStatus === 'ready') {
+    const speaker = view.speakerName || '';
+    return { ...page, speaker, characterId: view.speakerId || '', speakerResolved: true, speakerTentative: false, kind: speaker ? 'dialogue' : 'narration', text };
+  }
+  // When the cast check cannot run (failed, or no text key), fall back to the
+  // writer's annotation. It is shown as tentative and never binds a sprite.
+  const unavailable = ['error', 'needs-key'].includes(view?.castStatus);
+  const speaker = unavailable ? String(page.speaker || '') : '';
+  return { ...page, speaker, characterId: '', speakerResolved: unavailable, speakerTentative: Boolean(speaker), kind: speaker ? 'dialogue' : 'narration', text };
 }
 
 export function preparationPages(pages, cursor) {
@@ -67,11 +73,20 @@ export function createPreparationQueue({ concurrency = 3, onError = () => {} } =
 
 // Only cast inference occupies the paragraph queue. Waiting for a shared slow
 // background must not stop checking/generating a later paragraph's speaker.
-export async function prepareAhead({ scene, pages, castDirector, assets, active, generate, preload }) {
+// Lookahead tiers: the whole published turn gets cheap cast checks, only the
+// reader's paragraph and the next few generate images, and an event CG waits
+// until the reader reaches its paragraph.
+export const IMAGE_LOOKAHEAD = 2;
+export function preparationTier(unitIndex, lookahead = IMAGE_LOOKAHEAD) {
+  return unitIndex === 0 ? 'current' : unitIndex <= lookahead ? 'images' : 'cast';
+}
+export async function prepareAhead({ scene, pages, castDirector, assets, active, generate, preload, tier = 'current' }) {
   await castDirector.prepare(scene, { generate, page: pages[0] });
   if (!active()) return { completion: Promise.resolve() };
-  const completion = Promise.all(pages.map(page => assets.prepare(scene, page, { active, generate }))).then(async () => {
-    if (active()) await Promise.all(pages.flatMap(page => assets.view(scene, page)?.portraits || []).map(person => preload(person.url)));
+  const images = tier !== 'cast';
+  // Beyond the image window, only already-stored art is loaded; nothing is paid.
+  const completion = Promise.all(pages.map(page => assets.prepare(scene, page, { active, generate: generate && images, cg: tier === 'current' }))).then(async () => {
+    if (active() && images) await Promise.all(pages.flatMap(page => assets.view(scene, page)?.portraits || []).map(person => preload(person.url)));
   });
   return { completion };
 }

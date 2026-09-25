@@ -6,7 +6,7 @@ import { captureScene, sceneVersion } from './vn-scene.mjs';
 import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice } from './vn-assets.mjs';
 import { installCostMeter } from './vn-costs.mjs';
 import { createCastDirector } from './vn-cast.mjs';
-import { publishedUnit, dialogueWait, resolvedSpeaker, preparationPages, nextWaitReason, createPreparationQueue, prepareAhead } from './vn-stage-timing.mjs';
+import { publishedUnit, dialogueWait, resolvedSpeaker, preparationPages, nextWaitReason, createPreparationQueue, prepareAhead, preparationTier } from './vn-stage-timing.mjs';
 import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, readDelay } from './vn-reader.mjs';
 import { directionAt, transitionFor, createSound } from './vn-direction.mjs';
 import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs';
@@ -32,7 +32,7 @@ root.innerHTML = `
     <section id="vn-library" class="vn-library" aria-labelledby="vn-library-title">
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.8 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.9 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -155,7 +155,7 @@ const castDirector = createCastDirector({ getConnection: () => ({ key: textKey()
   onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
 const assets = createStageAssets({ castDirector, getKey: imageKey, getProvider: purpose => imageProviderFor(state.imageRouting, purpose), getStyle: () => state.artStyle, getCgEnabled: () => state.reading.cg === 'on', getQuality: () => state.api?._settings()?.imageQuality === 'medium' ? 'medium' : 'low',
   getReferences: person => window.CortexTurnExperience.selectImageReferences({ visualReferences: [{ characterId: person.id, name: person.name, mode: person.referenceMode, allowedAssetRefs: person.allowedAssetRefs, primaryAssetRef: person.primaryAssetRef }] }, state.media).map(row => row.dataUrl),
-  onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
+  onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast, maxConcurrent: 2 });
 const preparationQueue = createPreparationQueue({ concurrency: 3, onError: error => toast(error?.message || '장면 준비 오류') });
 let toastTimer = 0;
 
@@ -608,8 +608,19 @@ function renderRevealedText(page) {
   const surface = $('vn-dialogue-text');
   // NVL keeps each line's speaker: a small label above spoken lines, in a
   // stable per-person accent, remembered once the cast check names them.
-  if (page.speakerResolved) state.speakerNames.set(key, page.speaker ? { name: page.speaker, id: page.characterId || page.speaker } : null);
-  const speakerOf = row => row.page.kind === 'dialogue' || row.page.quoted ? state.speakerNames.get(pageKey(row.page)) || null : null;
+  const remember = (rowKey, resolved) => { if (resolved.speakerResolved) state.speakerNames.set(rowKey, resolved.speaker ? { name: resolved.speaker, id: resolved.characterId || resolved.speaker, tentative: Boolean(resolved.speakerTentative) } : null); };
+  remember(key, page);
+  // Earlier lines of the frame may not have been current in this session (for
+  // example after a reload). Resolve them from their own verified cast view.
+  const speakerOf = row => {
+    if (row.page.kind !== 'dialogue' && !row.page.quoted) return null;
+    const rowKey = pageKey(row.page);
+    if (!state.speakerNames.has(rowKey) || state.speakerNames.get(rowKey)?.tentative) {
+      const rowScene = pageScene(row.page);
+      remember(rowKey, resolvedSpeaker(row.page, rowScene ? assets.view(rowScene, row.page) : null));
+    }
+    return state.speakerNames.get(rowKey) || null;
+  };
   if (frameKey !== reveal.frameKey) {
     surface.replaceChildren(); reveal.frameKey = frameKey;
     for (const [index, row] of frame.entries()) {
@@ -633,6 +644,8 @@ function renderRevealedText(page) {
     line.classList.toggle('is-spoken', Boolean(speaker) || row.page.kind === 'dialogue');
     const label = line.firstElementChild, copy = line.querySelector('.vn-line-text');
     label.hidden = !speaker;
+    label.classList.toggle('is-tentative', Boolean(speaker?.tentative));
+    label.title = speaker?.tentative ? '작가 주석 기준 · 현장 인물 확인 전' : '';
     if (speaker && label.textContent !== speaker.name) label.textContent = speaker.name;
     if (speaker) line.style.setProperty('--speaker-hue', String(speakerHue(speaker.id)));
     if (index < frame.length - 1 && copy.textContent !== row.text) copy.textContent = row.text;
@@ -779,6 +792,7 @@ function renderPage() {
   $('vn-loading').querySelector('small').textContent = '도착하는 문장부터 바로 표시됩니다';
   $('vn-stage').classList.toggle('is-generating', loading);
   $('vn-speaker').textContent = page.kind === 'dialogue' ? page.speaker || '대화' : '이야기';
+  $('vn-speaker').classList.toggle('is-tentative', Boolean(page.speakerTentative));
   $('vn-page-count').textContent = `${String(state.cursor + 1).padStart(2, '0')} / ${String(state.pages.length).padStart(2, '0')}`;
   $('vn-prev').disabled = state.cursor === 0;
   $('vn-next').textContent = state.cursor < state.pages.length - 1 ? '다음 →' : state.actions ? '입력 중' : '선택하기 →';
@@ -810,10 +824,11 @@ function maybeAutoGenerate() {
     if (!units.has(scene.unitKey)) units.set(scene.unitKey, { scene, pages: [] });
     units.get(scene.unitKey).pages.push(page);
   }
-  // Process the whole published incoming turn from its first narration. A
-  // bounded queue avoids flooding the provider; it never uses writer drafts.
-  for (const { scene, pages } of units.values()) {
-    const key = `${scene.unitKey}:${state.imageRouting.background}:${state.imageRouting.character}:${Boolean(imageKey('background'))}:${Boolean(imageKey('portrait'))}:${Boolean(textKey())}`;
+  // Cast checks cover the whole published incoming turn; paid images stay near
+  // the reader (see preparationTier). Writer drafts are never used.
+  for (const [unitIndex, { scene, pages }] of [...units.values()].entries()) {
+    const tier = preparationTier(unitIndex);
+    const key = `${scene.unitKey}:${tier}:${state.imageRouting.background}:${state.imageRouting.character}:${Boolean(imageKey('background'))}:${Boolean(imageKey('portrait'))}:${Boolean(textKey())}`;
     if (state.preparedBeats.has(key)) continue;
     state.preparedBeats.add(key);
     const scope = sceneScope();
@@ -821,7 +836,7 @@ function maybeAutoGenerate() {
       const active = () => current() && state.screen === 'stage' && sceneScope() === scope;
       try {
         if (!active()) return;
-        const { completion } = await prepareAhead({ scene, pages, castDirector, assets, active, generate: hasImageKey(), preload: displaySprite });
+        const { completion } = await prepareAhead({ scene, pages, castDirector, assets, active, generate: hasImageKey(), preload: displaySprite, tier });
         void completion.catch(error => toast(error?.message || '장면 준비 오류')).finally(() => { if (!active()) state.preparedBeats.delete(key); });
       } finally { if (!active()) state.preparedBeats.delete(key); }
     });

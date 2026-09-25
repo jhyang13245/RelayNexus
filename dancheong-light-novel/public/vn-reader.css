@@ -216,3 +216,5 @@
   .vn-image-routing-grid { grid-template-columns:1fr; }
   .vn-image-routing-grid label { min-height:0; }
 }
+/* v13.9: a speaker taken from the writer's annotation while the cast check is unavailable. */
+.vn-line-speaker.is-tentative,#vn-speaker.is-tentative { opacity:.62; font-style:italic; }
