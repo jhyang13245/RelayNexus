@@ -1,6 +1,6 @@
 /* V7: a stable NVL page floats over the scene. Controls belong to its outer edge. */
 .vn-scene-visual { position:absolute; inset:0; overflow:hidden; transition:filter .9s ease; }
-.vn-scene-visual .vn-background { transition:opacity .65s ease,transform 1.2s ease; }
+.vn-scene-visual .vn-background { transition:opacity .65s ease,transform 14s cubic-bezier(.2,.4,.2,1); }
 .vn-stage.is-nvl .vn-background-shade { background:linear-gradient(90deg,#03060b9c 0,#03060b60 30%,#03060b12 76%),linear-gradient(#02040838,transparent 65%,#02040880); }
 .vn-stage.is-nvl:not(.has-actions) .vn-play-area { top:clamp(90px,16vh,160px); left:clamp(28px,11.5vw,200px); right:auto; bottom:90px; transform:none; width:min(76%,1000px); max-height:none; overflow-y:auto; }
 .vn-stage.is-nvl .vn-dialogue-box { padding:0; min-height:0; background:none; border:0; }
@@ -49,11 +49,6 @@
 .vn-loading.is-streaming strong { font-size:12px; color:#c5d1e0; }
 .vn-loading.is-streaming small { display:none; }
 @keyframes vn-wait { 50% { opacity:.2; transform:rotate(225deg); } }
-.vn-character { transition:filter .3s,transform .9s cubic-bezier(.2,.65,.3,1),opacity .25s; transform-origin:50% 70%; }
-.vn-character.is-leaving { opacity:0; transform:translateY(12px); }
-.vn-stage[data-shot="wide"] .vn-character { transform:scale(.88); }
-.vn-stage[data-shot="close"] .vn-character.is-speaking,.vn-stage[data-shot="close"] .vn-characters[data-count="1"] .vn-character { transform:scale(1.27) translateY(7%); }
-.vn-stage[data-shot="close"] .vn-background.is-active { transform:scale(1.045); }
 .vn-stage.is-memory .vn-scene-visual { filter:sepia(.5) saturate(.6) brightness(.76); }
 .vn-stage.is-memory::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:4; box-shadow:inset 0 70px 65px #000b,inset 0 -70px 65px #000b; }
 .vn-reading-settings { border:0; border-top:1px solid #dbe8ff30; padding:22px 0 0; margin:26px 0 18px; }
@@ -86,8 +81,6 @@
   .vn-reading-controls { left:12px; right:12px; bottom:max(10px,env(safe-area-inset-bottom)); justify-content:center; flex-wrap:wrap; gap:0; opacity:.8; padding:3px 0; background:#040812b5; border-top:1px solid #d5e8ff19; }
   .vn-reading-controls button { font-size:12px !important; padding:12px 9px; min-height:42px; }
   #vn-reader-position { display:none; }
-  .vn-character { height:82%; width:96%; right:-24%; }
-  .vn-stage[data-shot="close"] .vn-character { transform:scale(1.13) translateY(5%); }
   .vn-loading { bottom:100px; max-width:calc(100% - 30px); padding:15px 18px; }
   .vn-loading strong { font-size:13px; }
   .vn-loading small { font-size:11px; }
@@ -102,3 +95,90 @@
 @media(prefers-reduced-motion:reduce) {
   .vn-stage *, .vn-stage *::after { animation:none !important; transition:none !important; }
 }
+/* V13: stage layers, stable actors, lighting/mood grading, weather, effects, NVL speakers, title screen. */
+.vn-scene-visual { z-index:0; }
+.vn-backdrop { position:absolute; inset:0; transition:transform 1.2s ease; }
+.vn-stage[data-shot="close"] .vn-backdrop { transform:scale(1.045); }
+.vn-characters { transition:filter 1.2s ease,opacity .8s ease; }
+.vn-character { position:absolute; bottom:-3%; left:calc(var(--x,.68) * 100% - var(--w,.46) * 50%); width:calc(var(--w,.46) * 100%); height:calc(96% * var(--hs,1)); transform-origin:50% 22%;
+  transition:left .6s cubic-bezier(.3,.7,.3,1),width .6s cubic-bezier(.3,.7,.3,1),height .6s ease,filter .35s ease,transform .9s cubic-bezier(.2,.65,.3,1),opacity .35s ease; }
+.vn-character-image { position:absolute; bottom:0; left:50%; height:100%; width:auto; max-width:none; transform:translateX(-50%); opacity:0; transition:opacity .24s ease; filter:drop-shadow(0 10px 18px #0005); }
+.vn-character-image.is-visible { opacity:1; }
+.vn-character.is-speaking { transform:scale(1.02); }
+.vn-characters.has-speaker .vn-character:not(.is-speaking) { filter:brightness(.66) saturate(.8); }
+.vn-stage[data-shot="wide"] .vn-character { transform:scale(.86); }
+.vn-stage[data-shot="close"] .vn-character.is-focus,.vn-stage[data-shot="close"] .vn-characters[data-count="1"] .vn-character { transform:scale(1.3) translateY(8%); }
+.vn-characters .vn-character.is-entering { opacity:0; transform:translateX(var(--enter,28px)); }
+.vn-characters .vn-character.is-leaving { opacity:0; transform:translateY(14px); }
+.vn-ghost { position:absolute; bottom:0; left:50%; height:92%; aspect-ratio:3/4.4; transform:translateX(-50%); display:grid; justify-items:center; align-content:start;
+  background:radial-gradient(ellipse 17% 12% at 50% 13%,#dfe8f230 98%,transparent 100%),radial-gradient(ellipse 34% 62% at 50% 80%,#dfe8f224 98%,transparent 100%); animation:vn-ghost 1.8s ease-in-out infinite; }
+.vn-ghost span { margin-top:32%; font:500 14px/1.4 "Noto Serif KR",serif; letter-spacing:.2em; color:#eef3f8b8; text-shadow:0 1px 4px #000; }
+@keyframes vn-ghost { 50% { opacity:.5; } }
+/* The sprite takes the colour of the place it stands in. */
+.vn-stage[data-light="night"] .vn-characters { filter:brightness(.74) saturate(.78) hue-rotate(-10deg); }
+.vn-stage[data-light="dusk"] .vn-characters { filter:sepia(.22) saturate(1.08) brightness(.93); }
+.vn-stage[data-light="dawn"] .vn-characters { filter:brightness(.9) saturate(.86) hue-rotate(-4deg); }
+.vn-stage[data-mood="tense"] .vn-scene-visual { filter:saturate(.82) contrast(1.08) brightness(.94); }
+.vn-stage[data-mood="warm"] .vn-scene-visual { filter:sepia(.12) saturate(1.08) brightness(1.03); }
+.vn-stage[data-mood="sad"] .vn-scene-visual { filter:saturate(.7) brightness(.9); }
+.vn-stage[data-mood="eerie"] .vn-scene-visual { filter:hue-rotate(-14deg) saturate(.72) brightness(.82) contrast(1.06); }
+.vn-stage[data-mood="tense"] .vn-background-shade,.vn-stage[data-mood="eerie"] .vn-background-shade { box-shadow:inset 0 0 min(18vw,220px) #000d; }
+.vn-weather { position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0; transition:opacity 1.5s ease; }
+.vn-stage[data-weather="rain"] .vn-weather { opacity:.6; background-image:repeating-linear-gradient(104deg,transparent 0 11px,#cfe0ff2e 11px 12px,transparent 12px 23px),repeating-linear-gradient(100deg,transparent 0 17px,#cfe0ff22 17px 18px,transparent 18px 37px);
+  background-size:240px 240px,330px 330px; -webkit-mask-image:repeating-linear-gradient(0deg,#000 0 38px,transparent 38px 92px); mask-image:repeating-linear-gradient(0deg,#000 0 38px,transparent 38px 92px); animation:vn-rain .45s linear infinite; }
+@keyframes vn-rain { to { background-position:-60px 240px,-70px 330px; } }
+.vn-stage[data-weather="snow"] .vn-weather { opacity:.8; background-image:radial-gradient(circle,#fff 0 1.6px,transparent 2.2px),radial-gradient(circle,#ffffffb0 0 1.1px,transparent 1.6px); background-size:140px 140px,90px 90px; background-position:0 0,40px 60px; animation:vn-snow 9s linear infinite; }
+@keyframes vn-snow { to { background-position:140px 560px,130px 510px; } }
+.vn-stage[data-weather="fog"] .vn-weather { inset:0 -8%; opacity:.75; background:radial-gradient(ellipse 60% 30% at 30% 70%,#d7dde624,transparent 70%),radial-gradient(ellipse 50% 25% at 75% 55%,#d7dde61e,transparent 70%),linear-gradient(#cdd5de00 30%,#cdd5de2b); animation:vn-fog 26s ease-in-out infinite alternate; }
+@keyframes vn-fog { to { transform:translateX(-5%); } }
+.vn-cg { position:absolute; inset:0; z-index:4; background-size:cover; background-position:center; opacity:0; transition:opacity 1.1s ease; pointer-events:none; }
+.vn-cg::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,#03060b99 0,#03060b40 35%,transparent 70%); }
+.vn-stage.is-adv .vn-cg::after { background:linear-gradient(transparent 55%,#03060b99); }
+.vn-cg.is-visible { opacity:1; }
+.vn-stage.has-cg .vn-scene-visual .vn-characters { opacity:0; }
+.vn-flash { position:absolute; inset:0; z-index:6; pointer-events:none; opacity:0; }
+/* NVL: readable prose over art, and a speaker label on spoken lines. */
+.vn-stage.is-nvl:not(.has-actions):not(.is-text-hidden) .vn-background-shade { background:linear-gradient(90deg,#03060bb8 0,#03060b85 38%,#03060b40 80%,#03060b26),linear-gradient(#02040838,transparent 65%,#02040880); }
+.vn-stage.is-nvl.is-narration:not(.is-text-hidden) .vn-scene-visual .vn-characters { opacity:.84; }
+.vn-stage.has-cg.is-nvl .vn-scene-visual .vn-characters { opacity:0; }
+.vn-line-speaker { display:block; margin:0 0 .05em; font:600 .58em/1.5 "Noto Sans KR",sans-serif; letter-spacing:.14em; color:hsl(var(--speaker-hue,210) 62% 82%); text-shadow:0 1px 3px #000; }
+.vn-line-speaker[hidden] { display:none; }
+.vn-stage.is-nvl #vn-dialogue-text > p.is-spoken { padding-left:.8em; border-left:2px solid hsl(var(--speaker-hue,210) 48% 72% / .6); }
+.vn-stage.is-nvl .vn-read-line .vn-line-speaker { opacity:.72; }
+.vn-stage.is-adv .vn-line-speaker { display:none; }
+/* Per-work title screen. */
+.vn-title { position:relative; height:100%; overflow:hidden; overflow:clip; background:#05080f; }
+.vn-title-art { position:absolute; inset:0; background:radial-gradient(ellipse at 70% 30%,#2a334e,#080c14 70%) center/cover; background-size:cover; background-position:center 30%; transform:scale(1.06); animation:vn-title-drift 24s ease-in-out infinite alternate; }
+@keyframes vn-title-drift { to { transform:scale(1.12) translate(-1.5%,-1%); } }
+.vn-title-shade { position:absolute; inset:0; background:linear-gradient(90deg,#03060bf0 0,#03060bb0 38%,#03060b20 75%),linear-gradient(0deg,#03060bcc,transparent 45%); }
+.vn-title-body { position:absolute; left:clamp(28px,9vw,150px); bottom:clamp(60px,13vh,150px); max-width:min(640px,calc(100% - 56px)); display:grid; gap:14px; animation:vn-title-in 1.1s ease-out both; }
+.vn-title-body h1 { margin:0; font:600 clamp(40px,6vw,84px)/1.08 "Noto Serif KR",Georgia,serif; letter-spacing:-.02em; text-shadow:0 4px 24px #000; }
+.vn-title-body p { margin:0; color:#d7dfe8; font-size:15px; line-height:1.7; text-shadow:0 1px 6px #000; }
+.vn-title-menu { display:grid; gap:2px; margin-top:22px; justify-items:start; }
+.vn-title-menu button { background:none; border:0; border-left:2px solid transparent; color:#f1f4f7; padding:9px 16px; min-height:44px; font:500 19px/1.3 "Noto Serif KR",serif; letter-spacing:.08em; text-shadow:0 2px 8px #000; transition:border-color .2s,padding .2s,color .2s; }
+.vn-title-menu button:hover,.vn-title-menu button:focus-visible { border-left-color:#dfe9f5; padding-left:24px; color:#fff; outline:none; }
+.vn-title-menu button:first-child { font-size:23px; }
+@keyframes vn-title-in { from { opacity:0; transform:translateY(14px); } }
+.vn-title-cast { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; padding:84px clamp(18px,6vw,90px) 40px; background:#04070de8; backdrop-filter:blur(10px); }
+.vn-title-cast-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+.vn-title-cast-head strong { font:500 26px "Noto Serif KR",serif; }
+.vn-title-cast-head button { background:none; border:0; color:#dfe7ef; min-height:44px; }
+.vn-title-cast-list { flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:18px; align-content:start; }
+.vn-title-cast-card { margin:0; display:grid; gap:10px; justify-items:center; }
+.vn-title-cast-card img { height:300px; max-width:100%; object-fit:contain; object-position:bottom; filter:drop-shadow(0 10px 18px #000a); }
+.vn-title-cast-card figcaption { font:500 16px "Noto Serif KR",serif; letter-spacing:.1em; }
+.vn-title-cast-empty { color:#c5cfda; line-height:1.7; }
+@media(max-width:760px) {
+  .vn-character { bottom:-2%; }
+  .vn-stage[data-shot="close"] .vn-character.is-focus,.vn-stage[data-shot="close"] .vn-characters[data-count="1"] .vn-character { transform:scale(1.14) translateY(5%); }
+  /* Phone NVL: prose covers the stage, so the actors step back while it is read. */
+  .vn-stage.is-nvl:not(.has-actions):not(.is-text-hidden) .vn-background-shade { background:linear-gradient(#020409b8,#020409a0 60%,#020409c8); }
+  .vn-stage.is-nvl:not(.is-text-hidden):not(.has-actions) .vn-scene-visual .vn-characters { opacity:.45; }
+  .vn-stage.is-nvl.is-dialogue:not(.is-text-hidden):not(.has-actions) .vn-scene-visual .vn-characters { opacity:.62; }
+  .vn-title-body { left:22px; bottom:48px; }
+  .vn-title-menu button { font-size:17px; }
+  .vn-title-menu button:first-child { font-size:20px; }
+  .vn-title-cast-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .vn-title-cast-card img { height:220px; }
+}
+@media(prefers-reduced-motion:reduce) { .vn-title *,.vn-title-art { animation:none !important; transition:none !important; } }

@@ -1,5 +1,5 @@
 {
-  "release": "v12",
+  "release": "v13",
   "description": "Complete application source; shared Neoreum/Jieum services and browser-local data are external.",
   "files": [
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 4774,
-      "sha256": "514cb574a3234bbd8777846b1fbb58d469b48fb12dc5159d97e538a4a42bfb56"
+      "bytes": 5427,
+      "sha256": "3d4a423d5f4815dfa52d9e94217caee5f2942456b5668813058450a483c11fbf"
     },
     {
       "path": "app/api/catalog/route.ts",
@@ -423,6 +423,11 @@
       "sha256": "316838f8d862b5ef09b999d44b0c48b39d6af0e8efe3ae42b1db07c8e5613c16"
     },
     {
+      "path": "docs/v13-visual-direction.md",
+      "bytes": 8703,
+      "sha256": "a6aa5d35734079b92f7de49233e29c9fc55786af73790eb70d7b6b7d07181e92"
+    },
+    {
       "path": "docs/v7-tsukihime-comparison.md",
       "bytes": 11877,
       "sha256": "91a006484ab792b582c024e87ab7f3773890b6413c43d3e8def135a787bd0e65"
@@ -495,7 +500,7 @@
     {
       "path": "public/cortex.html",
       "bytes": 1419314,
-      "sha256": "cc85c512a6afc05e693e6ddc79172cb9c8c16e88b234557547020ad3e0c3a9b3"
+      "sha256": "e5504cdcebbf6508856109f01eaeaadfcc1c8c4a876313388db2344b36efb8cc"
     },
     {
       "path": "public/favicon.svg",
@@ -514,8 +519,13 @@
     },
     {
       "path": "public/vn-assets.mjs",
-      "bytes": 11030,
-      "sha256": "4b09782532b7bf9ffebc1672c587637870a36b4b79e045518c294caa84476c3b"
+      "bytes": 16137,
+      "sha256": "4ffbb18acaff6b8acff941e977b0d9de52eac9179c914a40505b57e9128933c4"
+    },
+    {
+      "path": "public/vn-audio.mjs",
+      "bytes": 6549,
+      "sha256": "f0244c0d388857ab9bb20662e5c2fa560cfdbe3835ae15d6cc6739c6b00550e4"
     },
     {
       "path": "public/vn-boot.html",
@@ -524,8 +534,8 @@
     },
     {
       "path": "public/vn-cast.mjs",
-      "bytes": 8544,
-      "sha256": "15bc3355fdeeab8c25f48076827193ec454a30dae8068ec1bd9a0e0ecb143aef"
+      "bytes": 12488,
+      "sha256": "7f31b1e87ea8ce56a893a486943110fa0d8f357f940ad9b34d6e84695b5ee491"
     },
     {
       "path": "public/vn-chroma.mjs",
@@ -559,8 +569,8 @@
     },
     {
       "path": "public/vn-reader.css",
-      "bytes": 10213,
-      "sha256": "93dceeda547b8af7c9eb4e7ac661535957de4cf920b1676828d92406b7f59b6a"
+      "bytes": 19385,
+      "sha256": "e760ada8cbe83d957b78501cfffbfb4297d636019e09b16bebbf59f738aebe31"
     },
     {
       "path": "public/vn-reader.mjs",
@@ -573,19 +583,29 @@
       "sha256": "68a063c08fe3a6f1fef3d629bd3b8e622006e89769cb5b54302ee097e2ba2ca8"
     },
     {
+      "path": "public/vn-sprite.mjs",
+      "bytes": 6184,
+      "sha256": "7f379e1846023189339386e150f1d3d613e16879106c9178f5d0081c82375e72"
+    },
+    {
       "path": "public/vn-stage-timing.mjs",
       "bytes": 1566,
       "sha256": "233b8b648ce43aa77d7f2ff2c5e1ca235dc4366c4dee3c01c254b2851bf1bc52"
     },
     {
+      "path": "public/vn-stage.mjs",
+      "bytes": 2973,
+      "sha256": "3aa33a43b3e23b60f2247e345452c3b5e267b3064920c46b4e893c2905a1fc37"
+    },
+    {
       "path": "public/vn.css",
-      "bytes": 34866,
-      "sha256": "27424a86389b420ac7afabd66c8847bd726cb0ffb993d585114008ef8f17cb79"
+      "bytes": 33162,
+      "sha256": "05dea88ada066365a27ec2c423f40e8c3ea752ebe22b3f02a80ca032a8e0e601"
     },
     {
       "path": "public/vn.js",
-      "bytes": 64503,
-      "sha256": "edbe6c5094cc4c77c7afce1b6963d9299b2f5bae8ba9cb7dc047ab31e0bec38a"
+      "bytes": 78360,
+      "sha256": "b13ab5a1b6f287e32d34292deaf0e2dc399917a282985c0eeb72bad2309df92f"
     },
     {
       "path": "public/window.svg",
@@ -594,8 +614,8 @@
     },
     {
       "path": "scripts/build-cortex.mjs",
-      "bytes": 5818,
-      "sha256": "4f8c7bdea76d40d1293ff62a67c9aa344eefe35d70aa72f15b56fd878136bd6d"
+      "bytes": 5867,
+      "sha256": "e8c8456b64a317cc2bde68f0d1f31714111caccd3b7b6e0c46127090ed7837b3"
     },
     {
       "path": "scripts/build-verified.sh",
@@ -630,7 +650,7 @@
     {
       "path": "scripts/package-source.mjs",
       "bytes": 2725,
-      "sha256": "4f8df0cefd41670e89075a3a8e8a2c3a19153e6cfb9f48f418773f6ce043be99"
+      "sha256": "d32f45bf8b4e17485ca9d36435c7a37af588ef34c9e12329b5ed126dc190933b"
     },
     {
       "path": "scripts/pnpm-install.mjs",
@@ -726,6 +746,11 @@
       "path": "tests/vn-scene.test.mjs",
       "bytes": 6390,
       "sha256": "caeb0a2cb8f8aa8e01b2228b34f0add13f67bfa17bace4cc04da9d7fe26f5996"
+    },
+    {
+      "path": "tests/vn-stage-direction.test.mjs",
+      "bytes": 12327,
+      "sha256": "ce8714726a6065f2f8bebf1098d6a3af11acd8589ff7389303a748775cf0f3c8"
     },
     {
       "path": "tests/vn-stage-timing.test.mjs",

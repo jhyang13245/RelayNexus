@@ -7,6 +7,9 @@ import { createCastDirector } from './vn-cast.mjs';
 import { publishedUnit, dialogueWait } from './vn-stage-timing.mjs';
 import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, readDelay } from './vn-reader.mjs';
 import { directionAt, transitionFor, createSound } from './vn-direction.mjs';
+import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, lightFor, mergeDirection } from './vn-stage.mjs';
+import { displaySprite } from './vn-sprite.mjs';
+import { createAmbience, ambienceFor } from './vn-audio.mjs';
 
 const activeKey = 'dancheong-ln-active-work-v1';
 const nexusBase = 'https://relay-novel-nexus.juno12345.chatgpt.site';
@@ -28,7 +31,13 @@ root.innerHTML = `
     <section id="vn-library" class="vn-library" aria-labelledby="vn-library-title">
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v12 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13 · 실행 안내 포함</span></footer>
+    </section>
+    <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
+      <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
+      <div class="vn-title-body"><span class="vn-kicker" id="vn-title-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-title-name">작품</h1><p id="vn-title-sub"></p>
+        <div class="vn-title-menu"><button id="vn-title-start" type="button">이어하기</button><button id="vn-title-cast" type="button">만난 인물</button><button id="vn-title-settings" type="button">설정</button><button id="vn-title-library" type="button">작품 목록</button></div></div>
+      <div class="vn-title-cast" id="vn-title-cast-panel" hidden><div class="vn-title-cast-head"><strong>만난 인물</strong><button id="vn-title-cast-close" type="button">닫기 ×</button></div><div id="vn-title-cast-list" class="vn-title-cast-list"></div></div>
     </section>
     <section id="vn-stage" class="vn-stage" aria-label="비주얼노벨 플레이" hidden>
       <div class="vn-background vn-background-a is-active" id="vn-background-a"></div><div class="vn-background vn-background-b" id="vn-background-b"></div><div class="vn-background-shade"></div><div class="vn-scene-cut" id="vn-scene-cut" aria-hidden="true"></div>
@@ -52,8 +61,16 @@ document.body.prepend(root);
 const textSurface = document.createElement('div'); textSurface.id = 'vn-dialogue-text';
 document.getElementById('vn-dialogue-text').replaceWith(textSurface);
 const visual = document.createElement('div'); visual.id = 'vn-scene-visual'; visual.className = 'vn-scene-visual';
-for (const selector of ['#vn-background-a', '#vn-background-b', '.vn-background-shade', '#vn-characters']) visual.append(root.querySelector(selector));
+// Backdrop zoom (camera) and the slow background drift are separate layers so
+// neither transition overrides the other.
+const backdrop = document.createElement('div'); backdrop.className = 'vn-backdrop';
+backdrop.append(root.querySelector('#vn-background-a'), root.querySelector('#vn-background-b'));
+const cgLayer = document.createElement('div'); cgLayer.id = 'vn-cg'; cgLayer.className = 'vn-cg'; cgLayer.setAttribute('aria-hidden', 'true');
+const weatherLayer = document.createElement('div'); weatherLayer.className = 'vn-weather'; weatherLayer.setAttribute('aria-hidden', 'true');
+visual.append(backdrop, root.querySelector('.vn-background-shade'), root.querySelector('#vn-characters'), cgLayer, weatherLayer);
 root.querySelector('#vn-stage').prepend(visual);
+const flashLayer = document.createElement('div'); flashLayer.className = 'vn-flash'; flashLayer.setAttribute('aria-hidden', 'true');
+root.querySelector('#vn-scene-cut').after(flashLayer);
 const stageTools = document.createElement('div'); stageTools.className = 'vn-stage-tools';
 stageTools.innerHTML = '<div id="vn-scene-label" class="vn-scene-label" aria-hidden="true"></div><div id="vn-loading" class="vn-loading" role="status" hidden><span></span><strong>다음 장면을 준비하고 있습니다</strong><small>완성되면 첫 문장부터 표시됩니다</small></div><button type="button" id="vn-show-text" class="vn-show-text" hidden>본문 표시 · H</button><div class="vn-reading-controls" role="toolbar" aria-label="읽기 제어"><span id="vn-reader-position"></span><button type="button" id="vn-reader-log" title="읽은 기록 (L)">기록</button><button type="button" id="vn-auto" aria-pressed="false" title="자동 읽기 (A)">자동</button><button type="button" id="vn-skip" aria-pressed="false" title="읽은 부분만 건너뛰기 (S)">읽은 부분</button><button type="button" id="vn-hide-text" title="본문 숨기기 (H)">글 숨김</button><button type="button" id="vn-fullscreen" title="전체 화면 (F)">전체 화면</button><button type="button" id="vn-reader-settings">설정</button></div>';
 root.querySelector('#vn-stage').append(stageTools);
@@ -83,7 +100,7 @@ connectionPanel.querySelector('#vn-openai-key').closest('label').querySelector('
 const imageQualityHelp = document.createElement('small'); imageQualityHelp.id = 'vn-image-quality-help';
 connectionPanel.querySelector('#vn-image-quality').after(imageQualityHelp);
 const readingFields = document.createElement('fieldset'); readingFields.className = 'vn-reading-settings';
-readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다.</p>';
+readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>표정 교체<select id="vn-face-blend"><option value="face">얼굴만 교체 · 권장</option><option value="full">생성된 전체 이미지</option></select></label><label>사건 CG<select id="vn-cg-setting"><option value="off">끔</option><option value="on">켬 · 이미지 비용 추가</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 사건 CG는 절정 장면에만, 문단당 최대 1장 생성합니다.</p>';
 connectionPanel.querySelector('.vn-settings-help').before(readingFields);
 settingsForm.append(connectionPanel);
 const costPanel = document.createElement('div'); costPanel.id = 'vn-cost-panel'; costPanel.hidden = true; costPanel.setAttribute('role', 'tabpanel'); costPanel.setAttribute('aria-labelledby', 'vn-cost-tab'); settingsForm.append(costPanel);
@@ -102,13 +119,19 @@ state.stageScenes = new Map(); state.preparedBeats = new Set(); state.dialogueBy
 state.imageProvider = localStorage.getItem(imageProviderKey) === 'gemini' ? 'gemini' : 'openai';
 const readingPrefsKey = 'dancheong-vn-reading-prefs-v1';
 let storedReading = {}; try { storedReading = JSON.parse(localStorage.getItem(readingPrefsKey) || '{}'); } catch { /* Defaults remain usable. */ }
-state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off' };
+state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off',
+  ambience: storedReading?.ambience === 'on' ? 'on' : 'off', faceBlend: storedReading?.faceBlend === 'full' ? 'full' : 'face', cg: storedReading?.cg === 'on' ? 'on' : 'off' };
+const artStyleKey = slug => `dancheong-vn-art-style-v1:${slug}`;
+function loadArtStyle(slug) { try { return localStorage.getItem(artStyleKey(slug)) || ''; } catch { return ''; } }
+state.artStyle = loadArtStyle(state.activeSlug);
 Object.assign(state, { playback: 'manual', playbackTimer: 0, readThrough: -1, bookmark: null, awaitingTurn: false, submittedTurnId: '', readerWork: '', lastDirectionKey: '', lastScene: null, hideText: false, backdropSequence: 0, generationStarted: 0 });
 const sound = createSound(() => state.reading.sound === 'on');
+const ambience = createAmbience(() => state.reading.ambience === 'on' && state.screen === 'stage' && !document.hidden);
+Object.assign(state, { stageOrder: [], speakerNames: new Map(), firedEffects: new Set(), focusId: '', ambienceTarget: null });
 const meter = installCostMeter({ context: () => ({ slug: state.activeSlug, title: currentWork()?.title || '' }), onChange: () => { if ($('vn-settings-dialog').open && !$('vn-cost-panel').hidden) void renderCosts(); } });
 const castDirector = createCastDirector({ getConnection: () => ({ key: textKey(), model: providerModels[state.provider], endpoint: state.provider === 'openai' ? '/api/openai/responses' : '/api/go/responses' }), read: readAsset, write: writeAsset,
   onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
-const assets = createStageAssets({ castDirector, getKey: imageKey, getProvider: () => state.imageProvider, getQuality: () => state.api?._settings()?.imageQuality === 'medium' ? 'medium' : 'low',
+const assets = createStageAssets({ castDirector, getKey: imageKey, getProvider: () => state.imageProvider, getStyle: () => state.artStyle, getCgEnabled: () => state.reading.cg === 'on', getQuality: () => state.api?._settings()?.imageQuality === 'medium' ? 'medium' : 'low',
   getReferences: person => window.CortexTurnExperience.selectImageReferences({ visualReferences: [{ characterId: person.id, name: person.name, mode: person.referenceMode, allowedAssetRefs: person.allowedAssetRefs, primaryAssetRef: person.primaryAssetRef }] }, state.media).map(row => row.dataUrl),
   onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
 let toastTimer = 0;
@@ -255,7 +278,7 @@ async function openWork(slug) {
   // Returning to the same running work changes only the view. Keep its writer,
   // images, current page and reveal clock; never import or bootstrap it again.
   if (slug === state.activeSlug && state.pages.length && state.api?._scenario()?.runtime?.storyId !== 'unconfigured') {
-    showScreen('stage'); sync(true); return;
+    showTitle(); return;
   }
   if (busy() || assets.isBusy()) return toast('현재 장면이 완료된 뒤 작품을 바꿔 주세요.');
   const work = state.catalog.find(row => row.slug === slug);
@@ -277,6 +300,7 @@ async function openWork(slug) {
       else { await importPackage(slug); fresh = true; }
     }
     applyProvider();
+    state.artStyle = loadArtStyle(slug);
     await loadMedia();
     await loadPresentation();
     state.openingArt = await savedOpeningArt(slug);
@@ -284,8 +308,7 @@ async function openWork(slug) {
     state.startAtFirst = fresh;
     state.actions = false;
     state.renderKey = '';
-    showScreen('stage');
-    sync(true);
+    showTitle(fresh);
   } catch (error) {
     toast(error instanceof Error ? error.message : '작품을 열지 못했습니다.');
   } finally { state.switching = false; $('vn-library-count').textContent = `${state.catalog.length}개 공개 항목`; }
@@ -294,20 +317,54 @@ async function openWork(slug) {
 function showScreen(screen) {
   stopPlayback();
   state.screen = screen;
-  root.classList.toggle('is-playing', screen === 'stage');
+  if (screen !== 'stage') ambience.stop();
+  root.classList.toggle('is-playing', screen !== 'library');
+  root.classList.toggle('is-title', screen === 'title');
+  $('vn-title').hidden = screen !== 'title';
   $('vn-home').setAttribute('aria-label', screen === 'stage' ? '메인화면으로 돌아가기' : '단청 메인화면');
   root.classList.remove('vn-menu-open');
   $('vn-menu-toggle').setAttribute('aria-expanded', 'false');
   $('vn-library').hidden = screen !== 'library';
   $('vn-stage').hidden = screen !== 'stage';
   $('vn-history-toggle').hidden = screen !== 'stage';
-  $('vn-top-title').textContent = screen === 'stage' ? currentWork()?.title || state.api?._scenario()?.title || '작품' : '작품을 선택하세요';
+  $('vn-top-title').textContent = screen !== 'library' ? currentWork()?.title || state.api?._scenario()?.title || '작품' : '작품을 선택하세요';
   $('vn-history').hidden = true;
 }
 
 function closeMenu() {
   root.classList.remove('vn-menu-open');
   $('vn-menu-toggle').setAttribute('aria-expanded', 'false');
+}
+
+// Each work opens on its own title screen: key art, name, and a short menu.
+function showTitle(fresh = false) {
+  const work = currentWork(), scenario = state.api?._scenario();
+  const art = state.openingArt || currentCover();
+  $('vn-title-art').style.backgroundImage = art ? `url("${art.replaceAll('"', '%22')}")` : '';
+  $('vn-title-kicker').textContent = String(work?.runtime || 'DANCHEONG · LIGHT NOVEL');
+  $('vn-title-name').textContent = work?.title || scenario?.title || '작품';
+  $('vn-title-sub').textContent = String(work?.subtitle || work?.genre || scenario?.summary || '').slice(0, 160);
+  const started = !fresh && (state.api?._turns().length > 0 || Boolean(state.bookmark));
+  $('vn-title-start').textContent = started ? '이어하기' : '시작하기';
+  $('vn-title-cast-panel').hidden = true;
+  showScreen('title');
+  $('vn-title-start').focus({ preventScroll: true });
+}
+function startFromTitle() { showScreen('stage'); sync(true); }
+async function renderMetCast() {
+  const list = $('vn-title-cast-list'); list.replaceChildren();
+  const pages = state.pages.length ? state.pages : collectPages();
+  const scene = pageScene(pages.at(-1));
+  const people = (scene?.candidates || []).filter(person => person.id !== scene.protagonistId);
+  const met = await assets.metPortraits(sceneScope(), people).catch(() => []);
+  if (!met.length) { const empty = document.createElement('p'); empty.className = 'vn-title-cast-empty'; empty.textContent = '아직 무대에서 만난 인물이 없습니다. 이야기를 진행하면 이곳에 기록됩니다.'; list.append(empty); return; }
+  for (const person of met) {
+    const card = document.createElement('figure'); card.className = 'vn-title-cast-card';
+    const image = document.createElement('img'); image.alt = person.name; image.src = person.url;
+    void displaySprite(person.url, person.url).then(url => { image.src = url; });
+    const name = document.createElement('figcaption'); name.textContent = person.name;
+    card.append(image, name); list.append(card);
+  }
 }
 
 function renderCatalog() {
@@ -368,25 +425,69 @@ function setBackground(url) {
   else apply();
 }
 
-function setPortraits(portraits, speakerId) {
+// Actors keep their place while present and slide when the line-up changes.
+// Positions, widths and height scale are CSS variables so moves transition.
+function setPortraits(view, speakerId) {
   const container = $('vn-characters');
-  const ids = new Set(portraits.map(person => person.id));
-  for (const node of [...container.children]) if (!ids.has(node.dataset.characterId)) { node.classList.add('is-leaving'); setTimeout(() => { if (node.classList.contains('is-leaving')) node.remove(); }, 220); }
-  container.dataset.count = String(portraits.length);
-  for (const [index, person] of portraits.entries()) {
-    let slot = [...container.children].find(node => node.dataset.characterId === person.id);
-    if (!slot) { slot = document.createElement('div'); slot.className = 'vn-character'; slot.dataset.characterId = person.id; container.append(slot); }
-    slot.classList.remove('is-leaving');
-    slot.style.setProperty('--slot', String(index));
-    slot.classList.toggle('is-speaking', person.id === speakerId);
+  const portraits = view?.portraits || [];
+  const ghosts = view?.status === 'generating' && view.castStatus === 'ready' ? (view.pending || []).map(person => ({ ...person, placeholder: true })) : [];
+  const people = [...portraits, ...ghosts.filter(ghost => !portraits.some(person => person.id === ghost.id))];
+  const ids = new Set(people.map(person => person.id));
+  for (const node of [...container.children]) if (!ids.has(node.dataset.characterId) && !node.classList.contains('is-leaving')) {
+    node.classList.add('is-leaving'); setTimeout(() => { if (node.classList.contains('is-leaving')) node.remove(); }, 480);
+  }
+  state.stageOrder = stageOrder(state.stageOrder, people.map(person => person.id));
+  const narrow = innerWidth <= 760, positions = stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow }), width = slotWidth(state.stageOrder.length, narrow);
+  container.dataset.count = String(people.length);
+  container.classList.toggle('has-speaker', Boolean(speakerId && portraits.some(person => person.id === speakerId)));
+  for (const person of people) {
+    const index = state.stageOrder.indexOf(person.id);
+    let slot = [...container.children].find(node => node.dataset.characterId === person.id && !node.classList.contains('is-leaving'));
+    if (!slot) {
+      slot = document.createElement('div'); slot.className = 'vn-character is-entering'; slot.dataset.characterId = person.id;
+      // Enter from the side the person will stand on.
+      slot.style.setProperty('--enter', positions[index] < 0.5 ? '-28px' : '28px');
+      container.append(slot); requestAnimationFrame(() => requestAnimationFrame(() => slot.classList.remove('is-entering')));
+    }
+    slot.style.setProperty('--x', String(positions[index]));
+    slot.style.setProperty('--w', String(width));
+    slot.style.setProperty('--hs', String(heightScale(person.profile)));
+    slot.style.zIndex = person.id === speakerId ? '5' : String(1 + index);
+    const speaking = person.id === speakerId;
+    if (speaking && !slot.classList.contains('is-speaking')) slot.querySelector('.vn-character-image.is-visible')?.animate([{ translate: '0 0' }, { translate: '0 -1.2%' }, { translate: '0 0' }], { duration: 260, easing: 'ease-out' });
+    slot.classList.toggle('is-speaking', speaking);
+    slot.classList.toggle('is-focus', person.id === (state.focusId || speakerId));
+    slot.classList.toggle('is-placeholder', Boolean(person.placeholder));
+    if (person.placeholder) {
+      if (!slot.querySelector('.vn-ghost')) { const ghost = document.createElement('div'); ghost.className = 'vn-ghost'; const label = document.createElement('span'); label.textContent = person.name; ghost.append(label); slot.append(ghost); }
+      continue;
+    }
     if (slot.dataset.source === person.url) continue;
     slot.dataset.source = person.url;
-    const incoming = document.createElement('img'); incoming.src = person.url; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
-    const previous = [...slot.children];
-    incoming.onload = () => { if (slot.dataset.source !== person.url) return incoming.remove(); incoming.classList.add('is-visible'); slot.dataset.ready = person.url; for (const image of previous) image.classList.remove('is-visible'); setTimeout(() => previous.forEach(image => image.remove()), 250); queueMicrotask(() => { if (state.screen === 'stage') renderPage(); }); };
-    incoming.onerror = () => { slot.dataset.ready = ''; toast('인물 이미지를 표시하지 못했습니다. 이미지 없이 읽거나 다시 시도해 주세요.'); };
-    slot.append(incoming);
+    const url = person.url;
+    void displaySprite(person.base || url, url, { faceOnly: state.reading.faceBlend !== 'full' }).then(src => {
+      if (slot.dataset.source !== url) return;
+      const incoming = document.createElement('img'); incoming.src = src; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
+      const previous = [...slot.children];
+      incoming.onload = () => {
+        if (slot.dataset.source !== url) return incoming.remove();
+        incoming.classList.add('is-visible'); slot.dataset.ready = url;
+        for (const node of previous) node.classList.remove('is-visible');
+        setTimeout(() => previous.forEach(node => node.remove()), 260);
+        queueMicrotask(() => { if (state.screen === 'stage') renderPage(); });
+      };
+      incoming.onerror = () => { slot.dataset.ready = ''; toast('인물 이미지를 표시하지 못했습니다. 이미지 없이 읽거나 다시 시도해 주세요.'); };
+      slot.append(incoming);
+    });
   }
+}
+
+function setCg(url) {
+  if (cgLayer.dataset.url === (url || '')) return;
+  cgLayer.dataset.url = url || '';
+  if (url) cgLayer.style.backgroundImage = `url("${url.replaceAll('"', '%22')}")`;
+  cgLayer.classList.toggle('is-visible', Boolean(url));
+  $('vn-stage').classList.toggle('has-cg', Boolean(url));
 }
 
 function pageScene(page) {
@@ -445,6 +546,7 @@ function resetReader() {
   state.stageScenes.clear(); state.preparedBeats.clear(); state.dialogueBypass.clear(); state.dialogueWaiting = false;
   state.pages = []; state.cursor = 0; state.readThrough = -1;
   state.lastDirectionKey = ''; state.lastScene = null; state.awaitingTurn = false;
+  state.stageOrder = []; state.speakerNames.clear(); state.firedEffects.clear(); state.focusId = '';
   state.readerWork = `dancheong-vn-position-v1:${sceneScope()}`;
   try { state.bookmark = JSON.parse(localStorage.getItem(state.readerWork) || 'null'); } catch { state.bookmark = null; }
   setTextHidden(false);
@@ -471,21 +573,30 @@ function renderRevealedText(page) {
   const key = pageKey(page), frameKey = `${key}:${state.reading.layout}:${columns}:${frame[0]?.index}`;
   if (key !== reveal.key || full !== reveal.text) { clearTimeout(state.playbackTimer); state.playbackTimer = 0; }
   const surface = $('vn-dialogue-text');
+  // NVL keeps each line's speaker: a small label above spoken lines, in a
+  // stable per-person accent, remembered once the cast check names them.
+  if (page.kind === 'dialogue' && page.speaker) state.speakerNames.set(key, { name: page.speaker, id: page.characterId || page.speaker });
+  const speakerOf = row => row.page.kind === 'dialogue' || row.page.quoted ? state.speakerNames.get(pageKey(row.page)) || (row.page.speaker ? { name: row.page.speaker, id: row.page.characterId || row.page.speaker } : null) : null;
   if (frameKey !== reveal.frameKey) {
     surface.replaceChildren(); reveal.frameKey = frameKey;
     for (const [index, row] of frame.entries()) {
       const line = document.createElement('p');
       line.className = index === frame.length - 1 ? 'vn-current-line' : 'vn-read-line';
-      line.classList.toggle('is-spoken', row.page.kind === 'dialogue');
-      line.textContent = index === frame.length - 1 ? '' : row.text;
-      surface.append(line);
-      if (index === frame.length - 1) reveal.element = line;
+      const label = document.createElement('span'); label.className = 'vn-line-speaker'; label.hidden = true;
+      const copy = document.createElement('span'); copy.className = 'vn-line-text';
+      copy.textContent = index === frame.length - 1 ? '' : row.text;
+      line.append(label, copy); surface.append(line);
+      if (index === frame.length - 1) reveal.element = copy;
     }
   }
   for (const [index, row] of frame.entries()) {
-    const line = surface.children[index];
-    line.classList.toggle('is-spoken', row.page.kind === 'dialogue');
-    if (index < frame.length - 1 && line.textContent !== row.text) line.textContent = row.text;
+    const line = surface.children[index], speaker = speakerOf(row);
+    line.classList.toggle('is-spoken', Boolean(speaker) || row.page.kind === 'dialogue');
+    const label = line.firstElementChild, copy = line.lastElementChild;
+    label.hidden = !speaker;
+    if (speaker && label.textContent !== speaker.name) label.textContent = speaker.name;
+    if (speaker) line.style.setProperty('--speaker-hue', String(speakerHue(speaker.id)));
+    if (index < frame.length - 1 && copy.textContent !== row.text) copy.textContent = row.text;
   }
   reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed,
     immediate: !state.dialogueWaiting && (state.cursor <= state.readThrough || state.playback === 'skip') });
@@ -527,24 +638,56 @@ function openHistory() {
   $('vn-history-list').lastElementChild?.scrollIntoView({ block: 'end' });
   $('vn-history-close').focus();
 }
-function applyDirection(page, scene) {
+function motionReduced() { return state.reading.motion === 'reduced' || matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function flash(color, duration, peak) {
+  flashLayer.style.background = color;
+  flashLayer.animate([{ opacity: 0 }, { opacity: peak, offset: 0.12 }, { opacity: 0 }], { duration, easing: 'ease-out' });
+}
+function playTransition(kind) {
+  const cut = $('vn-scene-cut');
+  if (kind === 'fade') cut.animate([{ opacity: 0 }, { opacity: 0.92, offset: 0.35 }, { opacity: 0 }], { duration: 950 });
+  if (kind === 'wipe') cut.animate([{ opacity: 1, clipPath: 'inset(0 100% 0 0)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)', offset: 0.45 }, { opacity: 1, clipPath: 'inset(0 0 0 100%)' }], { duration: 1050, easing: 'ease-in-out' });
+  if (kind === 'blur') visual.animate([{ filter: 'blur(14px) brightness(.55)' }, { filter: 'blur(0) brightness(1)' }], { duration: 1400, easing: 'ease-out' });
+  if (kind === 'flash') flash('#ffffff', 560, 0.85);
+}
+function playEffect(kind) {
+  if (kind === 'shake') visual.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-5px,1px)', offset: 0.2 }, { transform: 'translate(4px,-1px)', offset: 0.45 }, { transform: 'translate(-2px,0)', offset: 0.7 }, { transform: 'translate(0,0)' }], { duration: 280 });
+  if (kind === 'heavy_shake') visual.animate([{ transform: 'translate(0,0) scale(1.02)' }, { transform: 'translate(-12px,6px) scale(1.02)', offset: 0.15 }, { transform: 'translate(10px,-7px) scale(1.02)', offset: 0.35 }, { transform: 'translate(-7px,4px) scale(1.01)', offset: 0.55 }, { transform: 'translate(4px,-2px)', offset: 0.75 }, { transform: 'translate(0,0)' }], { duration: 480 });
+  if (kind === 'flash_white') { flash('#ffffff', 420, 0.95); playEffect('shake'); }
+  if (kind === 'flash_red') { flash('radial-gradient(circle,#b3121b55 30%,#6d0008 100%)', 760, 0.8); playEffect('shake'); }
+}
+function applyDirection(page, scene, view) {
+  const stage = $('vn-stage');
+  // Environment grading works on every beat, including streaming ones.
+  stage.dataset.light = lightFor(scene?.world?.time || '');
+  stage.dataset.weather = weatherFor(scene?.world);
   if (page.isLive) return;
-  const key = pageKey(page);
-  if (key === state.lastDirectionKey) return;
-  const previousScene = state.lastScene, transition = transitionFor(previousScene, scene);
-  state.lastDirectionKey = key; state.lastScene = scene;
-  const direction = directionAt(state.pages, state.cursor, scene), stage = $('vn-stage');
+  const model = view?.direction || null, key = pageKey(page), directionKey = `${key}:${model ? JSON.stringify(model) : ''}`;
+  if (directionKey === state.lastDirectionKey) return;
+  // A model decision can arrive after a narration beat is shown. Then only the
+  // framing updates; location cuts belong to the first arrival on the beat.
+  const refresh = state.lastDirectionKey.startsWith(`${key}:`);
+  const transition = refresh ? 'none' : transitionFor(state.lastScene, scene);
+  state.lastDirectionKey = directionKey; state.lastScene = scene;
+  const direction = mergeDirection(directionAt(state.pages, state.cursor, scene), model);
+  state.focusId = direction.focusId;
   stage.dataset.shot = direction.shot;
+  stage.dataset.mood = direction.mood;
   stage.classList.toggle('is-memory', direction.memory);
-  const reduced = state.reading.motion === 'reduced' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  state.ambienceTarget = ambienceFor(scene?.world, { mood: direction.mood, memory: direction.memory, light: stage.dataset.light, weather: stage.dataset.weather });
+  const reduced = motionReduced();
   if (transition !== 'none') {
     const label = $('vn-scene-label');
     label.textContent = [scene?.world?.location, scene?.world?.time].filter(Boolean).join('  /  ');
     label.getAnimations().forEach(animation => animation.cancel());
     if (!reduced) label.animate([{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 1, offset: .68 }, { opacity: 0 }], { duration: 2100 });
-    if (!reduced) $('vn-scene-cut').animate([{ opacity: 0 }, { opacity: .85, offset: .25 }, { opacity: 0 }], { duration: transition === 'location' ? 680 : 950 });
+    if (!reduced) playTransition(direction.transition === 'none' ? transition === 'location' ? 'fade' : 'wipe' : direction.transition);
   }
-  if (direction.impact && !reduced && state.cursor > state.readThrough) visual.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)', offset: .2 }, { transform: 'translateX(4px)', offset: .45 }, { transform: 'translateX(-2px)', offset: .7 }, { transform: 'translateX(0)' }], { duration: 280 });
+  // One-shot effects play once, on the first reading of a beat.
+  if (reduced || state.cursor <= state.readThrough) return;
+  if (transition === 'none' && direction.transition !== 'none' && !state.firedEffects.has(`${key}:t`)) { state.firedEffects.add(`${key}:t`); playTransition(direction.transition); }
+  if (direction.fx !== 'none' && !state.firedEffects.has(`${key}:fx`)) { state.firedEffects.add(`${key}:fx`); playEffect(direction.fx); }
+  if (state.firedEffects.size > 400) state.firedEffects.clear();
 }
 
 function renderPage() {
@@ -557,13 +700,15 @@ function renderPage() {
   root.dataset.font = state.reading.font; root.dataset.motion = state.reading.motion;
   $('vn-stage').classList.toggle('is-nvl', state.reading.layout === 'nvl');
   $('vn-stage').classList.toggle('is-adv', state.reading.layout === 'adv');
-  applyDirection(page, scene);
+  applyDirection(page, scene, view);
   const previousEnvironment = turns.slice(0, page.turnIndex).reverse().map(turn => assets.view(turn.vnScene, {})?.background).find(Boolean) || assets.view(state.openingScene, {})?.background;
   const background = view?.background || previousEnvironment ? { url: view?.background || previousEnvironment, source: 'generated' } : backgroundFor(turns, page.turnIndex, currentCover(), state.openingArt);
   setBackground(background.url);
   // Background and sprites finish independently. Ready characters remain visible
   // even when a new background is pending, failed, or not generated yet.
-  setPortraits(view?.portraits || [], page.characterId);
+  setPortraits(view, page.characterId);
+  setCg(view?.cg || '');
+  ambience.update(state.ambienceTarget);
   const speakingPortrait = view?.portraits.find(person => person.id === view.speakerId);
   const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && slot.dataset.ready === speakingPortrait.url));
   state.dialogueWaiting = dialogueWait(page, view, { enabled: Boolean(imageKey()), decoded, bypass: state.dialogueBypass.has(pageKey(page)) });
@@ -697,6 +842,11 @@ function openSettings() {
   $('vn-font-size').value = state.reading.font;
   $('vn-motion').value = state.reading.motion;
   $('vn-sound').value = state.reading.sound;
+  $('vn-ambience').value = state.reading.ambience;
+  $('vn-face-blend').value = state.reading.faceBlend;
+  $('vn-cg-setting').value = state.reading.cg;
+  $('vn-art-style').value = state.artStyle;
+  $('vn-art-style').disabled = !state.activeSlug;
   if (!dialog.open) dialog.showModal();
   if (!$('vn-cost-panel').hidden) void renderCosts();
 }
@@ -735,7 +885,12 @@ async function saveSettings() {
     state.effort = $('vn-muse-effort').value;
     localStorage.setItem(providerKey, state.provider);
     localStorage.setItem(effortKey, state.effort);
-    state.reading = { layout: $('vn-reading-layout').value, pace: $('vn-auto-pace').value, font: $('vn-font-size').value, motion: $('vn-motion').value, sound: $('vn-sound').value };
+    state.reading = { layout: $('vn-reading-layout').value, pace: $('vn-auto-pace').value, font: $('vn-font-size').value, motion: $('vn-motion').value, sound: $('vn-sound').value,
+      ambience: $('vn-ambience').value, faceBlend: $('vn-face-blend').value, cg: $('vn-cg-setting').value };
+    if (state.activeSlug) {
+      state.artStyle = $('vn-art-style').value.trim().slice(0, 600);
+      try { if (state.artStyle) localStorage.setItem(artStyleKey(state.activeSlug), state.artStyle); else localStorage.removeItem(artStyleKey(state.activeSlug)); } catch { /* Style stays for this tab. */ }
+    }
     localStorage.setItem(readingPrefsKey, JSON.stringify(state.reading));
     state.reveal.key = ''; state.lastDirectionKey = '';
     applyProvider();
@@ -763,6 +918,13 @@ function renderHistory() {
 }
 
 $('vn-home').addEventListener('click', () => { saveReadingPosition(); showScreen('library'); renderCatalog(); });
+$('vn-title-start').addEventListener('click', startFromTitle);
+$('vn-title-settings').addEventListener('click', openSettings);
+$('vn-title-library').addEventListener('click', () => { showScreen('library'); renderCatalog(); });
+$('vn-title-cast').addEventListener('click', () => { $('vn-title-cast-panel').hidden = false; void renderMetCast(); $('vn-title-cast-close').focus({ preventScroll: true }); });
+$('vn-title-cast-close').addEventListener('click', () => { $('vn-title-cast-panel').hidden = true; $('vn-title-cast').focus({ preventScroll: true }); });
+// Browsers start audio only after a gesture; resume the ambience on the next one.
+for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => ambience.resume(), { passive: true });
 $('vn-menu-toggle').addEventListener('click', () => { stopPlayback(); const open = root.classList.toggle('vn-menu-open'); $('vn-menu-toggle').setAttribute('aria-expanded', String(open)); });
 $('vn-settings').addEventListener('click', () => { closeMenu(); openSettings(); });
 $('vn-connection-tab').addEventListener('click', () => settingsTab(false));
@@ -805,7 +967,7 @@ $('vn-stage').addEventListener('click', event => {
   nextPage();
 });
 $('vn-stage').addEventListener('contextmenu', event => { if (!event.target.closest('input, textarea')) { event.preventDefault(); setTextHidden(!state.hideText); } });
-document.addEventListener('visibilitychange', () => { if (document.hidden) stopPlayback(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPlayback(); ambience.stop(); } else if (state.screen === 'stage') ambience.update(state.ambienceTarget); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (state.screen === 'stage') renderPage(); }, 120); });
 $('vn-prev').addEventListener('click', prevPage);
@@ -863,7 +1025,7 @@ async function boot() {
     await loadMedia();
     await loadPresentation();
     state.openingArt = await savedOpeningArt(state.activeSlug);
-    showScreen('stage'); sync(true);
+    showTitle();
   } else showScreen('library');
   setInterval(() => sync(), 300);
   window.addEventListener('cortex-turn-display', () => sync(true));

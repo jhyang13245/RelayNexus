@@ -43,7 +43,7 @@ async function collect(relative) {
 for (const relative of sourceRoots) await collect(relative);
 manifest.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 entries[prefix + 'SOURCE-MANIFEST.json'] = Buffer.from(JSON.stringify({
-  release: 'v12',
+  release: 'v13',
   description: 'Complete application source; shared Neoreum/Jieum services and browser-local data are external.',
   files: manifest,
 }, null, 2) + '\n');

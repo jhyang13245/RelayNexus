@@ -48,7 +48,6 @@ body > .app { position: fixed !important; left: -100000px !important; top: 0 !im
 .vn-scene-head strong { font:600 clamp(22px,2.6vw,37px)/1.1 Georgia,"Noto Serif KR",serif; }
 .vn-scene-head small { font-size:12px; color:#edf3ed; }
 .vn-scene-counter { border:1px solid #e3ece182; padding:7px 10px; font:700 10px/1 ui-monospace,monospace; letter-spacing:.15em; white-space:nowrap; }
-.vn-portrait { position:absolute; z-index:2; right:7%; bottom:12%; width:min(35vw,480px); height:73%; object-fit:contain; object-position:bottom center; filter:drop-shadow(0 15px 35px #0009); mask-image:linear-gradient(to bottom,black 73%,transparent 100%); pointer-events:none; }
 .vn-play-area { position:absolute; z-index:5; left:50%; bottom:clamp(16px,3vw,42px); transform:translateX(-50%); width:min(1030px,calc(100% - 40px)); max-height:calc(100% - 125px); overflow-y:auto; scrollbar-width:thin; }
 .vn-dialogue-box { background:linear-gradient(120deg,rgba(8,24,28,.93),rgba(16,36,42,.91)); border:1px solid rgba(209,236,218,.42); box-shadow:0 20px 60px #0009, inset 0 1px #fff1; backdrop-filter:blur(13px); padding:22px clamp(22px,3vw,38px) 17px; min-height:205px; outline:none; }
 .vn-dialogue-box:focus-visible { border-color:#b7e2c6; }
@@ -90,7 +89,7 @@ body > .app { position: fixed !important; left: -100000px !important; top: 0 !im
 .vn-toast.is-visible { opacity:1; transform:translate(-50%,0); }
 dialog.vn-internal-import { opacity:0 !important; pointer-events:none !important; }
 dialog.vn-internal-import::backdrop { background:transparent; }
-@media(max-width:760px) { #vn-root { grid-template-rows:58px minmax(0,1fr); } .vn-topbar { padding:0 15px; gap:8px; } .vn-brand { min-width:0; } .vn-brand-mark { width:29px; height:29px; font-size:16px; } .vn-brand strong { font-size:14px; } .vn-brand small { font-size:6px; } .vn-top-title { display:none; } .vn-topbar nav { min-width:0; } .vn-topbar nav button { padding:7px 9px; } .vn-library { padding:36px 18px 55px; } .vn-library-hero h1 { font-size:47px; } .vn-library-hero p { font-size:14px; } .vn-library-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; } .vn-work-info { min-height:133px; padding:12px; } .vn-work-info strong { font-size:18px; } .vn-work-info small { font-size:9px; } .vn-scene-head { top:18px; left:19px; right:19px; gap:8px; } .vn-scene-head .vn-kicker { display:none; } .vn-scene-head > div { margin:0 auto 0 0; text-align:left; } .vn-scene-head strong { font-size:22px; } .vn-scene-head small { font-size:10px; } .vn-scene-counter { padding:5px 7px; font-size:9px; } .vn-portrait { right:-4%; bottom:21%; width:65vw; height:55%; } .vn-play-area { width:calc(100% - 24px); bottom:12px; max-height:calc(100% - 100px); } .vn-dialogue-box { min-height:185px; padding:15px 16px 12px; } #vn-dialogue-text { font-size:16px; line-height:1.65; margin:13px 0 14px; } .vn-suggestions { grid-template-columns:1fr; } .vn-suggestions button { min-height:42px; } .vn-action-panel { padding:16px; } .vn-action-panel h2 { font-size:20px; } .vn-compose { flex-direction:column; } .vn-compose button { padding:11px; } .vn-history { top:58px; } }
+@media(max-width:760px) { #vn-root { grid-template-rows:58px minmax(0,1fr); } .vn-topbar { padding:0 15px; gap:8px; } .vn-brand { min-width:0; } .vn-brand-mark { width:29px; height:29px; font-size:16px; } .vn-brand strong { font-size:14px; } .vn-brand small { font-size:6px; } .vn-top-title { display:none; } .vn-topbar nav { min-width:0; } .vn-topbar nav button { padding:7px 9px; } .vn-library { padding:36px 18px 55px; } .vn-library-hero h1 { font-size:47px; } .vn-library-hero p { font-size:14px; } .vn-library-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; } .vn-work-info { min-height:133px; padding:12px; } .vn-work-info strong { font-size:18px; } .vn-work-info small { font-size:9px; } .vn-scene-head { top:18px; left:19px; right:19px; gap:8px; } .vn-scene-head .vn-kicker { display:none; } .vn-scene-head > div { margin:0 auto 0 0; text-align:left; } .vn-scene-head strong { font-size:22px; } .vn-scene-head small { font-size:10px; } .vn-scene-counter { padding:5px 7px; font-size:9px; } .vn-play-area { width:calc(100% - 24px); bottom:12px; max-height:calc(100% - 100px); } .vn-dialogue-box { min-height:185px; padding:15px 16px 12px; } #vn-dialogue-text { font-size:16px; line-height:1.65; margin:13px 0 14px; } .vn-suggestions { grid-template-columns:1fr; } .vn-suggestions button { min-height:42px; } .vn-action-panel { padding:16px; } .vn-action-panel h2 { font-size:20px; } .vn-compose { flex-direction:column; } .vn-compose button { padding:11px; } .vn-history { top:58px; } }
 @media(max-width:370px) { .vn-library-grid { grid-template-columns:1fr 1fr; } .vn-work-cover { aspect-ratio:4/5; } .vn-work-info strong { font-size:16px; } .vn-work-info em { font-size:11px; } #vn-dialogue-text { font-size:15px; } }
 @media(prefers-reduced-motion:reduce) { .vn-background, .vn-work-card, .vn-toast { transition:none; } }
 
@@ -154,7 +153,7 @@ dialog.vn-internal-import::backdrop { background:transparent; }
 #vn-root.is-playing.vn-menu-open .vn-topbar nav { display:flex; }
 #vn-root.is-playing .vn-topbar nav > * { display:block; width:100%; text-align:left; border:0; border-radius:0; padding:11px 14px; background:transparent; color:#f4f3f0; font-size:13px; }
 #vn-root.is-playing .vn-topbar nav > *:hover { background:#ffffff17; }
-.vn-stage { background:#080b12; }
+.vn-stage { background:#080b12; overflow:clip; }
 .vn-stage::before { content:""; position:absolute; z-index:1; inset:0; pointer-events:none; box-shadow:inset 0 0 min(15vw,200px) #030509a8,inset 0 -35px 48px #020307a8; }
 .vn-background { background-position:center; transform:scale(1.075); transition:opacity .65s ease,transform 12s cubic-bezier(.2,.4,.2,1); }
 .vn-background.is-active { transform:scale(1); }
@@ -169,8 +168,6 @@ dialog.vn-internal-import::backdrop { background:transparent; }
 .vn-scene-head > div { margin:0; text-align:left; }
 .vn-scene-head strong { font:500 11px/1.4 "Noto Sans KR",sans-serif; letter-spacing:.15em; text-transform:uppercase; }
 .vn-scene-counter { margin-left:auto; font-size:9px; letter-spacing:.2em; }
-.vn-portrait { right:12%; bottom:0; width:min(43vw,610px); height:94%; filter:drop-shadow(0 18px 32px #0008); mask-image:linear-gradient(to bottom,black 79%,transparent 100%); animation:vn-character-in .52s ease-out both; }
-@keyframes vn-character-in { from{opacity:0; transform:translateX(25px)} to{opacity:1; transform:translateX(0)} }
 .vn-play-area { z-index:7; scrollbar-width:none; }
 .vn-play-area::-webkit-scrollbar { display:none; }
 .vn-stage.is-narration .vn-play-area { top:clamp(130px,20vh,215px); left:clamp(40px,11vw,170px); width:min(780px,calc(100% - 80px)); max-height:calc(100% - 180px); }
@@ -256,7 +253,7 @@ dialog.vn-internal-import::backdrop { background:transparent; }
   #vn-root.is-playing .vn-topbar nav { right:15px; top:47px; }
   .vn-scene-head { top:65px; left:19px; right:20px; }
   .vn-scene-head strong { font-size:10px; }
-  .vn-portrait { right:-18%; width:80vw; height:75%; }
+ 
   .vn-stage.is-narration .vn-play-area { top:clamp(130px,17vh,190px); left:22px; width:calc(100% - 44px); max-height:calc(100% - 165px); }
   .vn-stage.is-narration #vn-dialogue-text { font-size:clamp(18px,4.6vw,22px); line-height:1.84; }
   .vn-stage.is-dialogue .vn-play-area { max-height:50%; }
@@ -271,16 +268,11 @@ dialog.vn-internal-import::backdrop { background:transparent; }
   .vn-provider-grid label { min-height:55px; }
   .vn-settings-dialog form { padding:20px 16px; }
 }
-@media(prefers-reduced-motion:reduce) { .vn-scene-cut.is-cut, .vn-portrait, .vn-suggestions button, #vn-next::after { animation:none; } }
+@media(prefers-reduced-motion:reduce) { .vn-scene-cut.is-cut, .vn-suggestions button, #vn-next::after { animation:none; } }
 
 /* Environment and actors are independent, persistent visual-novel layers. */
 .vn-characters { position:absolute; inset:0; z-index:3; pointer-events:none; }
-.vn-character { position:absolute; bottom:-4%; right:9%; height:96%; width:48%; transition:filter .25s ease; }
-.vn-character-image { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center bottom; opacity:0; transition:opacity .22s ease; filter:drop-shadow(0 10px 18px #0004); }
 .vn-character-image.is-visible { opacity:1; }
-.vn-characters[data-count="2"] .vn-character { width:42%; right:calc(2% + var(--slot)*30%); }
-.vn-characters[data-count="3"] .vn-character { width:36%; height:90%; right:calc(-3% + var(--slot)*28%); }
-.vn-stage.is-dialogue .vn-character:not(.is-speaking) { filter:brightness(.85); }
 .vn-settings-tabs { display:flex; border-bottom:1px solid #ffffff26; margin-bottom:24px; gap:22px; }
 .vn-settings-tabs button { background:none; border:0; color:#99a7b8; padding:12px 0; font-size:14px; cursor:pointer; border-bottom:2px solid transparent; }
 .vn-settings-tabs button[aria-selected="true"] { color:#eef3ff; border-bottom-color:#aacbf9; }
@@ -301,8 +293,7 @@ dialog.vn-internal-import::backdrop { background:transparent; }
 .vn-cost-table th { color:#cbd7e6; padding:10px 8px; border-bottom:1px solid #c9ddf73a; font-weight:500; }
 .vn-cost-table td { padding:11px 8px; border-bottom:1px solid #c9ddf71a; white-space:pre-line; line-height:1.7; color:#aebcd0; }
 .vn-cost-table th:last-child,.vn-cost-table td:last-child { text-align:right; white-space:nowrap; }
-@media(max-width:760px) { .vn-character { height:81%; width:90%; right:-17%; } .vn-characters[data-count="2"] .vn-character { height:73%; width:75%; right:calc(-24% + var(--slot)*46%); } .vn-characters[data-count="3"] .vn-character { height:67%; width:61%; right:calc(-23% + var(--slot)*35%); } .vn-cost-summary > div { padding:15px 12px; } .vn-cost-summary strong { font-size:24px; } }
-@media(prefers-reduced-motion:reduce) { .vn-character, .vn-character-image { transition:none; } }
+@media(max-width:760px) { .vn-cost-summary > div { padding:15px 12px; } .vn-cost-summary strong { font-size:24px; } }
 .vn-dialogue-wait { margin-top: 20px; display: flex; align-items: center; gap: 16px; color: #ded8cf; font-size: 14px; }
 .vn-dialogue-wait[hidden] { display: none; }
 .vn-dialogue-wait button { padding: 8px 12px; border: 1px solid #b7a18177; background: #111827b3; color: #e8dfd4; cursor: pointer; }
