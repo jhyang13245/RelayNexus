@@ -36,6 +36,9 @@ export function imageNotice(view, hasKey) {
   if (!hasKey && view.readyCount < view.totalCount) return { text: '배경·인물 이미지를 만들려면 API 키를 설정해 주세요', action: 'settings' };
   if (view.status === 'error') return { text: '이미지 생성 실패 · 다시 시도', action: 'retry' };
   if (view.readyCount < view.totalCount) return { text: '이미지 준비 대기 중', action: 'wait' };
+  // Event CG is optional: it never blocks reading, but its state is visible.
+  if (view.cgStatus === 'error') return { text: '사건 CG 생성 실패 · 다시 시도', action: 'retry' };
+  if (view.cgStatus === 'generating') return { text: '사건 CG 준비 중', action: 'wait' };
   return null;
 }
 
@@ -156,6 +159,9 @@ export function createStageAssets({ getKey, getQuality, getReferences, getProvid
         const cast = stageCast(scene, scene.speakerId || page?.characterId);
         const references = new Map(cast.map(person => { try { return [person.id, { images: getReferences(person) }]; } catch (error) { return [person.id, { error }]; } }));
         await Promise.all(keysFor(scene, page).map(load));
+        // A stored CG is restored without a key or generation, like any layer.
+        const storedCg = cgBeat(scene, { start: Infinity });
+        if (storedCg) await load(cgKey(scene, storedCg.start, getStyle()));
         onChange();
         if (!generate || !getKey() || scene.castPending) return;
         const emotions = emotionsFor(scene, page);
@@ -179,25 +185,34 @@ export function createStageAssets({ getKey, getQuality, getReferences, getProvid
       const cast = stageCast(scene, scene.speakerId || page?.characterId);
       const requested = [envKey(scene), ...cast.map(person => spriteKey(scene.scope, person, emotions[person.id] || 'neutral'))];
       const readyCount = requested.filter(key => cache.has(key)).length;
-      const cg = beat ? cache.get(cgKey(scene, beat.start, getStyle()))?.url || '' : '';
-      return { background, cg, direction: scene.direction || null, readyCount, totalCount: requested.length, castStatus: scene.castStatus, speakerId: scene.speakerId || '', speakerName: cast.find(person => person.id === scene.speakerId)?.name || '',
+      const cgAt = beat ? cgKey(scene, beat.start, getStyle()) : '';
+      const cg = cgAt ? cache.get(cgAt)?.url || '' : '';
+      const cgStatus = cgAt ? status(cgAt) : 'none';
+      return { background, cg, cgStatus, direction: scene.direction || null, readyCount, totalCount: requested.length, castStatus: scene.castStatus, speakerId: scene.speakerId || '', speakerName: cast.find(person => person.id === scene.speakerId)?.name || '',
         status: keys.some(key => status(key) === 'generating') ? 'generating' : keys.some(key => status(key) === 'error') ? 'error' : readyCount === requested.length ? 'ready' : 'idle',
         portraits: cast.map(person => {
           const expression = emotions[person.id] || 'neutral';
           const exact = cache.get(spriteKey(scene.scope, person, expression))?.url || '';
           const base = cache.get(spriteKey(scene.scope, person))?.url || '';
-          return { id: person.id, name: person.name, expression, url: exact || base, base, profile: person.publicProfile || '' };
+          return { id: person.id, name: person.name, expression, url: exact || base, base, baseKey: spriteKey(scene.scope, person), profile: person.publicProfile || '' };
         }).filter(person => person.url),
-        pending: cast.filter(person => !cache.get(spriteKey(scene.scope, person))?.url).map(person => ({ id: person.id, name: person.name })),
+        pending: cast.filter(person => !cache.get(spriteKey(scene.scope, person))?.url).map(person => ({ id: person.id, name: person.name, baseKey: spriteKey(scene.scope, person) })),
       };
     },
-    retry(scene, page) { castDirector?.retry(scene); for (const key of keysFor(castDirector?.view(scene, page) || scene, page)) failures.delete(key); return this.prepare(scene, page); },
+    retry(scene, page) {
+      castDirector?.retry(scene);
+      for (const key of keysFor(castDirector?.view(scene, page) || scene, page)) failures.delete(key);
+      const beat = cgBeat(scene, { start: Infinity });
+      if (beat) failures.delete(cgKey(scene, beat.start, getStyle()));
+      return this.prepare(scene, page);
+    },
     resetFailures() { failures.clear(); castDirector?.resetFailures(); },
     isBusy() { return jobs.size > 0 || preparations > 0; },
-    // Neutral sprites already made for this work (people the reader has met).
-    async metPortraits(scope, people) {
+    // Sprites for people the reader has actually seen on stage. Membership comes
+    // from the reading record, never from which images happen to be cached.
+    async metPortraits(met) {
       const rows = [];
-      for (const person of people) { const record = await load(spriteKey(scope, person)); if (record?.url) rows.push({ id: person.id, name: person.name, url: record.url }); }
+      for (const person of met) { let record = null; try { record = person.baseKey ? await load(person.baseKey) : null; } catch { /* Name only. */ } rows.push({ id: person.id, name: person.name, url: record?.url || '' }); }
       return rows;
     },
   };

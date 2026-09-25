@@ -7,7 +7,7 @@ import { createCastDirector } from './vn-cast.mjs';
 import { publishedUnit, dialogueWait } from './vn-stage-timing.mjs';
 import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, readDelay } from './vn-reader.mjs';
 import { directionAt, transitionFor, createSound } from './vn-direction.mjs';
-import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, lightFor, mergeDirection } from './vn-stage.mjs';
+import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs';
 import { displaySprite } from './vn-sprite.mjs';
 import { createAmbience, ambienceFor } from './vn-audio.mjs';
 
@@ -31,7 +31,7 @@ root.innerHTML = `
     <section id="vn-library" class="vn-library" aria-labelledby="vn-library-title">
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.1 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -127,7 +127,8 @@ state.artStyle = loadArtStyle(state.activeSlug);
 Object.assign(state, { playback: 'manual', playbackTimer: 0, readThrough: -1, bookmark: null, awaitingTurn: false, submittedTurnId: '', readerWork: '', lastDirectionKey: '', lastScene: null, hideText: false, backdropSequence: 0, generationStarted: 0 });
 const sound = createSound(() => state.reading.sound === 'on');
 const ambience = createAmbience(() => state.reading.ambience === 'on' && state.screen === 'stage' && !document.hidden);
-Object.assign(state, { stageOrder: [], speakerNames: new Map(), firedEffects: new Set(), focusId: '', ambienceTarget: null });
+Object.assign(state, { stageOrder: [], speakerNames: new Map(), firedEffects: new Set(), focusId: '', ambienceTarget: null, met: [], metKey: '' });
+root.dataset.motion = state.reading.motion;
 const meter = installCostMeter({ context: () => ({ slug: state.activeSlug, title: currentWork()?.title || '' }), onChange: () => { if ($('vn-settings-dialog').open && !$('vn-cost-panel').hidden) void renderCosts(); } });
 const castDirector = createCastDirector({ getConnection: () => ({ key: textKey(), model: providerModels[state.provider], endpoint: state.provider === 'openai' ? '/api/openai/responses' : '/api/go/responses' }), read: readAsset, write: writeAsset,
   onChange: () => { if (state.api && state.screen === 'stage') renderPage(); }, onError: toast });
@@ -353,17 +354,17 @@ function showTitle(fresh = false) {
 function startFromTitle() { showScreen('stage'); sync(true); }
 async function renderMetCast() {
   const list = $('vn-title-cast-list'); list.replaceChildren();
-  const pages = state.pages.length ? state.pages : collectPages();
-  const scene = pageScene(pages.at(-1));
-  const people = (scene?.candidates || []).filter(person => person.id !== scene.protagonistId);
-  const met = await assets.metPortraits(sceneScope(), people).catch(() => []);
+  const met = await assets.metPortraits(state.met).catch(() => []);
   if (!met.length) { const empty = document.createElement('p'); empty.className = 'vn-title-cast-empty'; empty.textContent = '아직 무대에서 만난 인물이 없습니다. 이야기를 진행하면 이곳에 기록됩니다.'; list.append(empty); return; }
   for (const person of met) {
     const card = document.createElement('figure'); card.className = 'vn-title-cast-card';
-    const image = document.createElement('img'); image.alt = person.name; image.src = person.url;
-    void displaySprite(person.url, person.url).then(url => { image.src = url; });
+    if (person.url) {
+      const image = document.createElement('img'); image.alt = person.name; image.src = person.url;
+      void displaySprite(person.url, person.url).then(url => { image.src = url; });
+      card.append(image);
+    } else { const ghost = document.createElement('div'); ghost.className = 'vn-title-cast-ghost'; ghost.setAttribute('aria-hidden', 'true'); card.append(ghost); }
     const name = document.createElement('figcaption'); name.textContent = person.name;
-    card.append(image, name); list.append(card);
+    card.append(name); list.append(card);
   }
 }
 
@@ -454,7 +455,7 @@ function setPortraits(view, speakerId) {
     slot.style.setProperty('--hs', String(heightScale(person.profile)));
     slot.style.zIndex = person.id === speakerId ? '5' : String(1 + index);
     const speaking = person.id === speakerId;
-    if (speaking && !slot.classList.contains('is-speaking')) slot.querySelector('.vn-character-image.is-visible')?.animate([{ translate: '0 0' }, { translate: '0 -1.2%' }, { translate: '0 0' }], { duration: 260, easing: 'ease-out' });
+    if (speaking && !slot.classList.contains('is-speaking') && !motionReduced()) slot.querySelector('.vn-character-image.is-visible')?.animate([{ translate: '0 0' }, { translate: '0 -1.2%' }, { translate: '0 0' }], { duration: 260, easing: 'ease-out' });
     slot.classList.toggle('is-speaking', speaking);
     slot.classList.toggle('is-focus', person.id === (state.focusId || speakerId));
     slot.classList.toggle('is-placeholder', Boolean(person.placeholder));
@@ -462,15 +463,17 @@ function setPortraits(view, speakerId) {
       if (!slot.querySelector('.vn-ghost')) { const ghost = document.createElement('div'); ghost.className = 'vn-ghost'; const label = document.createElement('span'); label.textContent = person.name; ghost.append(label); slot.append(ghost); }
       continue;
     }
-    if (slot.dataset.source === person.url) continue;
-    slot.dataset.source = person.url;
-    const url = person.url;
-    void displaySprite(person.base || url, url, { faceOnly: state.reading.faceBlend !== 'full' }).then(src => {
-      if (slot.dataset.source !== url) return;
+    // The shown image depends on the edit, its neutral base and the blend mode.
+    const url = person.url, faceOnly = state.reading.faceBlend !== 'full', displayKey = `${faceOnly}\n${person.base || ''}\n${url}`;
+    // Kept as a property: data-URL keys are too large for DOM attributes.
+    if (slot.vnDisplayKey === displayKey) continue;
+    slot.vnDisplayKey = displayKey;
+    void displaySprite(person.base || url, url, { faceOnly }).then(src => {
+      if (slot.vnDisplayKey !== displayKey) return;
       const incoming = document.createElement('img'); incoming.src = src; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
       const previous = [...slot.children];
       incoming.onload = () => {
-        if (slot.dataset.source !== url) return incoming.remove();
+        if (slot.vnDisplayKey !== displayKey) return incoming.remove();
         incoming.classList.add('is-visible'); slot.dataset.ready = url;
         for (const node of previous) node.classList.remove('is-visible');
         setTimeout(() => previous.forEach(node => node.remove()), 260);
@@ -538,7 +541,7 @@ function renderActions() {
   $('vn-send').disabled = busy();
   const page = state.pages[state.cursor], scene = pageScene(page), view = assets.view(scene, page);
   $('vn-retry-image').textContent = '이미지 생성 재시도';
-  $('vn-retry-image').hidden = !scene || view?.status !== 'error';
+  $('vn-retry-image').hidden = !scene || (view?.status !== 'error' && view?.cgStatus !== 'error');
 }
 
 function resetReader() {
@@ -549,6 +552,8 @@ function resetReader() {
   state.stageOrder = []; state.speakerNames.clear(); state.firedEffects.clear(); state.focusId = '';
   state.readerWork = `dancheong-vn-position-v1:${sceneScope()}`;
   try { state.bookmark = JSON.parse(localStorage.getItem(state.readerWork) || 'null'); } catch { state.bookmark = null; }
+  state.metKey = `dancheong-vn-met-v1:${sceneScope()}`;
+  try { const stored = JSON.parse(localStorage.getItem(state.metKey) || '[]'); state.met = Array.isArray(stored) ? stored.filter(row => row?.id) : []; } catch { state.met = []; }
   setTextHidden(false);
 }
 function saveReadingPosition() {
@@ -708,6 +713,8 @@ function renderPage() {
   // even when a new background is pending, failed, or not generated yet.
   setPortraits(view, page.characterId);
   setCg(view?.cg || '');
+  const met = recordMet(state.met, view);
+  if (met !== state.met) { state.met = met; try { localStorage.setItem(state.metKey, JSON.stringify(met)); } catch { /* Kept for this tab. */ } }
   ambience.update(state.ambienceTarget);
   const speakingPortrait = view?.portraits.find(person => person.id === view.speakerId);
   const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && slot.dataset.ready === speakingPortrait.url));
@@ -892,6 +899,7 @@ async function saveSettings() {
       try { if (state.artStyle) localStorage.setItem(artStyleKey(state.activeSlug), state.artStyle); else localStorage.removeItem(artStyleKey(state.activeSlug)); } catch { /* Style stays for this tab. */ }
     }
     localStorage.setItem(readingPrefsKey, JSON.stringify(state.reading));
+    root.dataset.motion = state.reading.motion;
     state.reveal.key = ''; state.lastDirectionKey = '';
     applyProvider();
     state.api._setSettings({ styleGuide: $('vn-style-guide').value.trim(), typingSpeed: $('vn-typing-speed').value, imageQuality: $('vn-image-quality').value });

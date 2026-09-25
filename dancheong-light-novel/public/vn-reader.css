@@ -182,3 +182,8 @@
   .vn-title-cast-card img { height:220px; }
 }
 @media(prefers-reduced-motion:reduce) { .vn-title *,.vn-title-art { animation:none !important; transition:none !important; } }
+/* V13.1: "화면 움직임: 최소화" covers every v13 layer (camera, actors, CG, weather, title). */
+#vn-root[data-motion="reduced"] .vn-stage *,#vn-root[data-motion="reduced"] .vn-stage *::before,#vn-root[data-motion="reduced"] .vn-stage *::after,
+#vn-root[data-motion="reduced"] .vn-title,#vn-root[data-motion="reduced"] .vn-title * { transition:none !important; animation:none !important; }
+.vn-title-cast-ghost { height:300px; aspect-ratio:3/4.4; background:radial-gradient(ellipse 17% 12% at 50% 13%,#dfe8f230 98%,transparent 100%),radial-gradient(ellipse 34% 62% at 50% 80%,#dfe8f224 98%,transparent 100%); }
+@media(max-width:760px) { .vn-title-cast-ghost { height:220px; } }

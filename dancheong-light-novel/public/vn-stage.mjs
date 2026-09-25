@@ -59,3 +59,13 @@ export function mergeDirection(text, model) {
   return { ...text, shot: model.shot || text.shot, memory, mood: memory ? 'memory' : model.mood || 'normal',
     transition: model.transition || 'none', fx: model.fx && model.fx !== 'none' ? model.fx : text.impact ? 'shake' : 'none', focusId: model.focusId || '' };
 }
+
+// "Met" means seen on stage while reading: only verified on-stage people of a
+// shown beat, never candidates, prepared images or people ahead in the text.
+export function recordMet(met = [], view) {
+  if (!view || view.castStatus !== 'ready') return met;
+  const people = [...(view.portraits || []), ...(view.pending || [])];
+  const known = new Set(met.map(person => person.id));
+  const added = people.filter(person => person?.id && !known.has(person.id)).map(person => ({ id: person.id, name: person.name, baseKey: person.baseKey || '' }));
+  return added.length ? [...met, ...added] : met;
+}
