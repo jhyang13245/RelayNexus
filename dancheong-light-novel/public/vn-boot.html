@@ -1,0 +1,46 @@
+<style id="vn-critical-style">
+html, body { margin:0 !important; background:#07151a !important; }
+/* Moving a parent off screen does not hide its viewport-fixed descendants. */
+body > :not(#vn-root):not(#vn-boot),
+body > :not(#vn-root):not(#vn-boot) * {
+  visibility:hidden !important; pointer-events:none !important;
+}
+body > dialog::backdrop { background:transparent !important; pointer-events:none !important; }
+html:not([data-vn-boot="ready"]) #vn-root,
+html:not([data-vn-boot="ready"]) #vn-root * { visibility:hidden !important; pointer-events:none !important; }
+#vn-boot { position:fixed; inset:0; z-index:2147483647; box-sizing:border-box; display:grid; place-content:center; justify-items:center; gap:24px; padding:32px; background:radial-gradient(ellipse at 50% 35%,#16342f,#07151a 70%); color:#f5efe3; text-align:center; font:16px/1.7 "Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
+#vn-boot * { box-sizing:border-box; }
+#vn-boot .vn-boot-mark { display:grid; place-items:center; width:64px; height:64px; border:1px solid #9ac6ad; color:#b9dfc7; font:32px/1 Georgia,serif; }
+#vn-boot h1 { margin:0; color:#f5efe3; font:400 30px/1.4 Georgia,"Noto Serif KR",serif; letter-spacing:.2em; }
+#vn-boot p { margin:0; max-width:26em; font:inherit; color:#baccc8; }
+#vn-boot .vn-boot-line { width:120px; height:1px; background:#a8d9bc; animation:vn-boot-pulse 1.8s ease-in-out infinite; }
+#vn-boot .vn-boot-error, #vn-boot .vn-boot-retry { display:none; }
+#vn-boot .vn-boot-retry { border:1px solid #90b3a2; padding:10px 24px; color:#edf5ef; font:inherit; text-decoration:none; }
+#vn-boot .vn-boot-retry:focus-visible { outline:2px solid #bce7ce; outline-offset:4px; }
+html[data-vn-boot="error"] #vn-boot .vn-boot-loading,
+html[data-vn-boot="error"] #vn-boot .vn-boot-line { display:none; }
+html[data-vn-boot="error"] #vn-boot .vn-boot-error,
+html[data-vn-boot="error"] #vn-boot .vn-boot-retry { display:block; }
+html[data-vn-boot="ready"] #vn-boot { display:none !important; }
+@keyframes vn-boot-pulse { 50% { opacity:.25; transform:scaleX(.6); } }
+@media (prefers-reduced-motion:reduce) { #vn-boot .vn-boot-line { animation:none; } }
+</style>
+<script id="vn-boot-controller">
+(() => {
+  const root = document.documentElement;
+  let assetFailed = false;
+  function fail() { if (root.dataset.vnBoot !== 'ready') root.dataset.vnBoot = 'error'; }
+  const deadline = setTimeout(fail, 30000);
+  window.NexusVNBoot = {
+    fail,
+    ready() {
+      if (assetFailed || ['vn-style-main', 'vn-style-reader'].some(id => !document.getElementById(id)?.sheet)) { fail(); return; }
+      clearTimeout(deadline); root.dataset.vnBoot = 'ready';
+    },
+  };
+  window.addEventListener('error', event => {
+    if (root.dataset.vnBoot === 'ready') return;
+    if (['vn-entry', 'vn-style-main', 'vn-style-reader'].includes(event.target?.id) || /\/vn-runtime\//u.test(event.filename || '')) { assetFailed = true; fail(); }
+  }, true);
+})();
+</script>

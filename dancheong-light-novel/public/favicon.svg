@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#07151a"/>
+  <rect x="9" y="9" width="46" height="46" rx="2" fill="none" stroke="#a8d9bc" stroke-width="2"/>
+  <text x="32" y="45" text-anchor="middle" fill="#e8f2e9" font-family="serif" font-size="38">丹</text>
+</svg>
