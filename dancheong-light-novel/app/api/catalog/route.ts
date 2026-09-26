@@ -22,6 +22,10 @@ export async function GET() {
         subtitle: String(work.subtitle ?? ""),
         genre: String(work.genre ?? ""),
         runtime: String(work.runtime ?? "Cortex Engine"),
+        currentRevision: Number.isSafeInteger(work.currentRevision) ? work.currentRevision : null,
+        packageSha256: /^[a-f0-9]{64}$/iu.test(String(work.packageSha256 || "")) ? String(work.packageSha256).toLowerCase() : "",
+        packageBytes: Number(work.packageBytes) || 0,
+        updatedAt: String(work.updatedAt || ""),
       }];
     });
     return Response.json({ works }, { headers: { "Cache-Control": "no-store" } });

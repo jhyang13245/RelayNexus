@@ -1,6 +1,8 @@
 import { readAsset, writeAsset } from './vn-assets.mjs';
-import { integratedLoudness, normalizationGain, peakOf } from './vn-loudness.mjs';
-import { analyzeTrack, waitForBoundary } from './vn-loop.mjs';
+import { waitForBoundary } from './vn-loop.mjs';
+import { analyzeMusicData, basicMusicAnalysis } from './vn-audio-analysis.mjs';
+import { analyzeInWorker } from './vn-audio-task.mjs';
+import { requestDurableStorage, withMediaTask } from './vn-storage.mjs';
 import { MUSIC_MODELS, moodPrompt, generateMusic, generatedRecord } from './vn-music-ai.mjs';
 export const musicMoods = { normal: '평상시', warm: '따뜻함', sad: '슬픔', tense: '긴장·전투', eerie: '불길함·공포', memory: '회상' };
 export const musicKey = (work, mood) => JSON.stringify(['vn-work-music-1', work, mood]);
@@ -13,6 +15,7 @@ export function licensedTrack(value) {
   } catch { return null; }
 }
 export async function selectedTrack(work, mood, packaged = {}, read = readAsset) {
+  if (mood === 'silence') return null;
   const kind = mood === 'dread' ? 'eerie' : Object.hasOwn(musicMoods, mood) ? mood : 'normal';
   for (const name of [...new Set([kind, 'normal'])]) {
     const local = await read(musicKey(work, name)).catch(() => null);
@@ -32,15 +35,11 @@ export async function selectedTrack(work, mood, packaged = {}, read = readAsset)
 // bar line. Undecodable sources (e.g. a URL without CORS) fall back to <audio>.
 export const MUSIC_TARGET_LUFS = -20;
 export const MUSIC_ANALYSIS_VERSION = 1;
-const pause = () => new Promise(resolve => setTimeout(resolve, 0));
 
 export async function analyzeMusic(buffer, { bpmHint = 0 } = {}) {
-  const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) => buffer.getChannelData(c));
-  await pause();
-  const loudness = integratedLoudness(channels, buffer.sampleRate);
-  await pause();
-  const track = analyzeTrack(channels, buffer.sampleRate, { bpmHint });
-  return { ...track, loudness, gain: normalizationGain(loudness, MUSIC_TARGET_LUFS, { peak: peakOf(channels) }), version: MUSIC_ANALYSIS_VERSION };
+  // Node test runner has no reader thread; browsers always use the worker.
+  if (typeof window === 'undefined') return analyzeMusicData(Array.from({ length: buffer.numberOfChannels }, (_, c) => buffer.getChannelData(c)), buffer.sampleRate, bpmHint);
+  return await analyzeInWorker(buffer, bpmHint) || basicMusicAnalysis(buffer);
 }
 
 // Wall-clock schedule for one loop pass: the next pass starts `crossfade`
@@ -72,10 +71,13 @@ export function createWorkMusic({ enabled, volume, onStatus = () => {}, read = r
     const task = (async () => {
       const bytes = row.blob ? await row.blob.arrayBuffer() : await (await fetch(row.url, { mode: 'cors' })).arrayBuffer();
       const buffer = await ensureContext().decodeAudioData(bytes);
-      let analysis = row.analysis?.version === MUSIC_ANALYSIS_VERSION ? row.analysis : memo.get(row.url || row.id);
+      const analysisKey = row.blob && row.key ? JSON.stringify(['vn-music-analysis-1', row.key, row.savedAt, row.blob.size]) : '';
+      const saved = analysisKey ? await read(analysisKey).catch(() => null) : null;
+      let analysis = saved?.analysis?.version === MUSIC_ANALYSIS_VERSION ? saved.analysis : row.analysis?.version === MUSIC_ANALYSIS_VERSION ? row.analysis : memo.get(row.url || row.id);
       if (!analysis) {
         analysis = await analyzeMusic(buffer, { bpmHint: Number(row.generated?.bpm) || 0 });
-        if (row.blob && row.key) { const stored = { ...row, analysis }; delete stored.id; try { await write(stored); } catch { /* Re-analysed next time. */ } }
+        // Analysis owns a separate record. A stale job can never resurrect or replace a song.
+        if (analysisKey && analysis.version === MUSIC_ANALYSIS_VERSION) { try { await write({ key: analysisKey, analysis }); } catch { /* Re-analysed next time. */ } }
         else memo.set(row.url || row.id, analysis);
       }
       return { buffer, analysis };
@@ -138,6 +140,10 @@ export function createWorkMusic({ enabled, volume, onStatus = () => {}, read = r
     lastArgs = [work, mood, packaged]; refreshVolume();
     const next = `${work}:${mood}`; if (target === next) return;
     target = next; const ticket = ++request;
+    if (mood === 'silence') {
+      retire(current, context?.currentTime || 0, 1.8); current = null; clearInterval(timer); timer = 0;
+      onStatus('무음 연출 · 이 구간은 배경음악을 쉬어갑니다.'); return;
+    }
     const row = await selectedTrack(work, mood, packaged, read);
     if (request !== ticket || !enabled()) return;
     if (!row) { retire(current, 0, 0.7); current = null; onStatus('이 분위기에 등록된 음원이 없습니다. 평상시 음원을 등록하면 기본 음악으로 사용합니다.'); return; }
@@ -231,21 +237,25 @@ export function createMusicSettings({ parent, getWork, onChange, getGeminiKey = 
   ai('cancel').onclick = () => running?.abort();
   ai('generate').onclick = async () => {
     const work = getWork(), key = getGeminiKey(), moods = chosen(), model = ai('model').value;
+    const info = { ...getWorkInfo(), slug: work }, direction = ai('direction').value.trim();
     if (!work || running || !moods.length) return;
     if (!key) { ai('status').textContent = '설정의 Nano Banana 2 · Gemini API 키를 먼저 입력하고 저장해 주세요.'; return; }
     running = new AbortController(); ai('cancel').hidden = false; estimate();
+    void requestDurableStorage();
     let done = 0;
     try {
       // One request at a time: each song takes tens of seconds and is billed.
       for (const mood of moods) {
         if (running.signal.aborted) break;
         ai('status').textContent = `${musicMoods[mood]} 만드는 중… (${done + 1}/${moods.length}) · 곡당 30초~2분`;
-        const { prompt, bpm } = moodPrompt({ info: { slug: work, ...getWorkInfo() }, mood, direction: ai('direction').value.trim(), model });
-        const { blob, text } = await generate({ key, model, prompt, signal: running.signal });
-        if (getWork() !== work) break;
-        const previous = await read(musicKey(work, mood)).catch(() => null);
-        await write(generatedRecord({ key: musicKey(work, mood), mood, moodLabel: musicMoods[mood], model, bpm, prompt, blob, text, previous }));
+        const { prompt, bpm } = moodPrompt({ info, mood, direction, model });
+        await withMediaTask(async () => {
+          const { blob, text } = await generate({ key, model, prompt, signal: running.signal });
+          const previous = await read(musicKey(work, mood)).catch(() => null);
+          await write(generatedRecord({ key: musicKey(work, mood), mood, moodLabel: musicMoods[mood], model, bpm, prompt, blob, text, previous }));
+        });
         done++; onChange();
+        if (getWork() !== work) break;
         if (find('mood').value === mood) await refresh();
       }
       ai('status').textContent = done === moods.length ? `${done}곡을 만들었습니다. 위에서 분위기를 골라 들어 보고, 읽기 설정의 음악을 ‘작품 음원’으로 선택해 주세요.` : `${done}/${moods.length}곡을 만들고 중지했습니다.`;

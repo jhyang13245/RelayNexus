@@ -6,6 +6,7 @@ import { outfitKey } from './vn-wardrobe.mjs';
 import { shotAssetKey, shotPrompt } from './vn-shots.mjs';
 import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs';
 import { withMediaTask } from './vn-storage.mjs';
+import { optimizeImageRecord } from './vn-image-codec.mjs';
 
 // One art direction for every generated asset, so backgrounds, sprites,
 // expressions and event CG read as the same work. A per-work note refines it.
@@ -80,9 +81,11 @@ export function imageNotice(view, hasKey) {
 function database() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('dancheong-vn-assets-v1', 1);
+    let settled = false;
+    const timer = setTimeout(() => { settled = true; reject(new Error('IMAGE_STORE_OPEN_TIMEOUT')); }, 6000);
     request.onupgradeneeded = () => request.result.createObjectStore('assets', { keyPath: 'key' });
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => { clearTimeout(timer); if (settled) request.result.close(); else { settled = true; resolve(request.result); } };
+    request.onerror = request.onblocked = () => { clearTimeout(timer); settled = true; reject(request.error || new Error('IMAGE_STORE_BLOCKED')); };
   });
 }
 export async function readAsset(key) {
@@ -91,9 +94,43 @@ export async function readAsset(key) {
   finally { db.close(); }
 }
 export async function writeAsset(record) {
-  const db = await database();
-  try { await new Promise((resolve, reject) => { const tx = db.transaction('assets', 'readwrite'); tx.objectStore('assets').put(record); tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error); }); }
-  finally { db.close(); }
+  record = await optimizeImageRecord(record);
+  // Retry the already-paid bytes, never invoke an image model again.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let db;
+    try {
+      db = await database();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('assets', 'readwrite');
+        const timer = setTimeout(() => { try { tx.abort(); } catch { /* Already completed. */ } reject(new Error('IMAGE_STORE_WRITE_TIMEOUT')); }, 6000);
+        tx.objectStore('assets').put(record);
+        tx.oncomplete = () => { clearTimeout(timer); resolve(); };
+        tx.onerror = tx.onabort = () => { clearTimeout(timer); reject(tx.error || new Error('IMAGE_STORE_ABORTED')); };
+      });
+      break;
+    } catch (error) { if (attempt === 2) throw error; await new Promise(resolve => setTimeout(resolve, attempt ? 1200 : 300)); }
+    finally { db?.close(); }
+  }
+  return record;
+}
+
+export async function replaceAssetEncoding(original, optimized) {
+  const db = await database(); let changed = false;
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('assets', 'readwrite'), store = tx.objectStore('assets'), request = store.get(original.key);
+      const timer = setTimeout(() => { try { tx.abort(); } catch { /* Completed. */ } reject(new Error('IMAGE_STORE_WRITE_TIMEOUT')); }, 6000);
+      request.onsuccess = () => {
+        const current = request.result;
+        // Never restore a deleted image or overwrite a newer regeneration.
+        if (!current || current.url !== original.url || current.motionPolicy) return;
+        store.put({ ...current, url: optimized.url, storageEncoding: optimized.storageEncoding }); changed = true;
+      };
+      tx.oncomplete = () => { clearTimeout(timer); resolve(); };
+      tx.onerror = tx.onabort = () => { clearTimeout(timer); reject(tx.error || new Error('IMAGE_STORE_ABORTED')); };
+    });
+    return changed;
+  } finally { db.close(); }
 }
 
 // Jobs are keyed by reusable assets, not turns. Failed jobs require explicit retry.
@@ -190,13 +227,18 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
           }
           throw error;
         }
-        const record = await inspectFrame({ ...metadata, key, url, provider, model: result.model || config.model, savedAt: Date.now(),
+        const record = await inspectFrame({ ...metadata, key, url, purpose: body.purpose, provider, model: result.model || config.model, savedAt: Date.now(),
           ...(needsMatte ? { chromaVersion, matteColor: body.matteColor } : {}) });
         cache.set(key, record);
         warmSprite(key, record); onChange();
-        try { await write(record); } catch { onError('이미지는 표시됐지만 기기에 저장하지 못했습니다.'); }
+        try {
+          // Queue first-display framing ahead of optional storage encoding.
+          await Promise.resolve();
+          const saved = await write(record);
+          if (saved?.key === key) cache.set(key, saved);
+        } catch { onError('이미지는 표시됐지만 기기에 저장하지 못했습니다.'); }
         if (record.rejected) { failures.set(key, frameFailure); onError(frameFailure); return null; }
-        return record;
+        return cache.get(key);
       } catch (error) { failures.set(key, error?.message || '이미지 생성 실패'); onError(failures.get(key)); return null; }
       finally { jobs.delete(key); onChange(); }
     })();
@@ -297,7 +339,7 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
       // model's only visual identity. Use the text finish standard in that case.
       const guide = identity.length ? await getQualityReference(scene.scope) : '';
       return { purpose: 'portrait', aspect: 'portrait', referenceImages: [...identity, ...(guide ? [guide] : [])],
-        prompt: portraitPrompt({ person, art: artDirection(style), hasGuide: Boolean(guide), peers: scene.characters }) + ' ' + STAGE_FRAME_DIRECTION };
+        prompt: portraitPrompt({ person, art: artDirection(style), hasGuide: Boolean(guide), hasIdentity: identity.length > 0, peers: scene.characters }) + ' ' + STAGE_FRAME_DIRECTION };
     }, { stageFrame: STAGE_FRAME_VERSION });
     onNeutral(neutral);
     if (!neutral || expression === 'neutral' || !active()) return neutral;
@@ -459,7 +501,10 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
           const base = baseRecord?.url || '';
           return { id: person.id, name: person.name, expression, expressionReady: Boolean(exact || legacy), url: exact || legacy || base, base, baseKey: baseRecord?.key || spriteKey(scene.scope, person), profile: person.publicProfile || '', motion: exact ? Object.fromEntries(motionFor(scene, person, page).map(row => [row.kind, cache.get(row.key)?.url || ''])) : {} };
         }).filter(person => person.url),
-        pending: cast.filter(person => !cachedSprite(scene.scope, person)?.url).map(person => ({ id: person.id, name: person.name, baseKey: spriteKey(scene.scope, person) })),
+        pending: cast.filter(person => !cachedSprite(scene.scope, person)?.url).map(person => {
+          const baseKey = spriteKey(scene.scope, person), current = status(baseKey);
+          return { id: person.id, name: person.name, baseKey, status: current === 'idle' && !getKey('portrait') ? 'needs-key' : current };
+        }),
       };
     },
     retry(scene, page) {
@@ -486,7 +531,7 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
       const identity = getReferences(target).slice(0, 13);
       const guide = identity.length ? await getQualityReference(scene.scope) : '';
       const record = await ensure(key, 'portrait', async () => ({ purpose: 'portrait', aspect: 'portrait', referenceImages: [...identity, ...(guide ? [guide] : [])],
-        prompt: portraitPrompt({ person: target, art: artDirection(style), hasGuide: Boolean(guide), peers: scene.portraitPeers || scene.characters }) + ' ' + STAGE_FRAME_DIRECTION }), { stageFrame: STAGE_FRAME_VERSION });
+        prompt: portraitPrompt({ person: target, art: artDirection(style), hasGuide: Boolean(guide), hasIdentity: identity.length > 0, peers: scene.portraitPeers || scene.characters }) + ' ' + STAGE_FRAME_DIRECTION }), { stageFrame: STAGE_FRAME_VERSION });
       if (!record) throw new Error(failures.get(key) || '인물 이미지를 다시 만들지 못했습니다. 기존 이미지는 유지됩니다.');
       // Replacement pointers must never outlive their underlying stored image.
       await write(record);

@@ -1,4 +1,5 @@
 import { makeSlot, validateSlot } from './vn-saves.mjs';
+import { snapshotScope } from './vn-edition-key.mjs';
 import { assetScope, workAssets, workCosts, mergeRecords } from './vn-storage.mjs';
 
 export const BACKUP_SCHEMA = 'DANCHEONG_VN_FILE_V1';
@@ -19,7 +20,7 @@ export function validateBackup(payload) {
   if (payload?.schema !== BACKUP_SCHEMA || !Array.isArray(payload.assets) || !Array.isArray(payload.costs)) throw new Error('단청 저장 슬롯 백업 파일이 아닙니다.');
   validateSlot(payload.record);
   if (typeof payload.record.savedAt !== 'string' || !Number.isFinite(Date.parse(payload.record.savedAt))) throw new Error('백업의 저장 날짜가 손상되었습니다.');
-  const record = copySlot(payload.record), scope = `${record.slug}:${record.storyId}`;
+  const record = copySlot(payload.record), scope = snapshotScope(record.slug, record.snapshot);
   if (record.presentation.openingArt && !/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=\r\n]+$/u.test(record.presentation.openingArt)) throw new Error('백업 도입 이미지가 지원되는 파일 형식이 아닙니다.');
   // Never allow an imported file to carry a different work's media or remote URLs.
   const keys = new Set();
@@ -58,7 +59,7 @@ export async function readBackup(file) {
   return validateBackup(scrubBackup(envelope.payload));
 }
 export async function exportSlotFile(record) {
-  const assets = await workAssets(`${record.slug}:${record.storyId}`), costs = await workCosts(record.slug);
+  const assets = await workAssets(snapshotScope(record.slug, record.snapshot)), costs = await workCosts(record.slug);
   let blob = await makeBackup(record, { assets, costs }), extension = '.json';
   if (typeof CompressionStream !== 'undefined') { blob = await new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).blob(); extension += '.gz'; }
   const filename = `단청-${record.title.replace(/[^\p{L}\p{N}_-]/gu, '_').slice(0, 60)}-${record.slot}번-${new Date().toISOString().slice(0, 10)}${extension}`;

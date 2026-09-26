@@ -23,14 +23,29 @@ export function voiceLine(page, view, scope, voice = '', { cue = '', emphasis = 
   const context = JSON.stringify({ speaker: view.speakerName, delivery }).slice(0, 700);
   // Lines voiced before v13.12 stay playable for free under their old key.
   const legacyKey = JSON.stringify(['vn-voice-1', scope, view.speakerId, selectedVoice, written, JSON.stringify({ speaker: view.speakerName, mood, emotion }).slice(0, 700)]);
-  return { key: JSON.stringify(['vn-voice-2', scope, view.speakerId, selectedVoice, text, context]), legacyKey, playbackKey: `${page.turnId}:${page.start}`, text, context, voice: selectedVoice, speakerId: view.speakerId };
+  return { key: JSON.stringify(['vn-voice-2', scope, view.speakerId, selectedVoice, text, context]), legacyKey, playbackKey: JSON.stringify([scope, page.turnId, page.start]), text, context, voice: selectedVoice, speakerId: view.speakerId };
+}
+// Explicit full-autoplay mode also reads narration and unassigned dialogue.
+// Unverified quotations use a neutral reader, never an invented character voice.
+export function readingVoiceLine(page, view, scope, voice = '', delivery = {}) {
+  const character = voiceLine(page, view, scope, voice, delivery);
+  if (character) return character;
+  if (!page || page.isGrowing) return null;
+  const text = speakableKorean(String(page.rawText || page.text || '').trim());
+  if (!text || text.length > 900) return null;
+  const speakerId = '@vn/narrator', selectedVoice = 'marin';
+  const context = JSON.stringify({ speaker: '낭독', delivery: '차분하고 자연스러운 한국어 서술 낭독. 인물의 신원을 추측하거나 다른 인물을 흉내 내지 않는다. 본문만 읽고 설명을 덧붙이지 않는다.' });
+  return { key: JSON.stringify(['vn-voice-2', scope, speakerId, selectedVoice, text, context]),
+    playbackKey: JSON.stringify([scope, page.turnId, page.start]), text, context, voice: selectedVoice, speakerId };
 }
 export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...args) => fetch(...args), makeAudio = url => new Audio(url), onState = () => {} }) {
   const cache = new Map(), jobs = new Map(), failed = new Set();
   const remember = record => { cache.delete(record.key); cache.set(record.key, record); while (cache.size > VOICE_CACHE_LIMIT) cache.delete(cache.keys().next().value); return record; };
   let current = '', generation = 0, audio = null, phase = 'idle';
   let lastJob = Promise.resolve();
-  const playKey = line => `${line.key}:${line.playbackKey || ''}`;
+  // Keep one delivery while this passage is playing. Later streamed acting cues
+  // must not interrupt it or create a second paid request. Explicit replay still works.
+  const playKey = line => line.playbackKey ? JSON.stringify([line.playbackKey, line.speakerId, line.voice, line.text]) : line.key;
   const set = value => { phase = value; onState(value); };
   const halt = () => { if (audio) { audio.pause(); audio.currentTime = 0; audio = null; } };
   function stop() { generation++; halt(); set('idle'); }
@@ -77,6 +92,7 @@ export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...
     },
     replay(line) { if (!line || !getEnabled()) return; stop(); current = playKey(line); failed.delete(line.key); void play(line, generation); },
     stop,
+    resume() { makeAudio.resume?.(); },
     reset() { stop(); current = ''; },
     clearMemory() { stop(); current = ''; cache.clear(); failed.clear(); },
     get busy() { return jobs.size > 0; },

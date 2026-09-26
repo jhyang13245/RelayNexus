@@ -126,6 +126,63 @@ test('identity must be named outside quotation; a missing person can return in c
   assert.equal(validateCast(sc, value)[0].speakerId, han.id);
 });
 
+test('another person’s named action cannot supply presence for an earlier identified character', () => {
+  const text = '나디아는 창문을 살폈다. “흔적이 있어요.”';
+  const prior = '한명진이 복도에 들어왔다.';
+  const sc = { ...scene(), previousText: prior, publicText: text, castPages: [{ start: 0, text }] };
+  const value = { beats: [{ beat: 'P0', speaker: 'C0', onStage: [{ candidate: 'C0', evidence: '나디아는 창문을 살폈다.', identityEvidence: prior }] }] };
+  assert.deepEqual(validateCast(sc, value)[0].characters, []);
+  value.beats[0].speaker = 'C1';
+  value.beats[0].onStage = [{ candidate: 'C1', evidence: '나디아는 창문을 살폈다.', identityEvidence: '나디아는 창문을 살폈다.' }];
+  assert.equal(validateCast(sc, value)[0].speakerId, nadia.id);
+  sc.publicText = '그녀는 창문을 살폈다. “흔적이 있어요.”'; sc.castPages[0].text = sc.publicText;
+  value.beats[0].speaker = 'C0';
+  value.beats[0].onStage = [{ candidate: 'C0', evidence: '그녀는 창문을 살폈다.', identityEvidence: prior }];
+  assert.equal(validateCast(sc, value)[0].speakerId, han.id, 'uncontradicted pronoun continuity still works');
+});
+
+test('quote-only cached presence keeps an immediately verified sprite during speech, without guessing its speaker', () => {
+  const text = '나디아가 창문 앞에 섰다. “흔적이 있어요.” 나디아는 고개를 끄덕였다.';
+  const sc = { ...scene(), publicText: text, candidates: [nadia], previousText: '', castPages: [
+    { start: 0, text: '나디아가 창문 앞에 섰다.' }, { start: 16, text: '“흔적이 있어요.”', quoted: true }, { start: 28, text: '나디아는 고개를 끄덕였다.' },
+  ] };
+  const entry = evidence => ({ candidate: 'C0', evidence, identityEvidence: '나디아가 창문 앞에 섰다.', identityStatus: 'confirmed', presence: 'physical' });
+  const value = { beats: [
+    { beat: 'P0', speaker: '', onStage: [entry(sc.castPages[0].text)] },
+    { beat: 'P16', speaker: 'C0', speakerLabel: '나디아', speakerEvidence: sc.castPages[0].text, onStage: [entry(sc.castPages[1].text)] },
+    { beat: 'P28', speaker: '', onStage: [entry(sc.castPages[2].text)] },
+  ] };
+  const validated = validateCast(sc, value);
+  assert.deepEqual(validated.map(row => row.characters.map(person => person.id)), [[nadia.id], [nadia.id], [nadia.id]]);
+  assert.equal(validated[1].speakerId, nadia.id);
+  value.beats[1].speakerEvidence = '나디아는 창문 앞에 섰다.'; // not a verbatim source
+  const ungrounded = validateCast(sc, value)[1];
+  assert.equal(ungrounded.characters[0].id, nadia.id, 'keep the verified person visible');
+  assert.equal(ungrounded.speakerId, '', 'a repaired sprite does not turn forged attribution into a voice identity');
+  assert.equal(ungrounded.speakerName, '');
+  for (const patch of [{ presence: 'remote' }, { identityStatus: 'uncertain' }]) {
+    value.beats[1].onStage = [{ ...entry(sc.castPages[1].text), ...patch }];
+    assert.deepEqual(validateCast(sc, value)[1].characters, []);
+  }
+  value.beats[1].onStage = [entry(sc.castPages[1].text)];
+  value.beats[0].onStage = [];
+  assert.deepEqual(validateCast(sc, value)[1].characters, [], 'a quote cannot introduce an absent person from an identity anchor');
+});
+
+test('quote-only presence cannot restore someone after an intervening verified absence', () => {
+  const text = '나디아가 문 앞에 섰다. 나디아는 문밖으로 떠났다. “나디아가 오면 전해 줘.”';
+  const sc = { ...scene(), publicText: text, candidates: [nadia], previousText: '', castPages: [
+    { start: 0, text: '나디아가 문 앞에 섰다.' }, { start: 15, text: '나디아는 문밖으로 떠났다.' }, { start: 31, text: '“나디아가 오면 전해 줘.”', quoted: true },
+  ] };
+  const first = sc.castPages[0].text;
+  const value = { beats: [
+    { beat: 'P0', speaker: '', onStage: [{ candidate: 'C0', evidence: first, identityEvidence: first }] },
+    { beat: 'P15', speaker: '', onStage: [] },
+    { beat: 'P31', speaker: 'C0', onStage: [{ candidate: 'C0', evidence: sc.castPages[2].text, identityEvidence: first, identityStatus: 'confirmed', presence: 'physical' }] },
+  ] };
+  assert.deepEqual(validateCast(sc, value)[2].characters, []);
+});
+
 test('old name-only cast decisions are rechecked without clearing image records', async () => {
   let calls = 0;
   const cast = director({ read: async () => ({ policy: 'PUBLIC_CAST_DIRECTION_V4', decision: decision() }), fetchDecision: async () => { calls++; return response(decision()); } });

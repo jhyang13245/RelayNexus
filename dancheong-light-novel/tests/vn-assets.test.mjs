@@ -4,6 +4,7 @@ import { createStageAssets, expressionContext } from '../public/vn-assets.mjs';
 import { environmentKey, portraitKey } from '../public/vn-scene.mjs';
 import { chromaVersion } from '../public/vn-chroma.mjs';
 import { imageProviderFor } from '../public/vn-image-routing.mjs';
+import { fullAutoVisuals } from '../public/vn-autoplay.mjs';
 
 const person = { id: 'person', name: '서현', referenceMode: 'PRIMARY', allowedAssetRefs: ['*'] };
 function scene(location = '교실', expression = 'neutral') {
@@ -43,8 +44,36 @@ test('실패는 턴 진행이나 페이지 이동으로 자동 반복 청구하�
   await h.assets.prepare(scene(), {});
   assert.equal(h.requests.length, 2);
   assert.equal(h.assets.view(scene(), {}).status, 'error');
+  assert.equal(h.assets.view(scene(), {}).pending[0].status, 'error');
+  assert.equal(fullAutoVisuals({ ...h.assets.view(scene(), {}), castStatus: 'ready' }).action, 'stop');
   await h.assets.retry(scene(), {});
   assert.equal(h.requests.length, 4);
+});
+
+test('full auto waits for a slow base portrait, ignores unrelated background work, and reuses it without another paid request', async () => {
+  const releases = new Map(), requests = [];
+  const assets = createStageAssets({ getKey: () => 'fixture', getQuality: () => 'low', getReferences: () => [], onChange() {}, onError() {}, read: async () => null, write: async () => {},
+    fetchImage: async (_url, init) => { const { purpose } = JSON.parse(init.body); requests.push(purpose); return new Promise(resolve => releases.set(purpose, () => resolve(Response.json({ imageUrl: `data:image/png;base64,${Buffer.from(purpose).toString('base64')}` })))); } });
+  const current = scene(), pending = assets.prepare(current, {});
+  await new Promise(r => setImmediate(r));
+  const readView = () => ({ ...assets.view(current, {}), castStatus: 'ready' });
+  assert.equal(readView().pending[0].status, 'generating'); assert.equal(fullAutoVisuals(readView()).action, 'wait');
+  releases.get('portrait')(); await new Promise(r => setImmediate(r));
+  const view = readView(), sprite = view.portraits[0];
+  assert.equal(assets.isBusy(), true, 'the unrelated background is still generating');
+  assert.equal(view.pending.length, 0);
+  assert.equal(fullAutoVisuals(view).action, 'wait', 'generation alone cannot release navigation');
+  assert.equal(fullAutoVisuals(view, { displayed: [{ id: sprite.id, url: sprite.url, baseKey: sprite.baseKey }] }).action, 'ready');
+  releases.get('background')(); await pending;
+  await assets.prepare(current, {}); assert.equal(requests.filter(p => p === 'portrait').length, 1);
+});
+
+test('missing portrait credentials are distinct from queued generation', async () => {
+  const assets = createStageAssets({ getKey: () => '', getQuality: () => 'low', getReferences: () => [], onChange() {}, onError() {}, read: async () => null, write: async () => {},
+    fetchImage: async () => assert.fail('no paid request without a key') });
+  await assets.prepare(scene(), {});
+  const view = { ...assets.view(scene(), {}), castStatus: 'ready' };
+  assert.equal(view.pending[0].status, 'needs-key'); assert.equal(fullAutoVisuals(view).action, 'stop');
 });
 
 test('old expression art stays available offline; the paid base is preserved and only the needed face is upgraded', async () => {

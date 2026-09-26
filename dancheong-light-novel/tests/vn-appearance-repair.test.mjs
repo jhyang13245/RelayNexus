@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { captureScene, portraitKey } from '../public/vn-scene.mjs';
 import { portraitPrompt, workPortrait, readPortraitReplacement, writePortraitReplacement } from '../public/vn-character-art.mjs';
 import { createStageAssets } from '../public/vn-assets.mjs';
+import { validateCast } from '../public/vn-cast.mjs';
 
 const html = readFileSync(new URL('../vendor/Cortex_v1.42.0.html', import.meta.url), 'utf8');
 const marker = html.indexOf('/* Cortex v1.38.0 — compact rewind journal');
@@ -86,4 +87,74 @@ test('replacement pointers reject another work or person and preserve accepted r
   assert.equal(readPortraitReplacement(storage, 'other:save', h.person.id), '');
   assert.equal(readPortraitReplacement(storage, h.scene.scope, 'different-person'), '');
   assert.throws(() => writePortraitReplacement(storage, h.scene.scope, 'different-person', record.key));
+});
+
+for (const provider of ['openai', 'gemini']) test(`${provider}: registered profile without embedded art generates on arrival, then reuses its own identity`, async () => {
+  const sc = captured();
+  const arrival = '동생이 교실 문을 열고 들어와 내 앞에 섰다.';
+  const mention = '사진 속 친구를 떠올렸다.';
+  sc.publicText = `${arrival}\n${mention}`;
+  sc.castPages = [{ start: 0, text: sc.publicText }];
+  const named = evidence => ({ evidence, identityEvidence: evidence, identityStatus: 'confirmed', presence: 'physical' });
+  // Even an overinclusive model answer cannot put the merely recalled friend on stage.
+  const [beat] = validateCast(sc, { beats: [{ beat: 'P0', speaker: '', onStage: [
+    { candidate: 'C0', ...named(arrival) }, { candidate: 'C1', ...named(mention) },
+  ] }] });
+  const scene = { ...sc, ...beat };
+  assert.equal(scene.characters.length, 1);
+  assert.equal(scene.characters[0].id, 'younger');
+  assert.equal(scene.characters[0].primaryAssetRef, '');
+  const saved = new Map([[scene.environmentKey, { key: scene.environmentKey, url: url('room') }]]);
+  const requests = [], errors = [];
+  const options = {
+    getKey: () => 'fixture', getQuality: () => 'low', getProvider: () => provider,
+    getReferences: person => experience.selectImageReferences({ visualReferences: [{ characterId: person.id, name: person.name,
+      mode: person.referenceMode, primaryAssetRef: person.primaryAssetRef, allowedAssetRefs: person.allowedAssetRefs }] },
+    [{ characterId: 'friend', dataUrl: url('other-person'), ref: 'friend.png' }]).map(row => row.dataUrl),
+    getQualityReference: () => assert.fail('another character must not become the sole identity reference'),
+    chooseMatte: async () => '#00ff00', removeMatte: async value => value,
+    reviewFrame: async () => ({ status: 'valid' }),
+    read: async key => saved.get(key), write: async record => saved.set(record.key, record),
+    onChange() {}, onError: message => errors.push(message),
+    fetchImage: async (endpoint, init) => {
+      const body = JSON.parse(init.body); requests.push({ endpoint, ...body });
+      return Response.json({ imageUrl: url(`generated-${requests.length}`) });
+    },
+  };
+  const assets = createStageAssets(options);
+  await Promise.all([assets.prepare(scene, {}), assets.prepare(scene, {})]);
+  assert.deepEqual(errors, []);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].purpose, 'portrait');
+  assert.equal(requests[0].endpoint, provider === 'gemini' ? '/api/gemini/image' : '/api/image');
+  assert.deepEqual(requests[0].referenceImages, []);
+  assert.ok(requests[0].prompt.includes('No identity image is supplied'));
+  assert.ok(requests[0].prompt.includes(rows[0].source.appearance));
+  assert.ok(!requests[0].prompt.includes('PRIVATE_SECRET'));
+  const base = assets.view(scene, {}).portraits[0].url;
+  const restored = createStageAssets(options);
+  await restored.prepare(scene, {});
+  assert.equal(requests.length, 1);
+  assert.equal(restored.view(scene, {}).portraits[0].url, base);
+  scene.expressions = [{ characterId: 'younger', offset: 0, expression: 'smile' }];
+  await restored.prepare(scene, { text: '동생이 환하게 웃었다.' });
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1].purpose, 'expression');
+  assert.deepEqual(requests[1].referenceImages, [base]);
+});
+
+test('a declared but unavailable reference stays an error rather than silently inventing a different face', async () => {
+  const sc = captured(), person = { ...sc.candidates[0], primaryAssetRef: 'authored/younger.png' };
+  const errors = [], scene = { ...sc, characters: [person] };
+  const assets = createStageAssets({ getKey: () => 'fixture', getQuality: () => 'low',
+    getReferences: person => experience.selectImageReferences({ visualReferences: [{ characterId: person.id, name: person.name,
+      mode: person.referenceMode, primaryAssetRef: person.primaryAssetRef }] }, []),
+    read: async key => key === sc.environmentKey ? { key, url: url('room') } : null,
+    write: async () => {}, onChange() {}, onError: message => errors.push(message),
+    fetchImage: () => assert.fail('an authored reference load failure must not purchase an invented appearance'),
+  });
+  await assets.prepare(scene, {});
+  assert.equal(assets.view(scene, {}).portraits.length, 0);
+  assert.equal(errors.length, 1);
+  assert.ok(errors[0].includes('기준 사진'));
 });

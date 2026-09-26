@@ -262,7 +262,7 @@
   .vn-characters[data-count="3"] .vn-character { height:calc(min(53dvh,102vw) * var(--hs,1)); }
   .vn-stage[data-shot="close"] .vn-characters[data-count="1"] .vn-character { transform:scale(1.04); transform-origin:50% 100%; }
   .vn-stage.is-nvl:not(.has-actions) .vn-play-area { left:max(20px,env(safe-area-inset-left)); width:calc(100% - 40px); bottom:158px; }
-  .vn-reading-controls { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding-bottom:env(safe-area-inset-bottom); }
+  .vn-reading-controls { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding-bottom:env(safe-area-inset-bottom); }
   .vn-reading-controls button { min-height:44px; padding:8px 3px; white-space:nowrap; }
   .vn-stage .vn-voice-controls { bottom:calc(110px + env(safe-area-inset-bottom)); }
   .vn-stage .vn-visual-status { left:12px; bottom:calc(110px + env(safe-area-inset-bottom)); max-width:calc(100% - 145px); padding:9px 10px; }
@@ -289,3 +289,11 @@
 .vn-ai-moods label { display:inline-flex; align-items:center; gap:4px; font-size:13px; }
 .vn-ai-music button { min-height:40px; }
 .vn-ai-status { min-height:1.4em; }
+/* Edition management follows the existing dark reader dialogs. */
+.vn-edition-dialog{position:fixed;inset:0;margin:auto;transform:none;box-sizing:border-box;width:min(680px,calc(100vw - 24px));max-width:680px;max-height:88dvh;overflow:auto;background:#101824;color:#e8edf5;border:1px solid #62738b;padding:clamp(18px,4vw,30px);font-size:16px;line-height:1.6}
+.vn-edition-dialog::backdrop{background:#000a}
+.vn-edition-dialog header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.vn-edition-dialog h2{margin:0;font-size:24px}.vn-edition-dialog h3{font-size:18px;margin-top:28px}
+.vn-edition-dialog article{padding:16px 0;border-top:1px solid #425065}.vn-edition-dialog article p{color:#b5c3d5;font-size:14px;white-space:pre-wrap}
+.vn-edition-dialog button{font:inherit;min-height:44px;background:#1d2b3f;color:#eef3fa;border:1px solid #6b7c95;padding:8px 14px;margin:4px 8px 4px 0;cursor:pointer}
+.vn-edition-dialog button:disabled{opacity:.5;cursor:wait}.vn-edition-dialog [data-status]{color:#eccda7}

@@ -1,4 +1,5 @@
 // Manual saves are independent of the engine's autosave and the usage ledger.
+import { editionScope, snapshotEdition } from './vn-edition-key.mjs';
 export const SLOT_COUNT = 10;
 export const SLOT_SCHEMA = 'DANCHEONG_VN_SLOT_V1';
 const clone = value => structuredClone(value);
@@ -6,21 +7,21 @@ const slotNumber = slot => {
   if (!Number.isInteger(slot) || slot < 1 || slot > SLOT_COUNT) throw new Error('잘못된 저장 슬롯입니다.');
   return slot;
 };
-export function presentationKeys(slug, storyId) {
+export function presentationKeys(slug, storyId, edition) {
   if (!slug || !storyId || typeof slug !== 'string' || typeof storyId !== 'string') throw new Error('작품 정보가 없습니다.');
-  const scope = `${slug}:${storyId}`;
+  const scope = editionScope(slug, storyId, edition);
   return [`dancheong-vn-position-v1:${scope}`, `dancheong-vn-met-v1:${scope}`,
     `dancheong-vn-art-style-v1:${slug}`, `dancheong-vn-work-art-v1:${slug}`, `dancheong-vn-portrait-replacements-v1:${slug}`];
 }
-export function capturePresentation(storage, { slug, storyId, bookmark, met, openingArt = '', actions = false }) {
-  const keys = presentationKeys(slug, storyId);
+export function capturePresentation(storage, { slug, storyId, edition, bookmark, met, openingArt = '', actions = false }) {
+  const keys = presentationKeys(slug, storyId, edition);
   const values = keys.map(key => storage.getItem(key));
   if (bookmark) values[0] = JSON.stringify(bookmark);
   if (met) values[1] = JSON.stringify(met);
   return { values, openingArt, actions: Boolean(actions) };
 }
 export function applyPresentation(storage, record) {
-  const keys = presentationKeys(record.slug, record.storyId);
+  const keys = presentationKeys(record.slug, record.storyId, snapshotEdition(record.snapshot));
   const values = record.presentation?.values;
   if (!Array.isArray(values) || values.length !== keys.length || values.some(value => value !== null && typeof value !== 'string')) throw new Error('화면 저장 정보가 손상되었습니다.');
   // Only these explicit work-specific keys can be restored. Never restore keys,
@@ -42,7 +43,7 @@ export function makeSlot({ slot, slug, title, snapshot, presentation, excerpt = 
 }
 export function validateSlot(record) {
   if (record?.schema !== SLOT_SCHEMA || record.storyId !== record.snapshot?.scenario?.runtime?.storyId || !Array.isArray(record.snapshot?.turns)) throw new Error('지원하지 않거나 손상된 저장 데이터입니다.');
-  slotNumber(record.slot); presentationKeys(record.slug, record.storyId);
+  slotNumber(record.slot); presentationKeys(record.slug, record.storyId, snapshotEdition(record.snapshot));
   if (!Array.isArray(record.presentation?.values) || record.presentation.values.length !== 5 || record.presentation.values.some(value => value !== null && typeof value !== 'string')) throw new Error('화면 저장 정보가 손상되었습니다.');
   return record;
 }
@@ -54,7 +55,7 @@ export function slotSummary(record) {
 // that namespace when recovering an interrupted cross-storage activation.
 export async function narrativeSignature(snapshot) {
   const world = snapshot?.scenario?.world || {};
-  const text = JSON.stringify([snapshot?.scenario?.runtime?.storyId, [world.day, world.time, world.location], (snapshot?.turns || []).map(turn => [turn.id, turn.status, turn.text || ''])]);
+  const text = JSON.stringify([snapshot?.scenario?.runtime?.storyId, [world.day, world.time, world.location], (snapshot?.turns || []).map(turn => [turn.id, turn.status, turn.text || '']), ...(snapshotEdition(snapshot) ? [snapshotEdition(snapshot)] : [])]);
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 }

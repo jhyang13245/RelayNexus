@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { captureScene } from '../public/vn-scene.mjs';
 import { portraitKey } from '../public/vn-scene.mjs';
-import { validateCast } from '../public/vn-cast.mjs';
+import { validateCast, castRequest } from '../public/vn-cast.mjs';
 import { loadWorkPresentation } from '../public/vn-public-cast.mjs';
 await loadWorkPresentation(async () => Response.json(JSON.parse(readFileSync(new URL('../public/work-presentation.json', import.meta.url), 'utf8'))));
 
@@ -24,6 +24,68 @@ const scenario = () => ({
     images: [{ isPrimary: true, assetPath: 'assets/visitor.webp' }] }],
 });
 const commit = (text, extra = {}) => ({ id: 't1', status: 'COMMITTED', text, ...extra });
+
+test('first-appearance portrait permission works under a public alias without disclosing the real identity', () => {
+  const sc = scenario();
+  sc.presentation = { publicAliases: { guard: ['소녀 검사', '검사'] } };
+  const person = { id: 'guard', name: '검사 · 은하', publicProfile: '', source: {
+    preRevealAlias: '정체불명의 소녀 검사', imageOnFirstAppearance: true,
+    publicInfo: '첫 등장 뒤 공개: 은하라는 가명을 쓰는 검사. PRIVATE BIOGRAPHY.',
+    appearance: '키 163cm. 흑갈색 긴 머리, 갈색 눈, 붉은 옷과 은하검.', hiddenInfo: 'PRIVATE IDENTITY',
+    images: [{ isPrimary: true, assetPath: 'guard.webp' }],
+  } };
+  sc.characters.push(person);
+  const before = structuredClone(sc), text = '검사는 문 앞에서 검을 낮췄다. “지금은 안전합니다.”';
+  const capture = () => captureScene({ scope: 'alias-fixture', scenario: sc, turn: commit(text), experience, timeline: true });
+  assert.equal(experience.publicCharacter(person, sc).referenceMode, 'NONE');
+  const scene = capture(), visual = scene.candidates.find(row => row.id === person.id);
+  assert.equal(visual?.referenceMode, 'PRIMARY');
+  assert.equal(visual.name, '정체불명의 소녀 검사');
+  assert.ok(visual.aliases.includes('검사'));
+  assert.equal(visual.primaryAssetRef, 'guard.webp');
+  assert.match(visual.publicAppearance, /163cm.*흑갈색.*갈색/u);
+  const request = castRequest(scene, 'gpt-6-luna');
+  assert.doesNotMatch(request.input, /은하|PRIVATE|guard\.webp/u);
+  assert.deepEqual(sc, before, 'the canonical disclosure ledger, name and source remain untouched');
+  const rows = validateCast({ ...scene, candidates: [visual], castPages: [{ start: 0, text }] }, { beats: [{
+    beat: 'P0', speaker: 'C0', speakerLabel: '검사', speakerEvidence: '검사는 문 앞에서 검을 낮췄다.',
+    onStage: [{ candidate: 'C0', evidence: '검사는 문 앞에서 검을 낮췄다.', identityEvidence: '검사는 문 앞에서 검을 낮췄다.' }],
+  }] });
+  assert.equal(rows[0].speakerId, 'guard');
+  assert.equal(rows[0].speakerName, '검사');
+  assert.equal(rows[0].characters[0].id, 'guard');
+  assert.deepEqual(Array.from(experience.selectImageReferences({ visualReferences: [{ characterId: visual.id, mode: visual.referenceMode, primaryAssetRef: visual.primaryAssetRef, allowedAssetRefs: visual.allowedAssetRefs }] }, [
+    { characterId: 'guard', ref: 'guard.webp', dataUrl: 'fixture' }, { characterId: 'visitor', ref: 'visitor.webp', dataUrl: 'wrong' },
+  ]), row => row.dataUrl), ['fixture']);
+  sc.runtime.disclosureLedger = { revealedEntityRefs: ['guard'] };
+  assert.equal(portraitKey(scene.scope, capture().candidates.find(row => row.id === 'guard')), portraitKey(scene.scope, visual), 'later name disclosure reuses the same paid portrait');
+  delete sc.runtime.disclosureLedger;
+  person.source.images = [];
+  assert.equal(capture().candidates.find(row => row.id === 'guard').primaryAssetRef, '', 'an alias with no embedded image can generate its own first portrait');
+  for (const patch of [{ imageOnFirstAppearance: false }, { secret: true }, { revealCondition: 'after-secret-event' }, { visibility: 'private' }]) {
+    const original = person.source; person.source = { ...original, ...patch };
+    assert.ok(!capture().candidates.some(row => row.id === 'guard'), JSON.stringify(patch));
+    person.source = original;
+  }
+  sc.characters.push({ id: 'other', name: '검사', publicInfo: '다른 사람' });
+  assert.ok(!capture().candidates.some(row => row.id === 'guard'), 'overlapping anonymous labels are withheld rather than guessed');
+});
+
+test('an authored concealed-form reference keeps its media boundary under first-appearance permission', () => {
+  const sc = scenario();
+  sc.characters = [{ id: 'masked', name: 'SECRET NAME', source: {
+    preRevealAlias: '가면 검사', imageOnFirstAppearance: true, publicInfo: '첫 등장 뒤 공개: SECRET BIOGRAPHY',
+    appearance: 'SECRET UNCOVERED FACE', preRevealProfile: '얼굴을 가린 가면과 검은 외투.',
+    images: [{ isPrimary: true, assetPath: 'unmasked.webp' }], preRevealImage: 'masked.webp',
+  } }];
+  const scene = captureScene({ scope: 'mask-fixture', scenario: sc, turn: commit('가면 검사는 문 앞에 섰다.'), experience, timeline: true });
+  const person = scene.candidates.find(row => row.id === 'masked');
+  assert.equal(person.referenceMode, 'PRE_REVEAL_ONLY');
+  assert.equal(person.primaryAssetRef, '');
+  assert.deepEqual([...person.allowedAssetRefs], ['masked.webp']);
+  assert.doesNotMatch(JSON.stringify(person), /SECRET|unmasked/u);
+  assert.match(person.publicAppearance, /가면/u);
+});
 
 test('authored Hongjae public alias releases appearance, preserves the public label and keeps the portrait key after naming', () => {
   const sc = scenario();

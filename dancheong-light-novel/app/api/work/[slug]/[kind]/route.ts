@@ -1,15 +1,18 @@
 const CORE_ORIGIN = "https://relay-core.juno12345.chatgpt.site";
 const HIDDEN_SLUGS = new Set(["giseong-academy-first-resonance"]);
 
-export async function GET(_request: Request, context: { params: Promise<{ slug: string; kind: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ slug: string; kind: string }> }) {
   const { slug, kind } = await context.params;
-  if (!/^[a-z0-9-]{3,80}$/u.test(slug) || HIDDEN_SLUGS.has(slug) || !["cover", "download"].includes(kind)) {
+  if (!/^[a-z0-9-]{3,80}$/u.test(slug) || HIDDEN_SLUGS.has(slug) || !["cover", "download", "revisions"].includes(kind)) {
     return new Response("Not found", { status: 404 });
   }
-  const path = kind === "cover" ? `/api/hub/assets/${slug}/cover` : `/api/hub/works/${slug}/download`;
+  const revision = new URL(request.url).searchParams.get("revision");
+  if (revision !== null && (kind !== "download" || !/^[1-9]\d{0,8}$/u.test(revision))) return new Response("Invalid revision", { status: 400 });
+  const path = kind === "cover" ? `/api/hub/assets/${slug}/cover` : kind === "revisions" ? `/api/hub/works/${slug}/revisions` : `/api/hub/works/${slug}/${revision ? `revisions/${revision}/` : ""}download`;
   try {
     const upstream = await fetch(new URL(path, CORE_ORIGIN), {
-      headers: { Accept: kind === "cover" ? "image/*" : "application/zip" },
+      headers: { Accept: kind === "cover" ? "image/*" : kind === "revisions" ? "application/json" : "application/zip" },
+      cache: "no-store",
       signal: AbortSignal.timeout(30000),
     });
     const headers = new Headers({

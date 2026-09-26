@@ -13,12 +13,20 @@ const bootHead = await readFile(new URL('../public/vn-boot.html', import.meta.ur
 if (!original.includes('</head>') || !original.includes('</body>')) throw new Error('Unexpected Cortex HTML structure.');
 const modules = ['vn-core.mjs', 'vn-key-vault.mjs', 'vn-image-routing.mjs', 'vn-progress.mjs', 'vn-public-cast.mjs', 'vn-scene.mjs', 'vn-wardrobe.mjs', 'vn-cast.mjs', 'vn-stage-timing.mjs', 'vn-reader.mjs', 'vn-direction.mjs', 'vn-stage.mjs', 'vn-sprite.mjs', 'vn-audio.mjs', 'vn-chroma.mjs', 'vn-character-art.mjs', 'vn-assets.mjs', 'vn-cost-core.mjs', 'vn-costs.mjs', 'vn.js'];
 const shellHash = createHash('sha256').update(await readFile(new URL('../public/vn.css', import.meta.url)));
-modules.push('vn-loudness.mjs', 'vn-loop.mjs', 'vn-speech-ko.mjs', 'vn-voice-post.mjs', 'vn-music-ai.mjs', 'vn-music.mjs', 'vn-voice.mjs', 'vn-shots.mjs', 'vn-motion.mjs', 'vn-saves.mjs', 'vn-save-ui.mjs', 'vn-cinema.mjs', 'vn-work-music.mjs');
+modules.push('vn-loudness.mjs', 'vn-loop.mjs', 'vn-speech-ko.mjs', 'vn-voice-post.mjs', 'vn-music-ai.mjs', 'vn-music.mjs', 'vn-music-direction.mjs', 'vn-voice.mjs', 'vn-shots.mjs', 'vn-motion.mjs', 'vn-saves.mjs', 'vn-save-ui.mjs', 'vn-cinema.mjs', 'vn-work-music.mjs');
 modules.push('vn-raster.mjs', 'vn-raster-worker.mjs');
 modules.push('vn-event-progress.mjs', 'vn-event-progress-ui.mjs');
 modules.push('vn-new-game.mjs');
+modules.push('vn-edition-key.mjs', 'vn-editions.mjs', 'vn-edition-ui.mjs');
+modules.push('vn-audio-analysis.mjs', 'vn-audio-task.mjs', 'vn-audio-worker.mjs');
 modules.push('vn-storage.mjs', 'vn-storage-ui.mjs', 'vn-backup.mjs');
 modules.push('vn-identity.mjs');
+modules.push('vn-autoplay.mjs');
+modules.push('vn-recovery.mjs');
+modules.push('vn-image-codec.mjs');
+modules.push('vn-image-storage.mjs');
+const storageRecovery = await readFile(new URL('./cortex-storage-recovery.js', import.meta.url), 'utf8');
+shellHash.update(storageRecovery);
 shellHash.update(bootHead);
 shellHash.update(await readFile(new URL('../public/vn-cinema.css', import.meta.url)));
 shellHash.update(await readFile(new URL('../public/vn-reader.css', import.meta.url)));
@@ -32,6 +40,21 @@ function replaceExactly(sourceText, before, after) {
   return sourceText.replace(before, after);
 }
 let shell = original;
+shell = replaceExactly(shell, '  async function forkStorageV1396(){', `${storageRecovery}\n  async function forkStorageV1396(){`);
+shell = replaceExactly(shell, '_forkStorage:forkStorageV1396,', '_forkStorage:forkStorageV1396,_retryStorage:retryStorageVN,_isBusy:()=>busy,_recoveryScope:()=>sessionEpoch,');
+// Retry the request before applying branch/resource effects, never the whole
+// commit function. Every attempt owns its timer and AbortController.
+const judgeStart = shell.indexOf('  async function requestUnifiedAdjudicationV1360(');
+const judgeEnd = shell.indexOf('\n  function createContinuityJudgeQueueV240(', judgeStart);
+if (judgeStart < 0 || judgeEnd < 0) throw new Error('Cortex verdict adapter target missing.');
+const judgeOriginal = shell.slice(judgeStart, judgeEnd);
+let judge = replaceExactly(judgeOriginal, ',controller=new AbortController();', ';const recoveryEpoch=sessionEpoch;');
+judge = replaceExactly(judge, 'try{result=await Promise.race', "const attempt=async()=>{const controller=new AbortController();let timer;rawResponse=null;rawResponseText='';try{return await Promise.race");
+judge = replaceExactly(judge, "catch(error){result={available:false,", "catch(error){return {available:false,");
+judge = replaceExactly(judge, 'finally{clearTimeout(timer)}', 'finally{clearTimeout(timer)}};result=await (globalThis.NexusVNRetryVerdict||((request)=>request()))(attempt,{current:()=>recoveryEpoch===sessionEpoch&&turns.includes(turn)});');
+judge = replaceExactly(judge, "const json=await response.json();if(json.status", "const json=await response.json();if(controller.signal.aborted)throw Error('VERDICT_TIMEOUT');if(json.status");
+judge = replaceExactly(judge, "policy:'ONE_EVENT_VERDICT_60S_DISPLAY_COMMIT_ON_FAILURE',attempts:1,totalMs:result.totalMs", "policy:'EVENT_VERDICT_AUTO_RETRY_MAX_3_DISPLAY_COMMIT_ON_FAILURE',attempts:result.autoRecovery?.attempts||1,history:result.autoRecovery?.history||[],totalMs:result.totalMs");
+shell = replaceExactly(shell, judgeOriginal, judge);
 // Keep the original publication/media gates, but let the VN reader own pacing.
 // Otherwise Cortex's typewriter and the VN typewriter would run in series.
 shell = replaceExactly(shell, 'const speed=asText(settings.typingSpeed),readableNatural=', 'const speed=globalThis.NexusVNHandlesTextReveal?"instant":asText(settings.typingSpeed),readableNatural=');

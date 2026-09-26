@@ -1,5 +1,5 @@
 // Presentation metadata only: the story and its canonical state remain in Cortex.
-import { presentationScenario, publicAppearance } from './vn-public-cast.mjs';
+import { presentationScenario, publicAppearance, visualCharacter } from './vn-public-cast.mjs';
 const clean = value => String(value ?? '').normalize('NFKC').trim().replace(/\s+/gu, ' ').toLowerCase();
 export function lightFor(time = '') {
   const hour = Number(String(time).match(/^(\d{1,2}):/u)?.[1]);
@@ -102,7 +102,7 @@ export function captureScene({ scope, scenario, turn, previous, experience, prio
   for (const person of witnessed) if (person?.id) present.add(person.id);
   const excludedNames = new Set(capsule?.excludedReferenceNames || []);
   const candidates = [scenario?.protagonist, ...(scenario?.characters || [])].filter(person => person && present.has(person.id))
-    .map(person => experience.publicCharacter(person, scenario)).filter(person => person && person.referenceMode !== 'NONE')
+    .map(person => visualCharacter(person, scenario, experience)).filter(person => person && person.referenceMode !== 'NONE')
     .filter(person => timeline || ![person.name, ...(person.aliases || [])].some(name => excludedNames.has(name)))
     .map(person => {
       const original = [scenario?.protagonist, ...(scenario?.characters || [])].find(row => row?.id === person.id);
@@ -114,7 +114,7 @@ export function captureScene({ scope, scenario, turn, previous, experience, prio
       // Public alias/appearance improvements must not charge again for an
       // already drawn identity. Use the old approved profile for cache lookup
       // only; prompts and labels use the new public projection above.
-      const cacheProfile = priorPublic?.referenceMode === person.referenceMode ? { portraitCacheProfile: priorPublic.publicProfile || '' } : {};
+      const cacheProfile = person.portraitCacheProfile === undefined && priorPublic?.referenceMode === person.referenceMode ? { portraitCacheProfile: priorPublic.publicProfile || '' } : {};
       return { ...person, ...cacheProfile,
         ...(original?.eventAliasScope ? { eventAliasScope: original.eventAliasScope, eventAliasText: original.eventAliasText, ...(original.eventAliasConfirmations ? { eventAliasConfirmations: original.eventAliasConfirmations } : {}), portraitCacheProfile: original.portraitCacheProfile } : {}),
         publicAppearance: publicAppearance(original, scenario, experience), primaryAssetRef: primaryAssetRef || capsule?.visualReferences?.find(row => row.characterId === person.id)?.primaryAssetRef || '' };

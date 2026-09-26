@@ -52,7 +52,7 @@ export function readNumbers(text) {
     .replace(/(\d+)\.(\d+)\s*(퍼센트|km|cm|kg|%|m|g)?/gu, (_, a, b, u = '') => `${sinoKorean(a)} 점 ${[...b].map(d => d === '0' ? '공' : DIGITS[d]).join(' ')}${u ? ` ${unit[u] || u}` : ''}`)
     // Phone-like digit strings are read digit by digit.
     .replace(/\d{2,4}(?:-\d{3,4}){1,2}/gu, value => value.split('-').map(part => [...part].map(d => d === '0' ? '공' : DIGITS[d]).join('')).join(' '))
-    .replace(/(\d[\d,]*)\s*(시간|번째|퍼센트|주년|학년|페이지|켤레|걸음|군데|사람|그루|송이|방울|번지|세기|km|cm|kg|[시개명살번마리잔권장대벌채달가지병줄판통척%분초년월일원층호회반쪽도차m])?/gu,
+    .replace(/(\d[\d,]*)\s*(시간|번째|퍼센트|주년|학년|페이지|켤레|걸음|군데|사람|그루|송이|방울|마리|가지|번지|세기|km|cm|kg|[시개명살번마리잔권장대벌채달가지병줄판통척%분초년월일원층호회반쪽도차m])?/gu,
       (_, digits, counter = '') => {
         const n = Number(digits.replace(/,/gu, ''));
         // 유월/시월 already include the counter.

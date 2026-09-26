@@ -1,7 +1,7 @@
 {
   "fate-seoul": {
     "publicAliases": {
-      "NPC_SERVANT_SABER_JEONGJO_TS": ["소녀 검사", "소녀검사"]
+      "NPC_SERVANT_SABER_JEONGJO_TS": ["소녀 검사", "소녀검사", "세이버"]
     },
     "roleNames": ["세이버", "Saber"],
     "eventPublicAliases": [

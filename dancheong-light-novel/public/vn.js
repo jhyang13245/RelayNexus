@@ -3,6 +3,8 @@ import { backgroundFor, pagesForTurn, createPageCollector } from './vn-core.mjs'
 import { loadDeviceKeys, storeDeviceKeys } from './vn-key-vault.mjs';
 import { imageRoutingKey, readImageRouting, imageProviderFor } from './vn-image-routing.mjs';
 import { storageProblem, submitEngineTurn, pendingAdjudication, retryAdjudication } from './vn-progress.mjs';
+import { createAutoRecovery, retryVerdict } from './vn-recovery.mjs';
+import { optimizeWorkImages } from './vn-image-storage.mjs';
 import { captureScene, sceneVersion } from './vn-scene.mjs';
 import { loadWorkPresentation } from './vn-public-cast.mjs';
 import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice, eventSceneSetting } from './vn-assets.mjs';
@@ -10,12 +12,14 @@ import { installCostMeter } from './vn-costs.mjs';
 import { createCastDirector } from './vn-cast.mjs';
 import { publishedUnit, dialogueWait, createDialogueGrace, resolvedSpeaker, preparationPages, createPreparationQueue, prepareAhead, preparationTier } from './vn-stage-timing.mjs';
 import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, createTextWaitTracker, readDelay } from './vn-reader.mjs';
+import { fullAutoStep, fullAutoVisuals, storyComplete, createContinuationGate } from './vn-autoplay.mjs';
 import { directionAt, transitionFor, createSound } from './vn-direction.mjs';
 import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs';
 import { displaySprite } from './vn-sprite.mjs';
 import { createAmbience, ambienceFor } from './vn-audio.mjs';
 import { createScore } from './vn-music.mjs';
-import { createVoice, voiceLine, voices } from './vn-voice.mjs';
+import { createMusicDirection } from './vn-music-direction.mjs';
+import { createVoice, voiceLine, readingVoiceLine, voices } from './vn-voice.mjs';
 import { createVoicePlayer } from './vn-voice-post.mjs';
 import { prepareMotion } from './vn-motion.mjs';
 import { createCinema } from './vn-cinema.mjs';
@@ -28,6 +32,9 @@ import { readBackup, exportSlotFile, storeImportedSlot, restoreSlotMedia } from 
 import { readEventProgress } from './vn-event-progress.mjs';
 import { createEventProgressDialog } from './vn-event-progress-ui.mjs';
 import { prepareNewGame, createNewGameDialog } from './vn-new-game.mjs';
+import { createEditionStore, revisionDescriptor } from './vn-editions.mjs';
+import { editionScope, snapshotEdition, editionId } from './vn-edition-key.mjs';
+import { createEditionDialog } from './vn-edition-ui.mjs';
 
 const activeKey = 'dancheong-ln-active-work-v1';
 const nexusBase = 'https://relay-novel-nexus.juno12345.chatgpt.site';
@@ -49,7 +56,7 @@ root.innerHTML = `
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <button id="vn-library-slots" class="vn-slot-open" type="button">저장·불러오기</button>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.12.0 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.13.4 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -167,23 +174,31 @@ const progressDialog = createEventProgressDialog({ root, recovery: recoveryPanel
   beforeOpen: () => { stopPlayback(); voice.stop(); saveReadingPosition(); closeMenu(); syncRecovery(); },
 });
 function syncRecovery() {
+  const automatic = autoRecovery.tick(state.api, { scope: state.api?._recoveryScope?.(),
+    enabled: !state.switching && !state.slotTask && !state.slotRecoveryNeeded && !state.retryingAdjudication && !state.submitting,
+    online: navigator.onLine !== false, canJudge: Boolean(textKey()) });
+  state.autoRecovery = automatic;
+  const recovering = automatic.waiting || Boolean(state.judgeRecovery);
   const problem = storageProblem(state.api);
   const pending = pendingAdjudication(state.api);
   adjudicationRetry.hidden = !pending;
   // Cortex's original send button reflects its actual request lock. A parked
   // ADJUDICATION_PENDING beat is resumable, although VN busy() blocks new turns.
-  adjudicationRetry.disabled = Boolean(problem || state.retryingAdjudication || state.awaitingTurn || $('send')?.disabled);
+  adjudicationRetry.disabled = Boolean(problem || recovering || state.retryingAdjudication || state.awaitingTurn || $('send')?.disabled);
   adjudicationRetry.textContent = state.retryingAdjudication ? '판정 보완 중…' : '판정 보완 다시 시도';
-  recoveryPanel.hidden = !problem && !pending && (!engineNotice || engineNotice.hidden);
-  recoveryHeading.textContent = problem ? '현재 진행을 저장하지 못했습니다' : '진행 안내';
-  const detail = problem ? `${problem.reason} 새로고침 전에 아래 버튼으로 현재 진행을 보존해 주세요.` : '';
+  recoveryPanel.hidden = !recovering && !problem && !pending && (!engineNotice || engineNotice.hidden);
+  recoveryHeading.textContent = recovering ? '자동 복구 중' : problem ? '현재 진행을 저장하지 못했습니다' : '진행 안내';
+  const recovery = state.judgeRecovery || automatic;
+  const detail = recovering ? recovery.phase === 'offline' ? '연결이 돌아오면 같은 비트의 판정을 자동으로 재시도합니다.'
+    : `${recovery.kind === 'storage' ? '현재 진행을 다시 저장' : '같은 본문의 판정을 다시 처리'}하고 있습니다 · ${recovery.attempt || 0}/${recovery.max}. 복구되면 이어서 진행합니다.`
+    : problem ? `${problem.reason} 자동 복구로 해결되지 않았습니다. 아래에서 현재 진행을 백업하거나 저장 공간을 확보한 뒤 다시 저장해 주세요.` : '';
   if (recoveryDetail.textContent !== detail) recoveryDetail.textContent = detail;
   recoveryDetail.hidden = !detail;
   // Reuse the toolbar entry instead of drawing a floating notice over the story.
   // Keep the actual engine recovery nodes (and their backup handlers) in the dialog.
   const retryReady = Boolean(pending && !adjudicationRetry.disabled);
-  const attention = Boolean(problem || retryReady || (!recoveryPanel.hidden && engineNotice?.querySelector('button')));
-  const label = problem ? '저장 오류' : retryReady ? '판정 재시도' : pending ? '판정 중' : !recoveryPanel.hidden ? '진행 안내' : '진행';
+  const attention = !recovering && Boolean(problem || retryReady || (!recoveryPanel.hidden && engineNotice?.querySelector('button')));
+  const label = recovering ? recovery.kind === 'storage' ? '저장 복구 중' : '판정 재시도 중' : problem ? '저장 오류' : retryReady ? '판정 재시도' : pending ? '판정 중' : !recoveryPanel.hidden ? '진행 안내' : '진행';
   if (progressButton.textContent !== label) progressButton.textContent = label;
   progressButton.dataset.attention = String(attention); menuProgressButton.dataset.attention = String(attention);
   progressButton.setAttribute('aria-label', `사건·비트 진행상황${label === '진행' ? '' : ` · ${label}`}`);
@@ -192,6 +207,10 @@ function syncRecovery() {
   return problem;
 }
 const state = { api: null, catalog: [], activeSlug: localStorage.getItem(activeKey) || '', pages: [], cursor: 0, following: true, startAtFirst: false, actions: false, customInputOpen: false, screen: 'library', renderKey: '', backgroundUrl: '', backgroundSide: 'a', media: [], openingArt: '', switching: false, provider: localStorage.getItem(providerKey) || 'openai', effort: localStorage.getItem(effortKey) || 'low', keys: { openai: '', go: '' }, reveal: { key: '', text: '', length: 0, timer: 0 } };
+const autoRecovery = createAutoRecovery({ changed: () => sync(true) });
+globalThis.NexusVNRetryVerdict = (attempt, options) => retryVerdict(attempt, { ...options,
+  onStatus: status => { state.judgeRecovery = status; },
+});
 globalThis.NexusVNHandlesTextReveal = true;
 const textWait = createTextWaitTracker();
 state.reveal = createTextRevealer({
@@ -218,10 +237,20 @@ const artStyleKey = slug => `dancheong-vn-art-style-v1:${slug}`;
 function loadArtStyle(slug) { try { return localStorage.getItem(artStyleKey(slug)) || ''; } catch { return ''; } }
 state.artStyle = loadArtStyle(state.activeSlug);
 Object.assign(state, { playback: 'manual', playbackTimer: 0, readThrough: -1, bookmark: null, awaitingTurn: false, submittedTurnId: '', readerWork: '', lastDirectionKey: '', lastScene: null, hideText: false, backdropSequence: 0, generationStarted: 0 });
+const autoContinuation = createContinuationGate();
+state.fullAutoVoice = null;
+const fullAutoButton = document.createElement('button'); fullAutoButton.id = 'vn-full-auto'; fullAutoButton.type = 'button';
+fullAutoButton.textContent = '완전 자동'; fullAutoButton.setAttribute('aria-pressed', 'false');
+fullAutoButton.title = '문장·AI 음성·장면 이어가기 자동 진행 (Shift+A) · API 사용료 발생';
+$('vn-auto').after(fullAutoButton);
+const fullAutoHelp = document.createElement('p'); fullAutoHelp.className = 'vn-settings-help';
+fullAutoHelp.textContent = '완전 자동은 서술·대사를 AI 음성으로 읽고, 현재 장면의 인물이 화면에 표시된 뒤 다음 문장으로 넘어갑니다. 입력 차례마다 장면 이어가기를 실행합니다. 본문·이미지·음성 API 사용료가 계속 발생합니다. OpenAI 음성 키가 필요하며, 자동 중지·화면 이동·탭 전환·오류 시 멈춥니다. 새로고침 후에는 직접 다시 켜 주세요.';
+readingFields.append(fullAutoHelp);
 const sound = createSound(() => state.reading.sound === 'on');
 const ambience = createAmbience(() => state.reading.ambience === 'on' && state.screen === 'stage' && !document.hidden);
+const musicDirection = createMusicDirection();
 const score = createScore(() => state.reading.music === 'on' && state.screen === 'stage' && !document.hidden, { getVolume: () => state.reading.musicVolume * (voice.phase === 'playing' ? .3 : 1) });
-const voice = createVoice({ getEnabled: () => state.reading.voice === 'on' && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && $('vn-history').hidden && state.playback !== 'skip', getKey: () => state.keys.openai, read: readAsset, write: writeAsset, onState: () => updateVoiceControls(),
+const voice = createVoice({ getEnabled: () => (state.reading.voice === 'on' || state.playback === 'full') && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && $('vn-history').hidden && state.playback !== 'skip', getKey: () => state.keys.openai, read: readAsset, write: writeAsset, onState: () => { updateVoiceControls(); queueMicrotask(schedulePlayback); },
   // Trim, level, EQ and a room matched to the current environment on the device.
   makeAudio: createVoicePlayer({ getRoom: () => ({ bed: state.ambienceTarget?.bed || '', mood: $('vn-stage')?.dataset.mood || '' }) }) });
 const workMusic = createWorkMusic({ enabled: () => state.reading.music === 'tracks' && state.screen === 'stage' && !document.hidden, volume: () => state.reading.musicVolume * (voice.phase === 'playing' ? .3 : 1), onStatus: text => musicSettings.status(text) });
@@ -248,6 +277,10 @@ const saveDialog = createSaveDialog({ root, store: slotStore, canSave: slotSaveP
   importFile: (backup, slot, revision) => withSlotLock(async () => { void requestDurableStorage(); return storeImportedSlot({ backup, slot, revision, store: slotStore }); }),
   exportFile: (slot, revision) => withSlotLock(async () => { const record = await slotStore.get(slot); if (!record || record.revision !== revision) throw new Error('슬롯이 변경되었습니다. 목록을 다시 확인해 주세요.'); return exportSlotFile(record); }) });
 const storageManager = createStoragePanel({ parent: storagePanel, works: () => state.catalog, slots: slotStore,
+  optimize: (slug, progress) => withSlotLock(() => withMediaMaintenance(async () => {
+    if (state.switching || state.slotTask || busy() || assets.isBusy() || voice.busy) throw new Error('현재 작업이 끝난 뒤 이미지를 최적화해 주세요.');
+    const result = await optimizeWorkImages(slug, { progress }); invalidateMediaMemory(); return result;
+  })),
   clear: (slug, kind) => withSlotLock(() => withMediaMaintenance(async () => {
     if (state.switching || state.slotTask || busy() || assets.isBusy() || voice.busy) throw new Error('현재 작업이 끝난 뒤 캐시를 정리해 주세요.');
     // Persist the pause first, so closing the tab cannot repurchase deleted art.
@@ -258,6 +291,21 @@ const storageManager = createStoragePanel({ parent: storagePanel, works: () => s
   openSaves: () => { $('vn-settings-dialog').close(); void saveDialog.show(); } });
 for (const id of ['vn-reader-slots', 'vn-library-slots', 'vn-title-slots', 'vn-menu-slots']) $(id).onclick = () => void saveDialog.show();
 const newGameDialog = createNewGameDialog({ root, getTitle: () => currentWork()?.title || state.api?._scenario()?.title || '작품', start: startNewGame, openSaves: () => saveDialog.show() });
+const editionStore = createEditionStore();
+const editionDialog = createEditionDialog({ root, getWork: currentWorkForEdition, getCurrent: () => state.api?._scenario()?.runtime?.vnEdition || null,
+  list: slug => editionStore.list(slug), install: revision => switchEdition({ revision }), restore: id => switchEdition({ id }),
+  exportRecord: id => withSlotLock(async () => {
+    if (id === editionId(state.api?._scenario()?.runtime?.vnEdition, state.activeSlug)) {
+      const problem = slotSaveProblem(); if (problem) throw new Error(problem);
+      saveReadingPosition(); await saveActiveWork();
+    }
+    const record = await editionStore.get(state.activeSlug, id);
+    if (!record) throw new Error('보관된 이야기를 찾지 못했습니다.');
+    return exportSlotFile(record);
+  }) });
+function currentWorkForEdition() { return state.catalog.find(work => work.slug === state.activeSlug); }
+const editionButton = document.createElement('button'); editionButton.id = 'vn-title-editions'; editionButton.type = 'button'; editionButton.textContent = '덧칠 관리';
+$('vn-title-new').after(editionButton); editionButton.onclick = () => void editionDialog.show();
 const dialogueGrace = createDialogueGrace();
 let dialogueGraceTimer = 0;
 let toastTimer = 0;
@@ -267,19 +315,20 @@ $('vn-stage').append(voiceControls);
 function readVoiceChoices() { try { return JSON.parse(localStorage.getItem(`dancheong-vn-voices-v1:${state.activeSlug}`) || '{}'); } catch { return {}; } }
 function updateVoiceControls() {
   if (!$('vn-voice-toggle')) return;
-  const on = state.reading.voice === 'on';
+  const on = state.reading.voice === 'on' || state.playback === 'full';
   $('vn-voice-toggle').textContent = `AI 음성 ${on ? 'ON' : 'OFF'}`; $('vn-voice-toggle').setAttribute('aria-pressed', String(on));
   $('vn-voice-replay').hidden = !on || !state.voiceLine;
   $('vn-voice-replay').textContent = voice.phase === 'playing' || voice.phase === 'preparing' ? '음성 중지' : voice.phase === 'error' ? '음성 다시 시도' : '다시 듣기';
-  $('vn-voice-status').textContent = on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', error: '음성 생성 실패', 'needs-key': 'OpenAI API 키 필요' }[voice.phase] || '') : '';
+  $('vn-voice-status').textContent = state.playback === 'full' ? (state.fullAutoArt?.action === 'wait' ? `완전 자동 · ${state.fullAutoArt.reason}` : ({ preparing: '완전 자동 · 음성 준비 중', playing: '완전 자동 · 읽는 중', done: '완전 자동 · 다음 문장으로' }[voice.phase] || '완전 자동 · 장면 이어가기')) : on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', error: '음성 생성 실패', 'needs-key': 'OpenAI API 키 필요' }[voice.phase] || '') : '';
 }
 $('vn-voice-toggle').onclick = event => {
   event.stopPropagation();
+  if (state.playback === 'full') { stopPlayback(); return; }
   if (state.reading.voice !== 'on') { settingsTab(false); openSettings(); $('vn-voice-setting').focus(); return; }
   state.reading.voice = 'off'; voice.reset();
   localStorage.setItem(readingPrefsKey, JSON.stringify({ ...state.reading, eventScenes: state.reading.cg })); updateVoiceControls();
 };
-$('vn-voice-replay').onclick = event => { event.stopPropagation(); if (['playing', 'preparing'].includes(voice.phase)) voice.stop(); else voice.replay(state.voiceLine); };
+$('vn-voice-replay').onclick = event => { event.stopPropagation(); const line = state.voiceLine, wasPlaying = ['playing', 'preparing'].includes(voice.phase); if (state.playback === 'full') stopPlayback(); if (wasPlaying) voice.stop(); else voice.replay(line); };
 
 function toast(message) {
   $('vn-toast').textContent = message;
@@ -321,7 +370,7 @@ function applyProvider() {
   state.api?._setSettings({ apiKey: textKey(), model: providerModels[state.provider], baseUrl: apiBase, writerReasoningEffort: isGo && state.provider === 'muse' ? state.effort : 'low' });
 }
 
-const busy = () => state.api?._turns().some(turn => ['STREAMING', 'ADJUDICATION_PENDING'].includes(turn.status) || turn.imageStatus === 'GENERATING' || turn.metrics?.lifecycle?.stage === 'PERSISTING');
+const busy = () => autoRecovery.running || state.api?._isBusy?.() || state.api?._turns().some(turn => ['STREAMING', 'ADJUDICATION_PENDING'].includes(turn.status) || turn.imageStatus === 'GENERATING' || turn.metrics?.lifecycle?.stage === 'PERSISTING');
 const currentWork = () => state.catalog.find(work => work.slug === state.activeSlug);
 const currentCover = () => state.activeSlug ? `/api/work/${encodeURIComponent(state.activeSlug)}/cover` : '';
 
@@ -335,6 +384,7 @@ function slotSaveProblem() {
 function slotPresentation() {
   const page = state.pages[state.cursor];
   return capturePresentation(localStorage, { slug: state.activeSlug, storyId: state.api._scenario().runtime.storyId,
+    edition: state.api._scenario().runtime.vnEdition,
     bookmark: page ? { cursor: pageKey(page), read: pageKey(state.pages[state.readThrough]) } : null,
     met: state.met, openingArt: state.openingArt, actions: state.actions });
 }
@@ -375,7 +425,7 @@ async function applySlotPresentation(record) {
     tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || new Error('도입 장면 저장 실패'));
   }); } finally { db.close(); }
 }
-const rememberSlot = record => storeSnapshot(record.slug, record.snapshot);
+const rememberSlot = async record => { await storeSnapshot(record.slug, record.snapshot); await editionStore.put(record); };
 async function loadManualSlot(slot, revision) {
   return withSlotLock(async () => {
     // An empty library has no active work to save, but can still load a slot.
@@ -419,7 +469,9 @@ async function startNewGame() {
     stopPlayback(); voice.reset(); preparationQueue.clear();
     try {
       // Validate/download first; a network or package error leaves play intact.
-      const record = await prepareNewGame({ slug, title: currentWork()?.title, api: state.api, storage: localStorage });
+      const activeEdition = state.api._scenario()?.runtime?.vnEdition;
+      const revision = activeEdition ? { revision: activeEdition.revision, sha256: activeEdition.sha256 } : currentWork()?.currentRevision ? revisionDescriptor(currentWork()) : null;
+      const record = await prepareNewGame({ slug, title: currentWork()?.title, api: state.api, storage: localStorage, revision });
       saveReadingPosition(); await saveActiveWork();
       // Reuse the durable activation journal, never overwrite a numbered slot.
       await activateSlot({ record, store: slotStore, api: state.api, apply: applySlotPresentation, remember: rememberSlot });
@@ -478,7 +530,33 @@ async function saveActiveWork() {
   if (busy()) throw new Error('현재 장면 처리가 끝난 뒤 작품을 바꿀 수 있습니다.');
   const saved = await state.api.persist();
   if (!saved?.ok) throw new Error('현재 작품 저장에 실패했습니다. 작품 전환을 중단합니다.');
-  await storeSnapshot(state.activeSlug, await state.api._fullExport());
+  const snapshot = await state.api._fullExport();
+  await storeSnapshot(state.activeSlug, snapshot);
+  const record = makeSlot({ slot: 1, slug: state.activeSlug, title: currentWork()?.title || snapshot.scenario.title, snapshot, presentation: slotPresentation(),
+    excerpt: pageText(state.pages[state.cursor]), page: state.cursor + 1, pageCount: state.pages.length });
+  await editionStore.put(record);
+}
+
+async function switchEdition({ revision, id }) {
+  return withSlotLock(async () => {
+    const problem = slotSaveProblem(); if (problem) throw new Error(problem);
+    const slug = state.activeSlug;
+    state.slotTask = true; state.switching = true;
+    stopPlayback(); voice.reset(); preparationQueue.clear(); void requestDurableStorage();
+    try {
+      const record = id ? await editionStore.get(slug, id) : await prepareNewGame({ slug, title: currentWork()?.title, api: state.api, storage: localStorage, revision });
+      if (!record || record.slug !== slug || (id && editionId(snapshotEdition(record.snapshot), slug) !== id)) throw new Error('보관된 덧칠의 작품 정보가 일치하지 않습니다.');
+      saveReadingPosition(); await saveActiveWork();
+      await activateSlot({ record, store: slotStore, api: state.api, apply: applySlotPresentation, remember: rememberSlot });
+      invalidateMediaMemory(); applyProvider(); await loadMedia(); await loadPresentation({ fresh: !id });
+      state.openingArt = record.presentation.openingArt || ''; state.actions = false; state.customInputOpen = false; $('vn-input').value = '';
+      state.startAtFirst = !id; state.following = false; showTitle(!id);
+    } catch (error) {
+      state.slotRecoveryNeeded = Boolean(await slotStore.pending());
+      if (state.slotRecoveryNeeded) throw new Error('덧칠 진행은 보존되어 있습니다. 새로고침하면 전환을 마무리합니다.');
+      throw error;
+    } finally { state.slotTask = false; state.switching = Boolean(state.slotRecoveryNeeded); }
+  });
 }
 
 function waitUntil(check, timeout = 120000) {
@@ -492,24 +570,10 @@ function waitUntil(check, timeout = 120000) {
 }
 
 async function importPackage(slug) {
-  const response = await fetch(`/api/work/${encodeURIComponent(slug)}/download`);
-  if (!response.ok) throw new Error(`작품을 내려받지 못했습니다 (${response.status}).`);
-  const file = new File([await response.blob()], `${slug}.zip`, { type: 'application/zip' });
-  const dialog = $('nexusImportDialog');
-  const fileInput = $('nexusPackageFile');
-  const apply = $('applyNexusPackage');
-  const report = $('nexusImportReport');
-  dialog.classList.add('vn-internal-import');
-  dialog.showModal();
-  try {
-    const transfer = new DataTransfer();
-    transfer.items.add(file);
-    fileInput.files = transfer.files;
-    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-    await waitUntil(() => { if (report.classList.contains('bad')) throw new Error(report.textContent || '작품 검사 실패'); return report.classList.contains('ok') && !apply.disabled; });
-    apply.click();
-    await waitUntil(() => { if (report.classList.contains('bad')) throw new Error(report.textContent || '작품 적용 실패'); return !dialog.open; });
-  } finally { if (dialog.open) dialog.close(); dialog.classList.remove('vn-internal-import'); }
+  const work = state.catalog.find(row => row.slug === slug);
+  const revision = revisionDescriptor(work);
+  const record = await prepareNewGame({ slug, title: work.title, api: state.api, storage: localStorage, revision });
+  await withSlotLock(() => activateSlot({ record, store: slotStore, api: state.api, apply: applySlotPresentation, remember: rememberSlot }));
 }
 
 async function loadMedia() {
@@ -518,7 +582,7 @@ async function loadMedia() {
   catch { state.media = []; }
 }
 
-function sceneScope(scenario = state.api?._scenario()) { return `${state.activeSlug}:${scenario?.runtime?.storyId || 'story'}`; }
+function sceneScope(scenario = state.api?._scenario()) { return editionScope(state.activeSlug, scenario?.runtime?.storyId || 'story', scenario?.runtime?.vnEdition); }
 function captureLatest(scenario, turns, force = false) {
   const last = turns.at(-1);
   if (!last || last.status !== 'COMMITTED' || last.vnScene?.version >= sceneVersion || !state.activeSlug || (state.switching && !force)) return false;
@@ -554,7 +618,7 @@ async function openWork(slug) {
   if (slug === state.activeSlug && state.pages.length && state.api?._scenario()?.runtime?.storyId !== 'unconfigured') {
     showTitle(); return;
   }
-  if (busy() || assets.isBusy()) return toast('현재 장면이 완료된 뒤 작품을 바꿔 주세요.');
+  if (busy() || assets.isBusy() || storageProblem(state.api)) return toast('현재 장면과 저장이 완료된 뒤 작품을 바꿔 주세요.');
   const work = state.catalog.find(row => row.slug === slug);
   if (!work) return toast('목록에서 작품을 찾지 못했습니다.');
   state.switching = true;
@@ -585,7 +649,8 @@ async function openWork(slug) {
     showTitle(fresh);
   } catch (error) {
     toast(error instanceof Error ? error.message : '작품을 열지 못했습니다.');
-  } finally { state.switching = false; $('vn-library-count').textContent = `${state.catalog.length}개 공개 항목`; }
+    state.slotRecoveryNeeded = Boolean(await slotStore.pending());
+  } finally { state.switching = Boolean(state.slotRecoveryNeeded); $('vn-library-count').textContent = `${state.catalog.length}개 공개 항목`; }
 }
 
 function showScreen(screen) {
@@ -618,6 +683,8 @@ function showTitle(fresh = false) {
   $('vn-title-kicker').textContent = String(work?.runtime || 'DANCHEONG · LIGHT NOVEL');
   $('vn-title-name').textContent = work?.title || scenario?.title || '작품';
   $('vn-title-sub').textContent = String(work?.subtitle || work?.genre || scenario?.summary || '').slice(0, 160);
+  const edition = scenario?.runtime?.vnEdition, latest = work?.currentRevision;
+  editionButton.textContent = latest && (!edition || latest > edition.revision) ? `${edition ? '새 덧칠' : '덧칠 확인'} · v${latest}` : edition ? `덧칠 관리 · v${edition.revision}` : '덧칠 관리';
   const started = !fresh && (state.api?._turns().length > 0 || Boolean(state.bookmark));
   $('vn-title-start').textContent = started ? '이어하기' : '시작하기';
   $('vn-title-cast-panel').hidden = true;
@@ -807,7 +874,12 @@ function setPortraits(view, speakerId) {
     }
     // Kept as a property: data-URL keys are too large for DOM attributes.
     if (slot.vnDisplayKey === displayKey) continue;
-    slot.vnDisplayKey = displayKey;
+    slot.vnDisplayKey = displayKey; slot.vnFailedUrl = '';
+    const displayFailed = () => {
+      if (!slot.isConnected || slot.vnDisplayKey !== displayKey) return;
+      slot.vnFailedUrl = url; slot.vnReadyUrl = '';
+      toast('인물 이미지를 표시하지 못했습니다. 새로고침 후 다시 시도해 주세요.'); requestRender();
+    };
     void displaySprite(url).then(src => {
       if (!slot.isConnected || slot.vnDisplayKey !== displayKey) return;
       const incoming = document.createElement('img'); incoming.src = src; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
@@ -820,9 +892,9 @@ function setPortraits(view, speakerId) {
         setTimeout(() => previous.forEach(node => node.remove()), 260);
         requestRender();
       };
-      incoming.onerror = () => { slot.vnReadyUrl = ''; toast('인물 이미지를 표시하지 못했습니다. 이미지 없이 읽거나 다시 시도해 주세요.'); };
+      incoming.onerror = displayFailed;
       slot.append(incoming);
-    });
+    }).catch(displayFailed);
   }
 }
 
@@ -881,6 +953,7 @@ function renderActions() {
 }
 
 function resetReader() {
+  musicDirection.reset();
   voice.reset(); state.voiceLine = null;
   dialogueGrace.clear(); clearTimeout(dialogueGraceTimer); dialogueGraceTimer = 0;
   stopPlayback(); state.reveal.reset(); state.reveal.frameKey = '';
@@ -1008,11 +1081,59 @@ function voiceDelivery(page, view) {
     emphasis: Boolean(emphasis?.kind && emphasis.kind !== 'none' && emphasis.text && spoken.includes(emphasis.text)) };
 }
 function stopPlayback() {
+  const full = state.playback === 'full';
   clearTimeout(state.playbackTimer); state.playbackTimer = 0; state.playback = 'manual';
-  for (const id of ['vn-auto', 'vn-skip']) $(id)?.setAttribute('aria-pressed', 'false');
+  state.fullAutoVoice = null;
+  state.fullAutoArt = null; state.fullAutoArtWaitPage = '';
+  for (const id of ['vn-auto', 'vn-skip', 'vn-full-auto']) $(id)?.setAttribute('aria-pressed', 'false');
+  if ($('vn-full-auto')) $('vn-full-auto').textContent = '완전 자동';
+  if (full) { voice.reset(); updateVoiceControls(); }
 }
-function playbackBlocked() { return cinema.blocked || state.dialogueWaiting || state.screen !== 'stage' || state.actions || state.awaitingTurn || document.hidden || state.hideText || Boolean(document.querySelector('dialog[open]')) || !$('vn-history').hidden || root.classList.contains('vn-menu-open'); }
+function playbackBlocked(full = false) { return cinema.blocked || state.dialogueWaiting || state.screen !== 'stage' || (!full && (state.actions || state.awaitingTurn)) || document.hidden || state.hideText || Boolean(document.querySelector('dialog[open]')) || !$('vn-history').hidden || root.classList.contains('vn-menu-open'); }
+function fullPlaybackStep() {
+  // Hold the existing autoplay mode across recovery. No continuation request
+  // may bypass the save barrier or allocate a second copy of a pending beat.
+  if (state.autoRecovery?.waiting || state.judgeRecovery) return { action: 'wait' };
+  const last = state.api?._turns().at(-1), scenario = state.api?._scenario();
+  const page = state.pages[state.cursor], scene = pageScene(page), view = assets.view(scene, presentationPage(scene, page));
+  state.fullAutoArt = fullAutoVisuals(view, {
+    displayed: [...$('vn-characters').children].map(slot => ({ id: slot.dataset.characterId, url: slot.vnReadyUrl, baseKey: slot.vnBaseKey, failedUrl: slot.vnFailedUrl, hidden: slot.hidden || slot.classList.contains('is-leaving') })),
+    eventDecoded: Boolean(view?.eventBackground && state.backgroundDisplayedUrl === view.eventBackground), canPrepare: hasImageKey(),
+  });
+  if (state.fullAutoArt.action === 'wait') state.fullAutoArtWaitPage = pageKey(page);
+  const ended = storyComplete(scenario), locked = Boolean($('send')?.disabled);
+  const problem = storageProblem(state.api)?.message || (state.api?._pendingRecovery?.() ? '먼저 진행상황에서 복구를 완료해 주세요.' : '')
+    || (pendingAdjudication(state.api) && !locked && !state.awaitingTurn && !autoContinuation.running ? '판정 보완이 필요해 완전 자동을 멈췄습니다. 진행상황을 확인해 주세요.' : '')
+    || (!textKey() || !state.keys.openai ? '본문 생성과 AI 음성을 위한 API 키를 확인해 주세요.' : '')
+    || (mediaPaused(state.activeSlug, 'voice') ? '저장 공간 관리에서 음성 생성을 다시 켜 주세요.' : '');
+  return fullAutoStep({ problem, visual: state.fullAutoArt, ended, tailStatus: last?.status, hasPage: Boolean(state.pages[state.cursor]), hasNext: state.cursor < state.pages.length - 1,
+    blocked: playbackBlocked(true), revealing: Boolean(state.reveal.timer), growing: state.pages[state.cursor]?.isGrowing,
+    voicePhase: voice.phase, hasVoice: Boolean(state.voiceLine), busy: busy(), awaiting: state.awaitingTurn || autoContinuation.running,
+    engineLocked: locked && !ended, draft: Boolean($('vn-input').value.trim() || $('input')?.value.trim()) });
+}
+function stopFullAuto(reason) { stopPlayback(); if (reason) toast(reason); }
+function scheduleFullPlayback() {
+  const step = fullPlaybackStep();
+  if (step.action === 'stop') { stopFullAuto(step.reason); return; }
+  updateVoiceControls();
+  if (step.action === 'wait') { clearTimeout(state.playbackTimer); state.playbackTimer = 0; return; }
+  if (state.playbackTimer) return;
+  const current = pageKey(state.pages[state.cursor]), scope = sceneScope();
+  state.playbackTimer = setTimeout(() => {
+    state.playbackTimer = 0;
+    if (state.playback !== 'full' || sceneScope() !== scope || pageKey(state.pages[state.cursor]) !== current) return;
+    const next = fullPlaybackStep();
+    if (next.action === 'stop') stopFullAuto(next.reason);
+    else if (next.action === 'advance') nextPage(true);
+    else if (next.action === 'continue') {
+      const turnKey = `${scope}:${state.api._turns().at(-1)?.id || 'opening'}`;
+      void autoContinuation.run(turnKey, () => submit('', true, { automated: true })).catch(error => stopFullAuto(error?.message || '자동 진행을 완료하지 못했습니다.'));
+    }
+  }, Math.max(state.fullAutoArtWaitPage === current ? 1500 : 0,
+    state.voiceLine ? (step.action === 'continue' ? 1400 : 700) : readDelay(state.pages[state.cursor]?.text, state.reading.pace)));
+}
 function schedulePlayback() {
+  if (state.playback === 'full') { scheduleFullPlayback(); return; }
   if (state.playback === 'manual' || state.playbackTimer || state.reveal.timer || state.pages[state.cursor]?.isGrowing || playbackBlocked()) return;
   const mode = state.playback, current = pageKey(state.pages[state.cursor]);
   state.playbackTimer = setTimeout(() => {
@@ -1033,6 +1154,22 @@ function togglePlayback(mode) {
   if (next === 'skip' && state.cursor >= state.readThrough) return toast('여기까지 읽었습니다.');
   state.playback = next; $(next === 'auto' ? 'vn-auto' : 'vn-skip').setAttribute('aria-pressed', 'true');
   schedulePlayback();
+}
+function toggleFullPlayback() {
+  if (state.playback === 'full') { stopPlayback(); return; }
+  if (state.screen !== 'stage' || document.hidden || document.querySelector('dialog[open]')) return;
+  if (!$('vn-history').hidden || root.classList.contains('vn-menu-open')) return toast('기록이나 메뉴를 닫고 완전 자동을 켜 주세요.');
+  if (!textKey() || !state.keys.openai) { openSettings(); toast('완전 자동에는 본문 생성 키와 AI 음성용 OpenAI API 키가 필요합니다.'); return; }
+  if (autoContinuation.running || state.awaitingTurn) return toast('현재 요청이 끝난 뒤 완전 자동을 켜 주세요.');
+  if ($('vn-input').value.trim() || $('input')?.value.trim()) return toast('입력 중인 내용을 먼저 전송하거나 지워 주세요.');
+  const issue = storageProblem(state.api)?.message;
+  if (issue || mediaPaused(state.activeSlug, 'voice')) return toast(issue || '저장 공간 관리에서 음성 생성을 다시 켜 주세요.');
+  stopPlayback(); voice.reset(); voice.resume(); autoContinuation.reset();
+  state.playback = 'full'; state.actions = false; state.customInputOpen = false; state.hideText = false;
+  $('vn-stage').classList.remove('is-text-hidden'); $('vn-show-text').hidden = true;
+  $('vn-full-auto').setAttribute('aria-pressed', 'true'); $('vn-full-auto').textContent = '자동 중지';
+  toast('완전 자동 시작 · AI 음성과 장면 이어가기 · API 사용료가 발생합니다.');
+  renderPage();
 }
 function setTextHidden(hidden) {
   stopPlayback(); state.hideText = hidden;
@@ -1132,12 +1269,14 @@ function renderPage() {
   const met = recordMet(state.met, view);
   if (met !== state.met) { state.met = met; try { localStorage.setItem(state.metKey, JSON.stringify(met)); } catch { /* Kept for this tab. */ } }
   ambience.update(state.ambienceTarget);
-  score.update($('vn-stage').dataset.mood === 'dread' ? 'eerie' : $('vn-stage').dataset.mood || 'normal');
-  void workMusic.update(state.activeSlug, $('vn-stage').dataset.mood || 'normal', scenario?.runtime?.packageContract?.presentation?.music);
+  const music = musicDirection.update({ scope: sceneScope(), scene: String(scene?.world?.location || ''), pageKey: pageKey(page), index: state.cursor,
+    mood: view?.direction?.mood || $('vn-stage').dataset.mood || 'normal', music: view?.direction?.music,
+    dramatic: ['heavy_shake', 'flash_red', 'flash_white'].includes(view?.direction?.fx),
+    provisional: page.isLive || ['publishing', 'checking', 'pending'].includes(view?.castStatus) });
+  score.update(music);
+  void workMusic.update(state.activeSlug, music, scenario?.runtime?.packageContract?.presentation?.music);
   $('vn-stage').dataset.drawnShot = view?.shotKind || '';
   const voiceChoice = readVoiceChoices()[view?.speakerId] || '';
-  state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view));
-  voice.update(state.voiceLine); updateVoiceControls();
   const speakingPortrait = view?.portraits.find(person => person.id === view.speakerId);
   const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && (slot.vnReadyUrl === speakingPortrait.url || speakingPortrait.expressionReady === false && slot.vnReadyUrl && slot.vnBaseKey === speakingPortrait.baseKey)));
   // Start the deadline on the first published page, even if it is narration.
@@ -1148,6 +1287,13 @@ function renderPage() {
   clearTimeout(dialogueGraceTimer); dialogueGraceTimer = 0;
   if (state.dialogueWaiting) dialogueGraceTimer = setTimeout(() => { dialogueGraceTimer = 0; if (state.screen === 'stage') renderPage(); }, graceRemaining + 1);
   $('vn-dialogue-wait').hidden = !state.dialogueWaiting;
+  if (state.playback === 'full') {
+    const key = JSON.stringify([sceneScope(), pageKey(page), page.rawText || page.text]);
+    if (page.isGrowing || state.dialogueWaiting) state.fullAutoVoice = null;
+    else if (state.fullAutoVoice?.key !== key) state.fullAutoVoice = { key, line: readingVoiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view)) };
+    state.voiceLine = state.fullAutoVoice?.line || null;
+  } else state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view));
+  voice.update(state.voiceLine); updateVoiceControls();
   cinema.update({ pageKey: pageKey(page), turnId: page.turnId, turnIndex: page.turnIndex, title: scene?.world?.location || scenario?.event?.title, direction: view?.direction || {}, portraits: view?.portraits || [], fresh: state.cursor > state.readThrough && !page.isLive && state.playback !== 'skip', enabled: state.reading.cinema === 'on' && state.screen === 'stage', waiting: state.dialogueWaiting, eventArt: Boolean(view?.eventBackground || view?.shotKind) });
   const selectedTurn = turns[page.turnIndex];
   renderRevealedText(page, selectedTurn);
@@ -1241,6 +1387,7 @@ function sync(force = false) {
   // wait hint, without rebuilding the stage or inspecting image caches.
   updateNextBuffer();
   maybeAutoGenerate();
+  if (state.playback === 'full') schedulePlayback();
 }
 
 function nextPage(fromPlayback = false) {
@@ -1264,24 +1411,29 @@ function prevPage() {
   if (state.cursor > 0) { state.cursor -= 1; state.following = false; renderPage(); }
 }
 
-async function submit(value, auto = false) {
+async function submit(value, auto = false, { automated = false } = {}) {
   const problem = syncRecovery();
-  if (problem) return toast(problem.message);
+  if (problem) return toast(state.autoRecovery?.waiting ? '저장을 자동으로 복구하고 있습니다. 완료되면 이어서 진행할 수 있습니다.' : problem.message);
   if (busy() || state.awaitingTurn) return toast('장면이 완성된 뒤 진행해 주세요.');
   if (!textKey()) { openSettings(); return toast('본문 생성을 위한 API 키를 설정해 주세요.'); }
   const text = String(value || '').trim();
   if (!auto && !text) return toast('행동이나 대사를 입력해 주세요.');
   if (!auto) $('vn-input').value = text;
-  stopPlayback();
+  if (!automated) stopPlayback();
   state.submittedTurnId = state.pages.at(-1)?.turnId || 'opening';
-  state.awaitingTurn = true; state.generationStarted = Date.now();
+  state.awaitingTurn = true; state.submitting = true; state.generationStarted = Date.now();
   state.actions = false; state.following = false; renderPage();
   try {
     await submitEngineTurn(state.api, { input: text, auto, notice: () => engineNotice && !engineNotice.hidden ? engineNotice.textContent : '' });
     $('vn-input').value = '';
     sync(true);
-  } catch (error) { state.actions = true; toast(error?.message || '이야기를 진행하지 못했습니다.'); }
-  finally { state.awaitingTurn = false; sync(true); }
+  } catch (error) {
+    const recoverable = storageProblem(state.api) || pendingAdjudication(state.api);
+    const accepted = state.api._turns().at(-1)?.id !== state.submittedTurnId;
+    if (recoverable && accepted) $('vn-input').value = '';
+    if (!recoverable) { if (automated) stopPlayback(); state.actions = true; toast(error?.message || '이야기를 진행하지 못했습니다.'); }
+  }
+  finally { state.submitting = false; state.awaitingTurn = false; sync(true); }
 }
 
 async function retryPendingAdjudication() {
@@ -1466,6 +1618,7 @@ visualStatus.addEventListener('click', () => {
   }
 });
 $('vn-auto').addEventListener('click', () => togglePlayback('auto'));
+$('vn-full-auto').addEventListener('click', toggleFullPlayback);
 $('vn-skip').addEventListener('click', () => togglePlayback('skip'));
 $('vn-hide-text').addEventListener('click', () => setTextHidden(true));
 $('vn-show-text').addEventListener('click', () => setTextHidden(false));
@@ -1481,7 +1634,7 @@ $('vn-stage').addEventListener('click', event => {
   nextPage();
 });
 $('vn-stage').addEventListener('contextmenu', event => { if (!event.target.closest('input, textarea')) { event.preventDefault(); setTextHidden(!state.hideText); } });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPlayback(); cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.stop(); } else if (state.screen === 'stage') { ambience.update(state.ambienceTarget); score.update($('vn-stage').dataset.mood); renderPage(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPlayback(); cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.stop(); } else if (state.screen === 'stage') { ambience.update(state.ambienceTarget); renderPage(); } });
 
 setInterval(() => {
   const enabled = state.reading.actorMotion === 'masked' && !motionReduced() && state.screen === 'stage' && !document.hidden && !$('vn-settings-dialog').open;
@@ -1503,7 +1656,7 @@ $('vn-dialogue-box').addEventListener('click', event => { if (!event.target.clos
 $('vn-send').addEventListener('click', () => void submit($('vn-input').value));
 adjudicationRetry.addEventListener('click', () => void retryPendingAdjudication());
 $('vn-continue').addEventListener('click', () => void submit('', true));
-$('vn-custom-toggle').addEventListener('click', () => { state.customInputOpen = true; renderActions(); $('vn-input').focus(); });
+$('vn-custom-toggle').addEventListener('click', () => { stopPlayback(); state.customInputOpen = true; renderActions(); $('vn-input').focus(); });
 $('vn-retry-image').addEventListener('click', () => {
   if (!hasImageKey()) return openSettings();
   const page = state.pages[state.cursor], scene = pageScene(page);
@@ -1524,7 +1677,7 @@ document.addEventListener('keydown', event => {
   const shortcut = event.key.toLowerCase();
   if (['a', 's', 'h', 'l', 'f'].includes(shortcut)) {
     event.preventDefault();
-    if (shortcut === 'a') togglePlayback('auto');
+    if (shortcut === 'a') { if (event.shiftKey) toggleFullPlayback(); else togglePlayback('auto'); }
     if (shortcut === 's') togglePlayback('skip');
     if (shortcut === 'h') setTextHidden(!state.hideText);
     if (shortcut === 'l') openHistory();

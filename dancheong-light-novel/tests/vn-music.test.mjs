@@ -135,6 +135,18 @@ test("patterns: deterministic and distinct per mood; unknown falls back", () => 
 
 // --- Scheduler tests --------------------------------------------------------
 
+test('silent direction stops the score scheduler, keeps SFX available and cannot resume by a tap', () => {
+  withFakeTimers(live => {
+    const ctx = makeFakeContext(), score = createScore(() => true, { contextFactory: () => ctx });
+    score.update('normal'); assert.equal(live.size, 1);
+    score.update('silence'); assert.equal(live.size, 0);
+    void score.resume(); assert.equal(live.size, 0);
+    const before = ctx.starts.length;
+    assert.equal(score.effect('impact'), true); assert.ok(ctx.starts.length > before);
+    score.update('warm'); assert.equal(live.size, 1); score.dispose();
+  });
+});
+
 test("disabled: no context, no timers, no effects", () => {
   withFakeTimers((live) => {
     let created = 0;

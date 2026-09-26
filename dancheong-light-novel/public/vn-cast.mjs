@@ -4,6 +4,7 @@ import { outfitKinds, validateOutfit, wardrobeAnchors } from './vn-wardrobe.mjs'
 import { shotKinds, validatedShot } from './vn-shots.mjs';
 import { ruleTransitions, validatedEmphasis, validatedCutin } from './vn-cinema.mjs';
 import { labelOccurrences, identityLabel, unsafePresenceEvidence, evidenceContext } from './vn-identity.mjs';
+import { musicCues, validatedMusic } from './vn-music-direction.mjs';
 const POLICY = 'PUBLIC_PHYSICAL_CAST_TIMELINE_V8';
 const DIRECTION_POLICY = 'PUBLIC_CAST_DIRECTION_V8';
 const POLICIES = new Set([DIRECTION_POLICY]);
@@ -75,6 +76,15 @@ function uniqueIdentity(person, text, candidates) {
   const used = namesFor(person).filter(name => directIdentity({ name }, text) || vocativeIdentity({ name }, text));
   return used.some(name => !candidates.some(other => other.id !== person.id && namesFor(other).some(alias => identityLabel(alias) === identityLabel(name))));
 }
+function anotherSubject(person, evidence, candidates) {
+  const narration = String(evidence || '').replace(QUOTES, quote => ' '.repeat(quote.length)).trim();
+  // "Saber inspected the mark" cannot establish Hishiri's presence merely
+  // because a separate earlier sentence identified Hishiri. Pronoun continuity
+  // and evidence explicitly placing both people together remain valid.
+  if (directIdentity(person, narration)) return false;
+  return candidates.some(other => other.id !== person.id && namesFor(other).some(name =>
+    new RegExp(`^${escapeRe(name)}(?:은|는|이|가)(?:\\s|$)`, 'u').test(narration)));
+}
 // A narrator identification in a later beat cannot retroactively bind an
 // earlier anonymous person. Empty proof lists were established in prior turns.
 function identityAt(person, source) {
@@ -117,6 +127,7 @@ The candidate list is NOT exhaustive. A professor, clerk, passerby or any other 
 An eventAliasScope connects an anonymous public label to a consistent visual identity only within this event. Use that public label and appearance; never infer or reveal its private name, class, allegiance or relationship. If eventAliasConfirmations is supplied, each label requires one of its verbatim identification statements to have occurred at or before the current beat (an empty list means established in a prior turn). It is still NOT a presence instruction. Require present physical action and distinguish other people with similar generic descriptions; an unrelated man or quoted memory must not inherit this portrait.
 Accuracy takes priority over filling the screen. An ambiguous role, two possible antecedents, a look-alike or a contradictory identity must be omitted. Quote complete evidence rather than cropping away a negation, remote context or qualifier such as "another". Identity and presence evidence must have occurred at or before the current beat. Never use a later entrance to populate an earlier beat. For anonymous event aliases, presence evidence itself must include the supplied public label and current physical action; if only a pronoun is available, include its preceding same-person antecedent in the verbatim quotation. OnStage entries require identityStatus "confirmed" and presence "physical"; use "uncertain" when the evidence does not establish those facts. Such entries will be withheld by the runtime.
 Each onStage entry must use a supplied candidate handle and an exact verbatim evidence quote from current/previous published text supporting physical co-presence AT THAT BEAT. The speaker must be the handle of a physically present person speaking the beat's quotation, and must also be in onStage. For narration, quoted memory, a remote/unknown speaker or the protagonist, use speaker "". Empty onStage is valid.
+During continuing dialogue, reuse the last valid NARRATION evidence of the person's physical presence. A quotation alone is NOT presence evidence: never put only the spoken line in onStage.evidence. Keep the established on-stage people through their dialogue and ordinary reactions until there is evidence of departure or a scene change. Copy evidence exactly, including the subject particles; do not rewrite a shorter alias into a full name.
 Each onStage entry also needs identityEvidence: an exact published quote containing that candidate's supplied name/alias/role and establishing who is here. Mere mentions, possessions, memories or an old absence are not identity/presence evidence. Use a sufficiently complete quotation to connect any pronoun to its antecedent. For a quoted beat, provide speakerLabel (the public name or role actually established by the text) and speakerEvidence (an exact narration quote establishing that speaker). For an unlisted professor use speaker "", speakerLabel "교수", and evidence identifying the professor; do not invent a named identity. For narration or an unidentified voice use empty label/evidence. Never let a writer's earlier annotation override the actual prose.
 A name used in direct address inside the dialogue ("나디아, 여기야") identifies the person being addressed. When "anchors" is supplied, each entry is the last earlier published sentence naming a candidate whose name is no longer in "previous"; quote it verbatim as identityEvidence to carry a continuing pronoun ("그녀") to that person, but presence at the beat still needs its own evidence.
 Also direct the camera for each beat, conservatively, like a visual-novel director:
@@ -132,19 +143,20 @@ Also direct the camera for each beat, conservatively, like a visual-novel direct
 - transition: "none" for almost every beat. Use "fade" or "wipe" only where the text clearly skips time or place, "blur" for waking/fainting/entering a memory, "flash" for a sudden realization. Alternatively use "diagonal" (decisive scene cut), "circle" (attention closes/opens), "blinds" (time skip), or "ink" (ominous transition) for a shaped mask transition at those same actual scene changes.
 - fx: "none" unless the published text shows a physical impact, blast, gunshot, blow or injury ("shake", "heavy_shake", "flash_white", "flash_red").
 - mood: the emotional colour of the beat (${directionOptions.mood.join('|')}); "memory" only while the text is inside a recollection; "dread" only for explicit present mortal terror or murderous intent deserving a red monochrome treatment, never for ordinary tension.
+- music: {"cue":"${musicCues.join('|')}","evidence":""}. This is the soundtrack for a sustained dramatic passage, INDEPENDENT of the visual mood above. Use keep on almost every beat, including a neutral reply inside a sad scene. Never alternate normal/sad or restart music per sentence or speaker. Not every scene needs music: use silence at an ordinary unscored scene opening, a deliberate suspenseful pause, aftermath, or a revelation whose impact is stronger with only environmental sound. Keep that silence until a meaningful musical entrance is earned. Choose a named mood only at a major sustained dramatic shift or actual scene opening where music helps; a sad word, brief smile, question or change of speaker is insufficient. Any cue other than keep requires an EXACT supporting substring of this beat, at least 6 characters, in evidence. Never insert soundtrack instructions into the story or change the prose. Use keep with empty evidence when uncertain.
 - cg: true for at most ONE visually significant event in this paragraph whose action or changed physical state cannot be shown by a location plate and standing sprites. This is not limited to a story climax: an animated bundle of paper striking a doorframe, a door bursting open, a creature emerging, a collision, a decisive action or an important object reveal deserves an event image. The objects and their interaction are the subject; a named human participant is NOT required. Do NOT turn ordinary conversation, glances, small gestures, walking, routine door opening, emotional wording or a scene description into an event image. Do NOT illustrate an event merely quoted, recalled, predicted, imagined, negated or metaphorical. If previous context already shows the same event and the paragraph only reacts to or restates it, use false.
 - eventEvidence: when cg is true, an exact verbatim quote from THIS beat's present-tense-scene narration showing the visible event (past-tense narrative prose is valid); never quote a later beat, memory, dialogue or context alone. Otherwise "".
 - eventFocus: when cg is true, a brief factual visual description of the acting subject, action, target and resulting state from that evidence. Keep nonhuman attackers and props as described (for example the elongated paper bundle hitting the doorframe, not a girl holding papers). Do not invent a face or turn a prop into a registered character. Otherwise "".
 - eventParticipants: list EVERY human whose face or body must be drawn in the event, using only onStage candidate handles. Do not include observers whose bodies are unnecessary. Use [] only for a strictly nonhuman object/creature/environment insert with NO human bodies, faces, silhouettes or hands.
 - eventCastComplete: true only if every visible human in the event maps unambiguously to an onStage candidate in eventParticipants. A first meeting with an unidentified girl, an unlisted person, an uncertain identity, or a visible protagonist is incomplete: use false AND cg false. Never turn an unknown person into an object-only event or invent their appearance. A purely nonhuman insert uses true. Runtime separately requires a generated portrait reference for each participant before drawing any event. Ordinary first meetings should use the location and character sprites, not event art.
-Return ONLY JSON with this shape: {"beats":[{"beat":"P0","speaker":"C0","speakerLabel":"public name or role","speakerEvidence":"exact narration","onStage":[{"candidate":"C0","evidence":"exact text","identityEvidence":"exact named identity evidence","identityStatus":"confirmed","presence":"physical"}],"expressions":[{"candidate":"C0","expression":"neutral","evidence":""}],"wardrobe":[{"candidate":"C0","kind":"default","detail":"","evidence":""}],"focus":"C0","shot":"medium","artShot":"none","shotEvidence":"","cutin":"none","emphasis":{"kind":"none","text":""},"transition":"none","fx":"none","mood":"normal","cg":false,"eventEvidence":"","eventFocus":"","eventParticipants":[],"eventCastComplete":false}]}. Use the actual supplied beat/candidate handles; include all beats.`,
+Return ONLY JSON with this shape: {"beats":[{"beat":"P0","speaker":"C0","speakerLabel":"public name or role","speakerEvidence":"exact narration","onStage":[{"candidate":"C0","evidence":"exact text","identityEvidence":"exact named identity evidence","identityStatus":"confirmed","presence":"physical"}],"expressions":[{"candidate":"C0","expression":"neutral","evidence":""}],"wardrobe":[{"candidate":"C0","kind":"default","detail":"","evidence":""}],"focus":"C0","shot":"medium","artShot":"none","shotEvidence":"","cutin":"none","emphasis":{"kind":"none","text":""},"transition":"none","fx":"none","mood":"normal","music":{"cue":"keep","evidence":""},"cg":false,"eventEvidence":"","eventFocus":"","eventParticipants":[],"eventCastComplete":false}]}. Use the actual supplied beat/candidate handles; include all beats.`,
     input: JSON.stringify({ current: bodyFor(scene), previous: previousFor(scene), ...(identityAnchors(scene).length ? { anchors: identityAnchors(scene) } : {}),
       ...(wardrobeAnchors(scene).length ? { wardrobeHistory: wardrobeAnchors(scene) } : {}),
       beats: pagesFor(scene).map(page => ({ beat: `P${page.start}`, text: page.rawText || page.text })),
       references: candidatesFor(scene).map((person, index) => ({ candidate: `C${index}`, ...publicIdentity(person) })) }),
     text: { format: { type: 'json_schema', name: 'physical_cast_timeline', strict: true, schema: {
       type: 'object', additionalProperties: false, required: ['beats'], properties: { beats: {
-        type: 'array', items: { type: 'object', additionalProperties: false, required: ['beat', 'speaker', 'speakerLabel', 'speakerEvidence', 'onStage', 'expressions', 'wardrobe', 'focus', 'shot', 'artShot', 'shotEvidence', 'cutin', 'emphasis', 'transition', 'fx', 'mood', 'cg', 'eventEvidence', 'eventFocus', 'eventParticipants', 'eventCastComplete'], properties: {
+        type: 'array', items: { type: 'object', additionalProperties: false, required: ['beat', 'speaker', 'speakerLabel', 'speakerEvidence', 'onStage', 'expressions', 'wardrobe', 'focus', 'shot', 'artShot', 'shotEvidence', 'cutin', 'emphasis', 'transition', 'fx', 'mood', 'music', 'cg', 'eventEvidence', 'eventFocus', 'eventParticipants', 'eventCastComplete'], properties: {
           beat: { type: 'string' }, speaker: { type: 'string' }, speakerLabel: { type: 'string' }, speakerEvidence: { type: 'string' }, onStage: { type: 'array', items: {
             type: 'object', additionalProperties: false, required: ['candidate', 'evidence', 'identityEvidence', 'identityStatus', 'presence'],
             properties: { candidate: { type: 'string' }, evidence: { type: 'string' }, identityEvidence: { type: 'string' }, identityStatus: { type: 'string', enum: ['confirmed', 'uncertain'] }, presence: { type: 'string', enum: ['physical', 'remote', 'mentioned', 'uncertain'] } },
@@ -161,6 +173,7 @@ Return ONLY JSON with this shape: {"beats":[{"beat":"P0","speaker":"C0","speaker
           transition: { type: 'string', enum: directionOptions.transition },
           fx: { type: 'string', enum: directionOptions.fx },
           mood: { type: 'string', enum: directionOptions.mood },
+          music: { type: 'object', additionalProperties: false, required: ['cue', 'evidence'], properties: { cue: { type: 'string', enum: musicCues }, evidence: { type: 'string' } } },
           cg: { type: 'boolean' },
           eventEvidence: { type: 'string' }, eventFocus: { type: 'string' },
           eventParticipants: { type: 'array', items: { type: 'string' } }, eventCastComplete: { type: 'boolean' },
@@ -180,10 +193,10 @@ export function validateCast(scene, decision) {
   // co-presence or who is speaking now after that person has left the scene.
   const source = [bodyFor(scene), previousFor(scene)].join('\n');
   const sources = beatSources(scene), anchors = identityAnchors(scene).map(row => row.text);
-  let heldExpressions = {}, heldWardrobe = {};
+  let heldExpressions = {}, heldWardrobe = {}, previousPresence = new Map();
   return decision.beats.map((beat, index) => {
     if (beat?.beat !== `P${pages[index].start}` || !Array.isArray(beat.onStage) || typeof beat.speaker !== 'string') throw new Error('인물 배치의 문장 위치를 확인하지 못했습니다.');
-    const selected = new Set(), declared = new Set(), eligible = new Map();
+    const selected = new Set(), declared = new Set(), eligible = new Map(), presence = new Map(), continued = new Set();
     const beatSource = sources[index], identitySource = [beatSource, ...anchors].join('\n');
     for (const row of beat.onStage) {
       const at = /^C(0|[1-9]\d*)$/u.test(row?.candidate || '') ? Number(row.candidate.slice(1)) : -1;
@@ -191,11 +204,22 @@ export function validateCast(scene, decision) {
       declared.add(at);
       const person = identityAt(candidates[at], beatSource);
       if (!person) continue;
-      const presenceContext = evidenceContext(beatSource, row.evidence);
-      if (!beatSource.includes(row.evidence) || unsafePresenceEvidence(row.evidence) || unsafePresenceEvidence(presenceContext)
+      let proof = row.evidence;
+      // Some cached director responses use only the utterance as presence proof.
+      // Preserve an immediately preceding VERIFIED on-stage person through that
+      // utterance; never introduce someone from a quote or an old identity anchor.
+      const quotedPage = pages[index].quoted || pages[index].kind === 'dialogue' || /^[“「『"]/u.test(String(pages[index].rawText || pages[index].text).trim());
+      if (quotedPage && !proof.replace(QUOTES, '').trim() && String(pages[index].rawText || pages[index].text).includes(proof)
+        && previousPresence.has(at) && row.identityStatus === 'confirmed' && row.presence === 'physical') {
+        proof = previousPresence.get(at); continued.add(at);
+      }
+      const presenceContext = evidenceContext(beatSource, proof);
+      if (!beatSource.includes(proof) || unsafePresenceEvidence(proof) || unsafePresenceEvidence(presenceContext)
+        || anotherSubject(person, presenceContext, candidates)
         || row.identityStatus && row.identityStatus !== 'confirmed' || row.presence && row.presence !== 'physical'
-        || person.eventAliasScope && (row.identityStatus !== 'confirmed' || row.presence !== 'physical' || !identifies(person, row.evidence) || !identifies(person, presenceContext))) continue;
+        || person.eventAliasScope && (row.identityStatus !== 'confirmed' || row.presence !== 'physical' || !identifies(person, proof) || !identifies(person, presenceContext))) continue;
       eligible.set(at, person);
+      presence.set(at, proof);
       const identity = row.identityEvidence ?? row.evidence;
       // A verbatim sentence about "the professor" alone proves nothing about
       // a named grandmother. Reject the unrelated portrait, not the reading.
@@ -211,7 +235,12 @@ export function validateCast(scene, decision) {
     // A public role incompatible with the selected identity cannot borrow its
     // sprite. Keep a grounded role label for an unregistered speaker instead.
     if (labelGrounded && selected.has(speaker) && !labelMatches(eligible.get(speaker), label)) selected.delete(speaker);
-    const speakerId = selected.has(speaker) ? candidates[speaker].id : '';
+    // Reusing a verified sprite is not permission to guess the speaking voice.
+    // A repaired quote-only row still needs exact, compatible speaker narration.
+    const continuedSpeaker = !continued.has(speaker) || evidence && beatSource.includes(evidence)
+      && (!label || labelMatches(candidates[speaker], label)) && uniqueIdentity(candidates[speaker], evidence, candidates);
+    const speakerId = selected.has(speaker) && continuedSpeaker ? candidates[speaker].id : '';
+    previousPresence = new Map([...selected].map(at => [at, presence.get(at)]));
     // Label and sprite follow one rule: a candidate's name is shown only when
     // that candidate is verified on stage; generic roles ("교수") stay labels.
     const namesCandidate = labelGrounded && candidates.some(person => labelMatches(person, label));
@@ -236,7 +265,7 @@ const handleIndex = value => /^C(0|[1-9]\d*)$/u.test(String(value || '')) ? Numb
 // Direction is advisory. Malformed values never invalidate the verified cast;
 // they only drop back to the conservative text rules.
 export function directionFor(beat, candidates, selected, expressionSource = '', eventSource = '') {
-  if (!beat || !('shot' in beat || 'expressions' in beat || 'mood' in beat)) return null;
+  if (!beat || !('shot' in beat || 'expressions' in beat || 'mood' in beat || 'music' in beat)) return null;
   const pick = (name, value) => directionOptions[name].includes(value) ? value : directionOptions[name][0];
   const expressions = {};
   for (const row of Array.isArray(beat.expressions) ? beat.expressions : []) {
@@ -256,7 +285,7 @@ export function directionFor(beat, candidates, selected, expressionSource = '', 
   const castComplete = beat.eventCastComplete === true && participants !== null && participants.every(at => selected.has(at) && candidates[at]?.id);
   const event = grounded ? { evidence, focus: eventFocus, castComplete, characterIds: [...new Set((participants || []).filter(at => selected.has(at) && candidates[at]?.id).map(at => candidates[at].id))] } : null;
   const focusId = selected.has(focus) ? candidates[focus].id : '';
-  return { expressions, focusId, ...('emphasis' in beat ? { emphasis: validatedEmphasis(beat.emphasis, eventSource) } : {}), ...('cutin' in beat ? { cutin: validatedCutin(beat, focusId, narration) } : {}), ...('artShot' in beat ? { artShot: validatedShot(beat, focusId, narration) } : {}), shot: pick('shot', beat.shot), transition: pick('transition', beat.transition),
+  return { expressions, focusId, ...('music' in beat ? { music: validatedMusic(beat.music, eventSource) } : {}), ...('emphasis' in beat ? { emphasis: validatedEmphasis(beat.emphasis, eventSource) } : {}), ...('cutin' in beat ? { cutin: validatedCutin(beat, focusId, narration) } : {}), ...('artShot' in beat ? { artShot: validatedShot(beat, focusId, narration) } : {}), shot: pick('shot', beat.shot), transition: pick('transition', beat.transition),
     fx: pick('fx', beat.fx), mood: pick('mood', beat.mood), cg: beat.cg === true && grounded && castComplete, ...('eventEvidence' in beat ? { event } : {}) };
 }
 export function createCastDirector({ getConnection, read, write, onChange = () => {}, onError = () => {}, fetchDecision = fetch }) {

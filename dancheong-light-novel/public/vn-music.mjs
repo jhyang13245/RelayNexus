@@ -317,6 +317,15 @@ export function createScore(getEnabled, { getVolume = () => 0.22, contextFactory
       currentMood = null;
       return;
     }
+    if (mood === 'silence') {
+      clearTimer(); pattern = null;
+      // Fade the music bus only. Environmental sound, voice and event SFX remain independent.
+      if (currentMood !== 'silence' && musicGain?.gain && ctx) {
+        if (musicGain.gain.setTargetAtTime) musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, .6);
+        else musicGain.gain.value = 0.0001;
+      }
+      currentMood = 'silence'; return;
+    }
     const name = MOODS.includes(mood) ? mood : "normal";
     if (name === currentMood && timer !== null) return; // no duplicate looping
     currentMood = name;

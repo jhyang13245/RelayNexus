@@ -42,7 +42,7 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
       const bytes = await (await fetch(url)).arrayBuffer();
       const buffer = await ensure().decodeAudioData(bytes);
       const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) => buffer.getChannelData(c));
-      const key = url.length > 256 ? `${url.length}:${url.slice(-128)}` : url;
+      const key = url;
       if (!analysisCache.has(key)) analysisCache.set(key, analyzeVoice(channels, buffer.sampleRate));
       while (analysisCache.size > 64) analysisCache.delete(analysisCache.keys().next().value);
       return { buffer, analysis: analysisCache.get(key) };
@@ -52,7 +52,7 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
     task.catch(() => decoded.delete(url));
     return task;
   }
-  return function makeAudio(url) {
+  function makeAudio(url) {
     let source = null, nodes = [], stopped = false, html = null;
     const instance = {
       onended: null, onerror: null,
@@ -67,6 +67,9 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
           return html.play();
         }
         const ctx = ensure(), room = roomFor(getRoom());
+        if (ctx.state === 'suspended') await ctx.resume();
+        if (stopped) return;
+        if (ctx.state === 'suspended') throw new Error('voice-playback-blocked');
         source = ctx.createBufferSource(); source.buffer = item.buffer;
         const highpass = ctx.createBiquadFilter(); highpass.type = 'highpass'; highpass.frequency.value = 85;
         const presence = ctx.createBiquadFilter(); presence.type = 'peaking'; presence.frequency.value = 3200; presence.Q.value = 0.9; presence.gain.value = 2;
@@ -88,5 +91,8 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
     };
     function cleanup() { for (const node of nodes) { try { node.disconnect(); } catch { /* detached */ } } nodes = []; source = null; }
     return instance;
-  };
+  }
+  // Called synchronously from the reader's gesture, before the paid fetch.
+  makeAudio.resume = () => { try { ensure(); } catch { /* HTML audio fallback remains available. */ } };
+  return makeAudio;
 }

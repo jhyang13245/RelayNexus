@@ -6,11 +6,18 @@ async function bitmap(url) {
   if (!response.ok) throw new Error('Image unavailable');
   return createImageBitmap(await response.blob());
 }
-async function render({ kind, url, frameUrl = url }) {
+async function render({ kind, url, frameUrl = url, quality = .94 }) {
   let source, drawable;
   try {
     source = await bitmap(frameUrl); drawable = frameUrl === url ? source : await bitmap(url);
     const { width, height } = source;
+    if (kind === 'storage-webp') {
+      if (width * height > 16_000_000) return null;
+      const canvas = new OffscreenCanvas(width, height);
+      canvas.getContext('2d').drawImage(source, 0, 0);
+      const blob = await canvas.convertToBlob({ type: 'image/webp', quality });
+      return blob.type === 'image/webp' ? new FileReaderSync().readAsDataURL(blob) : null;
+    }
     if (drawable.width !== width || drawable.height !== height) return frameUrl;
     const scan = new OffscreenCanvas(width, height), ctx = scan.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(source, 0, 0);

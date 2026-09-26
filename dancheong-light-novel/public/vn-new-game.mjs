@@ -1,16 +1,15 @@
 import { capturePresentation, makeSlot } from './vn-saves.mjs';
+import { verifiedPackage, stampEdition } from './vn-editions.mjs';
 
 // Prepare the package's initial canonical state without changing the live game.
 // The activation journal shares the save loader's format, but this record is
 // never put in a numbered slot. All ten user slots remain untouched.
-export async function prepareNewGame({ slug, title, api, storage, fetchPackage = fetch }) {
+export async function prepareNewGame({ slug, title, api, storage, fetchPackage = fetch, revision = null }) {
   if (!slug) throw new Error('새로 시작할 작품을 선택해 주세요.');
-  const response = await fetchPackage(`/api/work/${encodeURIComponent(slug)}/download`);
-  if (!response.ok) throw new Error(`작품을 내려받지 못했습니다 (${response.status}). 현재 진행은 유지됩니다.`);
-  const file = new File([await response.blob()], `${slug}.zip`, { type: 'application/zip' });
-  const candidate = await api.inspectNexusPackage(file);
+  const file = await verifiedPackage(slug, revision, fetchPackage);
+  const candidate = stampEdition(await api.inspectNexusPackage(file), slug, revision);
   const scenario = candidate.scenario, storyId = scenario?.runtime?.storyId;
-  const presentation = capturePresentation(storage, { slug, storyId, met: [], openingArt: '', actions: false });
+  const presentation = capturePresentation(storage, { slug, storyId, edition: scenario.runtime.vnEdition, met: [], openingArt: '', actions: false });
   presentation.values[0] = null;
   return makeSlot({ slot: 1, slug, title: title || candidate.report?.title,
     snapshot: { scenario, canonicalSession: candidate.canonicalSession, turns: [], undoLedger: [], recoveryJournal: [], pendingRecovery: null,

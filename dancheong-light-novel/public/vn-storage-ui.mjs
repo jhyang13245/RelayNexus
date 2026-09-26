@@ -8,7 +8,7 @@ export function storageDescription(info) {
     : !info.supported ? '브라우저 자동 정리 방지: 지원되지 않음' : '브라우저 자동 정리 방지: 승인되지 않음';
   return `${usage}\n${protection}. 브라우저 데이터 직접 삭제·기기 분실에는 파일 백업이 필요합니다.`;
 }
-export function createStoragePanel({ parent, works, slots, clear, resume, openSaves }) {
+export function createStoragePanel({ parent, works, slots, clear, resume, optimize, openSaves }) {
   const panel = document.createElement('section'); panel.className = 'vn-storage-panel';
   panel.innerHTML = '<h2>저장 공간 관리</h2><div class="vn-storage-overview"><p></p><progress max="100" hidden aria-label="사이트 저장 공간 사용률"></progress></div><div class="vn-storage-actions"><button type="button" data-protect>자동 정리 방지 요청</button><button type="button" data-refresh>새로고침</button><button type="button" data-backup>슬롯 파일 백업</button></div><p class="vn-storage-status" role="status" aria-live="polite"></p><p>이미지·음성 캐시만 작품별로 정리합니다. 이어하기, 10개 저장 슬롯, 작품 패키지와 비용 기록은 유지됩니다. 파일에서 가져온 슬롯에 포함된 미디어 복사본도 유지되므로 실제로 확보되는 용량은 다를 수 있습니다.</p><div class="vn-storage-works"></div><section class="vn-storage-confirm" hidden aria-label="캐시 정리 확인"><p></p><div><button type="button" data-cancel>취소</button><button type="button" data-confirm>캐시 삭제</button></div></section>';
   parent.append(panel);
@@ -36,6 +36,14 @@ export function createStoragePanel({ parent, works, slots, clear, resume, openSa
           const group = row?.[kind] || { count: 0, bytes: 0 }, label = kind === 'image' ? '이미지' : 'AI 음성';
           const text = document.createElement('p'); text.textContent = `${label} ${group.count}개 · ${formatBytes(group.bytes)}${mediaPaused(slug, kind) ? ' · 자동 생성 일시 중지' : ''}`;
           const actions = document.createElement('div');
+          if (kind === 'image' && group.count && optimize) actions.append(button('이미지 WebP 최적화', async () => {
+            if (working) return; setBusy(true);
+            try {
+              const result = await optimize(slug, ({ done, total }) => { status.textContent = `이미지 최적화 중 · ${done}/${total}`; });
+              status.textContent = `${result.changed}개 이미지를 WebP로 저장 · 약 ${formatBytes(result.savedBytes)} 절약. ${result.failed ? `${result.failed}개는 변환하지 못해 원본을 유지했습니다.` : '크기가 줄어든 이미지만 적용했습니다.'} 이미지 재생성 비용은 없습니다.`;
+            } catch (error) { status.textContent = error.message; }
+            finally { setBusy(false); await refresh(); }
+          }));
           const remove = button(`${label} 캐시 정리`, () => {
             if (working) return; intent = { slug, kind }; confirmation.hidden = false;
             confirmation.querySelector('p').textContent = `「${title}」의 ${label} 캐시 ${group.count}개를 삭제할까요? 파일 백업이 없다면 이 캐시는 복구할 수 없습니다. 삭제 후 ${label} 자동 생성을 멈춥니다. 재개하면 필요한 미디어를 다시 생성하며 API 비용이 발생할 수 있습니다.`;
