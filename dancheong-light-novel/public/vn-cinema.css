@@ -29,7 +29,7 @@
 #vn-stage.is-crimson .vn-scene-visual{filter:grayscale(1) sepia(1) saturate(5) hue-rotate(-50deg) brightness(.62) contrast(1.08);}
 #vn-stage.is-crimson .vn-scene-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(#5d0a0e59,#2a050733);}
 /* Opt-in breathing: vertical scale only, feet stay planted. */
-#vn-stage[data-cinema-motion="on"] .vn-character.is-present img.is-visible{transform-origin:50% 100%;animation:vn-cinema-breathe 4.6s ease-in-out infinite;}
+#vn-stage[data-cinema-motion="on"] .vn-character.is-present img.is-visible{transform-origin:50% 100%;animation:vn-cinema-breathe 4.6s ease-in-out infinite;animation-delay:var(--breath-delay,0s);}
 @keyframes vn-cinema-breathe{0%,100%{transform:translateX(-50%) scaleY(1);}50%{transform:translateX(-50%) scaleY(1.006);}}
 /* Small portrait phones: keep the quote and card clear of bottom controls. */
 @media (max-width:760px) and (orientation:portrait){

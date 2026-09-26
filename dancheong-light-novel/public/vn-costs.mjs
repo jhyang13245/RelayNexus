@@ -79,11 +79,11 @@ export function installCostMeter({ context, onChange }) {
   globalThis.fetch = async (input, init) => {
     let url;
     try { url = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url, location.origin); } catch { return nativeFetch(input, init); }
-    if (url.origin !== location.origin || !['/api/voice', '/api/image', '/api/gemini/image', '/api/gemini/music', '/api/openai/responses', '/api/go/responses'].includes(url.pathname)) return nativeFetch(input, init);
+    if (url.origin !== location.origin || !['/api/voice', '/api/image', '/api/gemini/image', '/api/gemini/music', '/api/gemini/voice', '/api/openai/responses', '/api/go/responses'].includes(url.pathname)) return nativeFetch(input, init);
     let body = {};
     try { if (typeof init?.body === 'string') body = JSON.parse(init.body); } catch { /* Request validation belongs to the API. */ }
     const image = url.pathname === '/api/image' || url.pathname === '/api/gemini/image';
-    if (image || url.pathname === '/api/voice' || url.pathname === '/api/gemini/music') void requestDurableStorage();
+    if (image || ['/api/voice', '/api/gemini/voice', '/api/gemini/music'].includes(url.pathname)) void requestDurableStorage();
     const headers = init?.headers ?? (typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined);
     const row = { id: crypto.randomUUID(), at: Date.now(), ...context(), provider: url.pathname.startsWith('/api/go/') ? 'go' : url.pathname.startsWith('/api/gemini/') ? 'gemini' : 'openai', category: resolveCostCategory({ image, purpose: body.purpose, headers }), model: typeof body.model === 'string' ? body.model : '', state: 'pending', usage: null, priceDate: pricingDate };
     void save(row);
@@ -115,7 +115,7 @@ export function installCostMeter({ context, onChange }) {
       const total = sumCosts(rows), work = sumCosts(rows.filter(row => row.slug === slug));
       element.innerHTML = `<div class="vn-cost-summary"><div><small>누적 API 예상 비용</small><strong>${money(total.usd)}</strong><span>${total.calls.toLocaleString()}회 호출 · 이 기기에서 집계</span></div><div><small>현재 작품</small><strong>${money(work.usd)}</strong><span>${work.calls.toLocaleString()}회 호출</span></div></div><p class="vn-cost-note">API가 반환한 사용량으로 계산한 USD 추정치입니다. 이전 기록은 작품을 열 때 저장된 사용량이 있는 호출만 합산합니다. 기록 없는 이용분·다른 기기·세금·환율·구독료는 제외됩니다. 실제 청구액은 제공사에서 확인하세요.</p><div class="vn-cost-breakdown"></div><p class="vn-cost-note">사용량 미확인 ${total.unknown}회 · OpenCode Go ${total.subscription}회 (구독 사용, 호출별 금액 미산정)<br>입력 ${total.input.toLocaleString()} / 출력 ${total.output.toLocaleString()} 토큰</p><h3>최근 호출</h3><div class="vn-cost-table"><table><thead><tr><th>시간 / 작품</th><th>용도 / 모델</th><th>예상 비용</th></tr></thead><tbody></tbody></table></div><p class="vn-cost-note">요금 기준 ${pricingDate} · 캐시 토큰 반영. 이미지 캐시 세부 사용량이 없으면 할인 전 상한으로 표시합니다.<br><a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener noreferrer">OpenAI 요금표 ↗</a> · <a href="https://platform.openai.com/usage" target="_blank" rel="noopener noreferrer">OpenAI 실제 사용량 ↗</a><br><a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">Gemini 요금표 ↗</a> · <a href="https://aistudio.google.com/usage" target="_blank" rel="noopener noreferrer">Gemini 실제 사용량 ↗</a></p>`;
       const breakdown = element.querySelector('.vn-cost-breakdown');
-      for (const [provider, label] of [['openai', 'OpenAI'], ['gemini', 'Nano Banana 2']]) {
+      for (const [provider, label] of [['openai', 'OpenAI'], ['gemini', 'Google Gemini']]) {
         const subtotal = sumCosts(rows.filter(row => row.provider === provider));
         const span = document.createElement('span'); span.textContent = `${label} ${money(subtotal.usd)} · ${subtotal.calls}회`; breakdown.append(span);
       }

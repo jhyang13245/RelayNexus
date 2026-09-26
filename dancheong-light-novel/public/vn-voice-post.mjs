@@ -32,8 +32,11 @@ function impulse(context, { seconds, damp }) {
   return buffer;
 }
 
-export function createVoicePlayer({ getRoom = () => ({}), createContext = () => new AudioContext(), fallback = url => new Audio(url) } = {}) {
-  let context;
+// getVolume(speakerId): 0..1 per-character and master voice volume.
+// makeAudio.level() is the playing line's short-term level (0..1, null when
+// unknown, e.g. the <audio> fallback); it drives mouth movement on the stage.
+export function createVoicePlayer({ getRoom = () => ({}), getVolume = () => 1, createContext = () => new AudioContext(), fallback = url => new Audio(url) } = {}) {
+  let context, meter = null;
   const decoded = new Map();
   const ensure = () => { context ||= createContext(); if (context.state === 'suspended') void context.resume().catch(() => {}); return context; };
   async function load(url) {
@@ -52,8 +55,9 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
     task.catch(() => decoded.delete(url));
     return task;
   }
-  function makeAudio(url) {
+  function makeAudio(url, { speakerId = '' } = {}) {
     let source = null, nodes = [], stopped = false, html = null;
+    const volume = () => Math.max(0, Math.min(1, Number(getVolume(speakerId)) || 0));
     const instance = {
       onended: null, onerror: null,
       async play() {
@@ -63,7 +67,8 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
         if (stopped) return;
         if (!item) {
           // Undecodable in this browser: play the original file as before.
-          html = fallback(url); html.onended = () => instance.onended?.(); html.onerror = () => instance.onerror?.();
+          html = fallback(url); html.volume = volume(); html.onended = () => { meter = null; instance.onended?.(); }; html.onerror = () => instance.onerror?.();
+          meter = { speakerId, analyser: null };
           return html.play();
         }
         const ctx = ensure(), room = roomFor(getRoom());
@@ -75,24 +80,39 @@ export function createVoicePlayer({ getRoom = () => ({}), createContext = () => 
         const presence = ctx.createBiquadFilter(); presence.type = 'peaking'; presence.frequency.value = 3200; presence.Q.value = 0.9; presence.gain.value = 2;
         const level = ctx.createGain(); level.gain.value = item.analysis.gain;
         const dry = ctx.createGain(); dry.gain.value = 1;
+        const out = ctx.createGain(); out.gain.value = volume();
+        const analyser = typeof ctx.createAnalyser === 'function' ? ctx.createAnalyser() : null;
+        if (analyser) { analyser.fftSize = 512; analyser.smoothingTimeConstant = 0.35; }
         const wet = ctx.createGain(); wet.gain.value = room.wet;
         const reverb = ctx.createConvolver(); reverb.buffer = impulse(ctx, room);
         source.connect(highpass); highpass.connect(presence); presence.connect(level);
-        level.connect(dry); dry.connect(ctx.destination);
-        level.connect(reverb); reverb.connect(wet); wet.connect(ctx.destination);
-        nodes = [source, highpass, presence, level, dry, wet, reverb];
+        if (analyser) level.connect(analyser);
+        level.connect(dry); dry.connect(out);
+        level.connect(reverb); reverb.connect(wet); wet.connect(out); out.connect(ctx.destination);
+        nodes = [source, highpass, presence, level, dry, wet, reverb, out, analyser].filter(Boolean);
+        meter = { speakerId, analyser, data: analyser ? new Float32Array(analyser.fftSize) : null };
         source.onended = () => { const done = !stopped; cleanup(); if (done) instance.onended?.(); };
         const duration = Math.max(0.05, item.analysis.end - item.analysis.start);
         source.start(0, item.analysis.start, duration);
       },
-      pause() { stopped = true; if (html) { html.pause(); return; } try { source?.stop(); } catch { /* not started */ } cleanup(); },
+      pause() { stopped = true; if (html) { html.pause(); if (meter?.speakerId === speakerId) meter = null; return; } try { source?.stop(); } catch { /* not started */ } cleanup(); },
       set currentTime(value) { if (html) html.currentTime = value; },
       get currentTime() { return html ? html.currentTime : 0; },
     };
-    function cleanup() { for (const node of nodes) { try { node.disconnect(); } catch { /* detached */ } } nodes = []; source = null; }
+    function cleanup() { if (meter && (meter.analyser ? nodes.includes(meter.analyser) : meter.speakerId === speakerId && !html)) meter = null; for (const node of nodes) { try { node.disconnect(); } catch { /* detached */ } } nodes = []; source = null; }
     return instance;
   }
   // Called synchronously from the reader's gesture, before the paid fetch.
   makeAudio.resume = () => { try { ensure(); } catch { /* HTML audio fallback remains available. */ } };
+  makeAudio.speaker = () => meter?.speakerId || '';
+  makeAudio.level = () => {
+    if (!meter) return 0;
+    if (!meter.analyser) return null;
+    meter.analyser.getFloatTimeDomainData(meter.data);
+    let sum = 0; for (const v of meter.data) sum += v * v;
+    // Levelled speech sits near -16 LUFS; map ~-40..-12 dBFS RMS to 0..1.
+    const db = 10 * Math.log10(sum / meter.data.length + 1e-12);
+    return Math.max(0, Math.min(1, (db + 40) / 28));
+  };
   return makeAudio;
 }

@@ -25,6 +25,7 @@ modules.push('vn-autoplay.mjs');
 modules.push('vn-recovery.mjs');
 modules.push('vn-image-codec.mjs');
 modules.push('vn-image-storage.mjs');
+modules.push('vn-actor-life.mjs', 'vn-typeset.mjs', 'vn-gallery.mjs', 'vn-face-compose.mjs');
 const storageRecovery = await readFile(new URL('./cortex-storage-recovery.js', import.meta.url), 'utf8');
 shellHash.update(storageRecovery);
 shellHash.update(bootHead);

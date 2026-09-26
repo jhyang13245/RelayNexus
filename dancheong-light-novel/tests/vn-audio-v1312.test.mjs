@@ -137,7 +137,8 @@ test('voice line speaks prepared text with delivery notes; the old key stays rea
   const line = voiceLine(page, view, 'scope', 'coral', { cue: '나디아가 속삭였다.' });
   assert.equal(line.text, '세 시에 봐.');
   assert.match(JSON.parse(line.context).delivery, /whisper/);
-  assert.equal(JSON.parse(line.key)[0], 'vn-voice-2');
+  assert.equal(JSON.parse(line.key)[0], 'vn-voice-3');
+  assert.equal(line.fallbackKeys[0], JSON.stringify(['vn-voice-2', 'scope', 'n', 'coral', '세 시에 봐.', line.context]));
   assert.equal(line.legacyKey, JSON.stringify(['vn-voice-1', 'scope', 'n', 'coral', '3시에 봐.', JSON.stringify({ speaker: '나디아', mood: 'tense', emotion: 'angry' })]));
 });
 

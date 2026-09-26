@@ -16,9 +16,10 @@ test('manual slots retain complete independent narrative/media/undo state but ex
   record.snapshot.turns[0].text = 'changed'; assert.equal(raw.turns[0].text, '안녕.');
   assert.equal(slotSummary(record).snapshot, undefined); assert.equal(slotSummary(record).presentation, undefined);
 });
-test('all ten slots accepted; invalid or in-flight snapshots rejected', () => {
+test('all ten slots and the quick slot accepted; invalid or in-flight snapshots rejected', () => {
   for (let slot = 1; slot <= 10; slot++) assert.equal(fixture(slot).slot, slot);
-  for (const slot of [0, 11, 1.5, '1']) assert.throws(() => fixture(slot));
+  assert.equal(fixture(11).slot, 11, 'slot 11 is the F5/F9 quick save');
+  for (const slot of [0, 12, 1.5, '1']) assert.throws(() => fixture(slot));
   const record = fixture(); record.snapshot.turns[0].status = 'STREAMING';
   assert.throws(() => makeSlot({ ...record, snapshot: record.snapshot }), /완료/);
   record.schema = 'FUTURE'; assert.throws(() => validateSlot(record), /지원/);

@@ -76,7 +76,13 @@ test('full reading speaks narration and unidentified quotations neutrally, and r
   const quote = { ...page, quoted: true, kind: 'dialogue', text: '“잠깐 기다려.”' };
   const view = { castStatus: 'ready', speakerId: 'verified', speakerName: '정민' };
   assert.deepEqual(readingVoiceLine(quote, view, 'work'), voiceLine(quote, view, 'work'));
-  assert.equal(readingVoiceLine(quote, { ...view, castStatus: 'checking' }, 'work').speakerId, '@vn/narrator');
+  // A quotation whose speaker check is still running waits; it is never read
+  // in the narrator's voice (that take would be cached and paid for).
+  assert.equal(readingVoiceLine(quote, { ...view, castStatus: 'checking' }, 'work'), null);
+  assert.equal(readingVoiceLine(quote, { ...view, castStatus: 'ready', speakerId: '' }, 'work').speakerId, '@vn/narrator', 'a verified-unknown speaker is read neutrally');
+  assert.equal(narration.voice, 'alloy', 'the narrator never shares a character voice');
+  assert.ok(!['marin', 'coral', 'sage', 'cedar', 'ash', 'verse'].includes(readingVoiceLine(page, {}, 'work', '', {}, { provider: 'openai' }).voice));
+  assert.equal(readingVoiceLine(page, {}, 'work', '', {}, { provider: 'gemini-3.8-flash-tts' }).voice, 'Schedar');
 });
 test('narration completion releases autoplay; later replays reuse its paid audio', async () => {
   let calls = 0, audio; const saved = new Map();
@@ -109,7 +115,7 @@ function shell() {
   const deps = { state, $, voice, document: { hidden: false, querySelector: () => null }, root: { classList: { contains: () => false } }, cinema: { blocked: false },
     autoContinuation: gate, fullAutoStep, fullAutoVisuals, storyComplete, pageKey, nextPlaybackStep, readDelay, submitEngineTurn,
     pageScene: () => ({}), presentationPage: (_s, p) => p, assets: { view: () => view }, hasImageKey: () => true,
-    sceneScope: () => 'work:save', storageProblem: () => null, pendingAdjudication: () => null, textKey: () => 'fixture', mediaPaused: () => false,
+    voiceKey: () => state.keys.openai, ttsProvider: () => ({ keyLabel: 'OpenAI' }), sceneScope: () => 'work:save', storageProblem: () => null, pendingAdjudication: () => null, textKey: () => 'fixture', mediaPaused: () => false,
     busy: () => turnStatus === 'STREAMING', syncRecovery: () => null, engineNotice: null,
     updateVoiceControls() {}, toast: m => notes.push(m), renderPage() {}, sync() {}, openSettings() {},
     nextPage: () => { state.cursor++; }, setTimeout: (fn, ms) => { delays.push(ms); const id = ++serial; timers.set(id, fn); return id; }, clearTimeout: id => timers.delete(id) };

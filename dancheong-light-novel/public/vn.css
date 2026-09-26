@@ -1,7 +1,7 @@
 html, body { overflow: hidden; }
 body > .app { position: fixed !important; left: -100000px !important; top: 0 !important; width: 960px !important; height: 800px !important; overflow: hidden !important; pointer-events: none !important; }
 #vn-root, #vn-root * { box-sizing: border-box; }
-#vn-root { --ink:#07151a; --cream:#f5efe3; --muted:#b7c3c2; --line:rgba(215,229,224,.22); --mint:#a8d9bc; position:fixed; inset:0; z-index:100; display:grid; grid-template-rows:68px minmax(0,1fr); color:var(--cream); background:var(--ink); font-family:Pretendard,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
+#vn-root { --ink:#07151a; --cream:#f5efe3; --muted:#b7c3c2; --line:rgba(215,229,224,.22); --mint:#a8d9bc; position:fixed; inset:0; z-index:100; display:grid; grid-template-rows:68px minmax(0,1fr); color:var(--cream); background:var(--ink); font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
 #vn-root [hidden] { display:none !important; }
 #vn-root button { font:inherit; cursor:pointer; }
 #vn-root button:disabled { cursor:not-allowed; opacity:.45; }

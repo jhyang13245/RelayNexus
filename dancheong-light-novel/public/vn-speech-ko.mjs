@@ -73,7 +73,7 @@ export function speakableKorean(text) {
   // Pauses and cut-offs.
   s = s.replace(/(?:\.{3,}|…+|‥+)/gu, '…');
   s = s.replace(/\s*(?:─|―|—|--)+\s*$/gu, '…').replace(/\s*(?:─|―|—|--)+\s*/gu, ', ');
-  s = s.replace(/~+/gu, '');
+  s = s.replace(/~+/gu, '').replace(/\*+/gu, '');
   // Internet laughter/crying jamo.
   s = s.replace(/ㅋ{2,}/gu, ' 크크 ').replace(/ㅎ{2,}/gu, ' 흐흐 ').replace(/[ㅠㅜ]{2,}/gu, ' ');
   s = s.replace(/[♪♩♫♬♥♡★☆※◆◇■□▲△▼▽●○◎]/gu, ' ');

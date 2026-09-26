@@ -1,5 +1,6 @@
 const MODEL = 'gpt-4o-mini-tts-2025-12-15';
-const VOICES = ['marin', 'cedar', 'coral', 'sage', 'ash', 'verse'];
+// Character pool plus narrator voices (alloy, ballad) that no character uses by default.
+const VOICES = ['marin', 'cedar', 'coral', 'sage', 'ash', 'verse', 'alloy', 'ballad'];
 const headers = { 'Cache-Control': 'no-store' };
 const fail = (message: string, status: number) => Response.json({ error: { message } }, { status, headers });
 

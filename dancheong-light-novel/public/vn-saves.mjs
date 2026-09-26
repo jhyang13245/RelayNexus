@@ -1,10 +1,13 @@
 // Manual saves are independent of the engine's autosave and the usage ledger.
 import { editionScope, snapshotEdition } from './vn-edition-key.mjs';
 export const SLOT_COUNT = 10;
+// Quick save (F5 / F9) has its own slot next to the ten numbered ones.
+export const QUICK_SLOT = 11;
 export const SLOT_SCHEMA = 'DANCHEONG_VN_SLOT_V1';
+export const slotLabel = slot => slot === QUICK_SLOT ? '퀵 세이브' : `${slot}번 슬롯`;
 const clone = value => structuredClone(value);
 const slotNumber = slot => {
-  if (!Number.isInteger(slot) || slot < 1 || slot > SLOT_COUNT) throw new Error('잘못된 저장 슬롯입니다.');
+  if (!Number.isInteger(slot) || ((slot < 1 || slot > SLOT_COUNT) && slot !== QUICK_SLOT)) throw new Error('잘못된 저장 슬롯입니다.');
   return slot;
 };
 export function presentationKeys(slug, storyId, edition) {

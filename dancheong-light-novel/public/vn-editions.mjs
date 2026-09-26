@@ -6,6 +6,11 @@ export function revisionDescriptor(row) {
   if (!Number.isSafeInteger(revision) || revision < 1 || !/^[a-f0-9]{64}$/u.test(sha256)) throw new Error('덧칠 번호와 파일 지문을 확인하지 못했습니다. 목록을 다시 확인해 주세요.');
   return { revision, sha256, bytes: Number(row.packageBytes) || 0, createdAt: String(row.createdAt || row.updatedAt || ''), notes: String(row.notes || row.changeLog || '').slice(0, 2000) };
 }
+// A catalog row without a complete published revision (older works, or a hub
+// that has not reported one) still opens, unversioned, like before editions.
+export function catalogRevision(row) {
+  try { return row?.currentRevision != null && row?.packageSha256 ? revisionDescriptor(row) : null; } catch { return null; }
+}
 export async function verifiedPackage(slug, revision, fetchPackage = fetch) {
   if (!/^[a-z0-9-]{3,80}$/u.test(slug)) throw new Error('작품 주소가 올바르지 않습니다.');
   const response = await fetchPackage(`/api/work/${encodeURIComponent(slug)}/download${revision ? `?revision=${revision.revision}` : ''}`, { cache: 'no-store' });

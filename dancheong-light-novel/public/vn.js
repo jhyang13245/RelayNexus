@@ -18,21 +18,25 @@ import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weather
 import { displaySprite } from './vn-sprite.mjs';
 import { createAmbience, ambienceFor } from './vn-audio.mjs';
 import { createScore } from './vn-music.mjs';
-import { createMusicDirection } from './vn-music-direction.mjs';
-import { createVoice, voiceLine, readingVoiceLine, voices } from './vn-voice.mjs';
+import { createMusicDirection, musicSeed } from './vn-music-direction.mjs';
+import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, NARRATOR_VOICE } from './vn-voice.mjs';
 import { createVoicePlayer } from './vn-voice-post.mjs';
 import { prepareMotion } from './vn-motion.mjs';
+import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs';
+import { faceComposite } from './vn-face-compose.mjs';
+import { typeset, renderTypeset, TYPEFACES, loadTypeface } from './vn-typeset.mjs';
 import { createCinema } from './vn-cinema.mjs';
-import { createWorkMusic, createMusicSettings } from './vn-work-music.mjs';
-import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock } from './vn-saves.mjs';
+import { createWorkMusic, createMusicSettings, musicKey, musicMoods, licensedTrack } from './vn-work-music.mjs';
+import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock, QUICK_SLOT } from './vn-saves.mjs';
+import { createGalleryDialog, galleryImages } from './vn-gallery.mjs';
 import { createSaveDialog } from './vn-save-ui.mjs';
-import { requestDurableStorage, withMediaTask, withMediaMaintenance, setMediaPaused, mediaPaused, removeWorkMedia, isMediaStorageEvent } from './vn-storage.mjs';
+import { requestDurableStorage, withMediaTask, withMediaMaintenance, setMediaPaused, mediaPaused, removeWorkMedia, isMediaStorageEvent, workAssets } from './vn-storage.mjs';
 import { createStoragePanel } from './vn-storage-ui.mjs';
 import { readBackup, exportSlotFile, storeImportedSlot, restoreSlotMedia } from './vn-backup.mjs';
 import { readEventProgress } from './vn-event-progress.mjs';
 import { createEventProgressDialog } from './vn-event-progress-ui.mjs';
 import { prepareNewGame, createNewGameDialog } from './vn-new-game.mjs';
-import { createEditionStore, revisionDescriptor } from './vn-editions.mjs';
+import { createEditionStore, catalogRevision } from './vn-editions.mjs';
 import { editionScope, snapshotEdition, editionId } from './vn-edition-key.mjs';
 import { createEditionDialog } from './vn-edition-ui.mjs';
 
@@ -56,7 +60,7 @@ root.innerHTML = `
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <button id="vn-library-slots" class="vn-slot-open" type="button">저장·불러오기</button>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.13.4 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.14.0 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -98,9 +102,15 @@ root.querySelector('#vn-scene-cut').after(flashLayer);
 const stageTools = document.createElement('div'); stageTools.className = 'vn-stage-tools';
 stageTools.innerHTML = '<div id="vn-scene-label" class="vn-scene-label" aria-hidden="true"></div><div id="vn-loading" class="vn-loading" role="status" hidden><span></span><strong>다음 장면을 준비하고 있습니다</strong><small>완성되면 첫 문장부터 표시됩니다</small></div><button type="button" id="vn-show-text" class="vn-show-text" hidden>본문 표시 · H</button><div class="vn-reading-controls" role="toolbar" aria-label="읽기 제어"><span id="vn-reader-position"></span><button type="button" id="vn-reader-log" title="읽은 기록 (L)">기록</button><button type="button" id="vn-auto" aria-pressed="false" title="자동 읽기 (A)">자동</button><button type="button" id="vn-skip" aria-pressed="false" title="읽은 부분만 건너뛰기 (S)">읽은 부분</button><button type="button" id="vn-hide-text" title="본문 숨기기 (H)">글 숨김</button><button type="button" id="vn-fullscreen" title="전체 화면 (F)">전체 화면</button><button type="button" id="vn-reader-settings">설정</button></div>';
 root.querySelector('#vn-stage').append(stageTools);
+const eyecatch = document.createElement('div'); eyecatch.className = 'vn-eyecatch'; eyecatch.hidden = true; eyecatch.setAttribute('aria-hidden', 'true');
+eyecatch.innerHTML = '<span></span><strong></strong><small></small>';
+root.querySelector('#vn-stage').append(eyecatch);
 const slotButton = document.createElement('button'); slotButton.type = 'button'; slotButton.id = 'vn-reader-slots'; slotButton.setAttribute('aria-label', '저장·불러오기');
 slotButton.innerHTML = '<span class="vn-slots-label-full">저장·불러오기</span><span class="vn-slots-label-short">저장</span>';
 root.querySelector('#vn-reader-log').after(slotButton);
+const quickSaveButton = document.createElement('button'); quickSaveButton.type = 'button'; quickSaveButton.id = 'vn-quick-save'; quickSaveButton.className = 'vn-quick'; quickSaveButton.textContent = 'Q.저장'; quickSaveButton.title = '퀵 세이브 (F5)';
+const quickLoadButton = document.createElement('button'); quickLoadButton.type = 'button'; quickLoadButton.id = 'vn-quick-load'; quickLoadButton.className = 'vn-quick'; quickLoadButton.textContent = 'Q.불러오기'; quickLoadButton.title = '퀵 로드 (F9)';
+slotButton.after(quickSaveButton, quickLoadButton);
 const menuSlotButton = document.createElement('button'); menuSlotButton.type = 'button'; menuSlotButton.id = 'vn-menu-slots'; menuSlotButton.textContent = '저장·불러오기';
 root.querySelector('#vn-history-toggle').after(menuSlotButton);
 const progressButton = document.createElement('button'); progressButton.type = 'button'; progressButton.id = 'vn-reader-progress'; progressButton.textContent = '진행'; progressButton.setAttribute('aria-label', '사건·비트 진행상황');
@@ -128,13 +138,13 @@ imageProviderFields.className = 'vn-image-routing';
 imageProviderFields.innerHTML = '<legend>이미지 생성 모델</legend><div class="vn-image-routing-grid"><label for="vn-background-provider"><strong>배경</strong><small>장소·풍경·사건</small><select id="vn-background-provider"><option value="openai">OpenAI 2.5 Flare</option><option value="gemini">Nano Banana 2</option></select></label><label for="vn-character-provider"><strong>인물·표정</strong><small>캐릭터·표정 변화</small><select id="vn-character-provider"><option value="openai">OpenAI 2.5 Flare</option><option value="gemini">Nano Banana 2</option></select></label></div><p class="vn-image-routing-help">사건이 담긴 배경도 배경 모델을 사용합니다. 선택은 새로 생성하는 이미지부터 적용되며, 기존 이미지는 재사용합니다.</p>';
 connectionPanel.querySelector('.vn-provider-grid').after(imageProviderFields);
 const geminiKeyField = document.createElement('label');
-geminiKeyField.innerHTML = 'Nano Banana 2 · Gemini API 키 <small>위에서 Nano Banana 2를 선택한 이미지에 사용합니다</small><input id="vn-gemini-key" type="password" autocomplete="off" maxlength="512" placeholder="Google AI Studio에서 발급한 API 키"><a class="vn-key-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Gemini API 키 발급 ↗</a>';
+geminiKeyField.innerHTML = 'Gemini API 키 <small>Nano Banana 2 이미지 · Lyria 배경음악 · Gemini 3.8 음성에 사용합니다</small><input id="vn-gemini-key" type="password" autocomplete="off" maxlength="512" placeholder="Google AI Studio에서 발급한 API 키"><a class="vn-key-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Gemini API 키 발급 ↗</a>';
 connectionPanel.querySelector('#vn-openai-key').closest('label').after(geminiKeyField);
 connectionPanel.querySelector('#vn-openai-key').closest('label').querySelector('small').textContent = 'GPT 이미지 · OpenAI 본문 모드';
 const imageQualityHelp = document.createElement('small'); imageQualityHelp.id = 'vn-image-quality-help';
 connectionPanel.querySelector('#vn-image-quality').after(imageQualityHelp);
 const readingFields = document.createElement('fieldset'); readingFields.className = 'vn-reading-settings';
-readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>사건 장면 연출<select id="vn-cg-setting"><option value="on">자동 · 중요한 동작과 사건</option><option value="off">끔 · 풍경과 인물만</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 표정은 뚜렷한 감정 변화 때만 본문 상황을 읽고 자연스럽게 새로 그리며, 풍경은 장소·시간대·날씨가 바뀔 때 재사용 여부를 확인합니다. 같은 인물의 적합한 표정은 저장된 이미지를 먼저 재사용합니다. 인물은 세밀한 선·눈·머리카락·재질 묘사를 글로 지정하며, 다른 작품의 인물 이미지는 보내지 않습니다. 이미 저장된 기본 입상은 유지합니다. 만난 인물에서 기본 입상을 고정할 수 있고, 같은 인물·표정은 재사용합니다. 평소에는 기본 복장을 유지하며, 실제 물놀이·취침·행사 등 본문 상황에 맞춰 복장을 바꿉니다. 복장별 입상과 표정을 저장해 다시 쓰고, 일상으로 돌아오면 기본 복장을 재사용합니다(처음 필요한 복장·표정 생성 시 비용 발생). 중요한 공격·충돌·사물의 변화는 사건 장면으로 보여줍니다. 이미 공개된 가까운 문단에서 미리 준비하며, 해당 순간부터 배경 자체를 사건이 담긴 이미지로 교체합니다. 사건 배경에 그려진 참여 인물의 입상만 숨기고 목격자 입상은 유지합니다. 사건 연출은 기본 꺼짐이며 기존 선택을 유지합니다. 평범한 대화에는 생성하지 않고 문단당 최대 1장만 생성·재사용합니다(이미지 비용 추가).</p>';
+readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>본문 글꼴<select id="vn-typeface">' + Object.entries(TYPEFACES).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('') + '</select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>사건 장면 연출<select id="vn-cg-setting"><option value="on">자동 · 중요한 동작과 사건</option><option value="off">끔 · 풍경과 인물만</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 표정은 뚜렷한 감정 변화 때만 본문 상황을 읽고 자연스럽게 새로 그리며, 풍경은 장소·시간대·날씨가 바뀔 때 재사용 여부를 확인합니다. 같은 인물의 적합한 표정은 저장된 이미지를 먼저 재사용합니다. 인물은 세밀한 선·눈·머리카락·재질 묘사를 글로 지정하며, 다른 작품의 인물 이미지는 보내지 않습니다. 이미 저장된 기본 입상은 유지합니다. 만난 인물에서 기본 입상을 고정할 수 있고, 같은 인물·표정은 재사용합니다. 평소에는 기본 복장을 유지하며, 실제 물놀이·취침·행사 등 본문 상황에 맞춰 복장을 바꿉니다. 복장별 입상과 표정을 저장해 다시 쓰고, 일상으로 돌아오면 기본 복장을 재사용합니다(처음 필요한 복장·표정 생성 시 비용 발생). 중요한 공격·충돌·사물의 변화는 사건 장면으로 보여줍니다. 이미 공개된 가까운 문단에서 미리 준비하며, 해당 순간부터 배경 자체를 사건이 담긴 이미지로 교체합니다. 사건 배경에 그려진 참여 인물의 입상만 숨기고 목격자 입상은 유지합니다. 사건 연출은 기본 꺼짐이며 기존 선택을 유지합니다. 평범한 대화에는 생성하지 않고 문단당 최대 1장만 생성·재사용합니다(이미지 비용 추가).</p>';
 connectionPanel.querySelector('.vn-settings-help').before(readingFields);
 const guideField = document.createElement('label');
 guideField.textContent = '이 작품의 인물 묘사 기준 이미지';
@@ -145,10 +155,14 @@ settingsForm.append(connectionPanel);
 const presentationFields = document.createElement('fieldset'); presentationFields.className = 'vn-reading-settings';
 presentationFields.innerHTML = `<legend>추가 연출 · 베타</legend><div class="vn-settings-fields"><label>비주얼노벨 화면 연출<select id="vn-cinema-setting"><option value="on">켬 · 무늬 전환 / 무료 컷인 / 강조 / 장면 카드</option><option value="off">끔</option></select></label><small>저장된 입상을 잘라 쓰는 컷인과 화면 효과에는 이미지 생성 비용이 들지 않습니다. 움직임 최소화를 선택하면 전환·떨림·카메라 이동을 생략합니다.</small>
   <div class="vn-settings-row"><label>새 구도로 그린 컷<select id="vn-drawn-shots"><option value="off">끔</option><option value="on">켬 · 상반신 / 전신 / 얼굴 / 손</option></select></label><label>눈 깜빡임·입 움직임<select id="vn-actor-motion"><option value="off">끔</option><option value="masked">실험 · OpenAI 눈·입 마스크 편집</option></select></label></div>
+  <label>표정이 바뀔 때<select id="vn-face-compose"><option value="off">그림 전체 교체 · 기본</option><option value="on">얼굴만 합성 · 실험 (몸·옷이 정확히 겹칠 때만)</option></select></label>
+  <small>얼굴만 합성은 새 표정 그림이 기본 입상과 몸·옷·윤곽이 거의 같을 때만 얼굴 부분을 기본 입상 위에 부드럽게 합칩니다. 겹치지 않거나 경계가 드러날 것 같으면 새 그림을 그대로 보여 줍니다. 추가 비용은 없습니다.</small>
   <small>추가 이미지는 기본 꺼짐입니다. 구도는 중요한 순간에 문단당 최대 1장, 움직임은 인물·복장·표정당 2장을 만들고 재사용합니다. 움직임은 OpenAI 인물 모델에서만 실험할 수 있습니다. 눈·입 이외의 픽셀은 원본으로 유지하며 정렬 검사를 통과하지 못하면 정지 입상을 사용합니다. 생성된 이미지 비용은 발생합니다.</small>
   <div class="vn-settings-row"><label>장면 배경음악·효과음<select id="vn-music"><option value="off">끔</option><option value="tracks">켬 · 작품 음원</option><option value="on">켬 · 기기에서 합성</option></select></label><label>음악 크기<input id="vn-music-volume" type="range" min="0" max="100" step="1"></label></div>
-  <label>AI 대사 음성<select id="vn-voice-setting"><option value="off">OFF · 끔</option><option value="on">ON · OpenAI 음성 생성</option></select></label>
-  <small>AI가 생성한 음성입니다. OpenAI API 키를 사용하며 대사별 음성 비용이 추가됩니다. 같은 대사는 저장해 다시 듣습니다. 전문 성우와 같은 연기 품질은 보장하지 않으며 한국어 발음과 감정은 대사에 따라 달라집니다. 음성 없이도 글은 바로 진행합니다.</small>
+  <div class="vn-settings-row"><label>AI 대사 음성<select id="vn-voice-setting"><option value="off">OFF · 끔</option><option value="on">ON · 음성 생성</option></select></label><label>음성 모델<select id="vn-voice-provider">${Object.entries(TTS_PROVIDERS).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('')}</select></label></div>
+  <div class="vn-settings-row"><label>음성 크기<input id="vn-voice-volume" type="range" min="0" max="100" step="1"></label><label>다음 문장으로 넘길 때<select id="vn-voice-continue"><option value="off">음성 멈춤</option><option value="on">끝까지 재생 · 다음 음성이 나오면 교체</option></select></label></div>
+  <label>낭독 목소리 · 완전 자동의 서술<select id="vn-narrator-voice"></select></label>
+  <small>AI가 생성한 음성입니다. OpenAI는 OpenAI API 키, Gemini 3.8 TTS는 위의 Gemini API 키를 사용하며 대사별 음성 비용이 추가됩니다. Gemini는 인물마다 서로 다른 목소리를 자동으로 배정하고 장면의 감정·상황을 연기 지시로 전달합니다. 같은 대사는 한 번만 생성해 저장하고, 다시 듣기와 되돌아가기는 추가 비용 없이 재생합니다. 모델을 바꾸면 이후 대사부터 새 목소리로 생성합니다. 전문 성우와 같은 연기 품질은 보장하지 않으며 음성 없이도 글은 바로 진행합니다.</small>
   <div id="vn-voice-actors"></div></div>`;
 readingFields.after(presentationFields);
 const costPanel = document.createElement('div'); costPanel.id = 'vn-cost-panel'; costPanel.hidden = true; costPanel.setAttribute('role', 'tabpanel'); costPanel.setAttribute('aria-labelledby', 'vn-cost-tab'); settingsForm.append(costPanel);
@@ -215,8 +229,12 @@ globalThis.NexusVNHandlesTextReveal = true;
 const textWait = createTextWaitTracker();
 state.reveal = createTextRevealer({
   write: text => {
-    if (state.reveal.element && state.reveal.element.textContent !== text) {
-      state.reveal.element.textContent = text;
+    // Ruby and emphasis dots are rendered from the typeset layout; the
+    // revealer only counts visible glyphs.
+    const count = Array.from(text).length, element = state.reveal.element;
+    if (element && (element.vnCount !== count || element.vnLayout !== state.reveal.layout)) {
+      element.vnCount = count; element.vnLayout = state.reveal.layout;
+      if (state.reveal.layout) renderTypeset(element, state.reveal.layout, count); else element.textContent = text;
       textWait.progress(state.reveal.key, state.reveal.length);
       setInlineBuffer('');
     }
@@ -230,9 +248,9 @@ state.stageScenes = new Map(); state.preparedBeats = new Set(); state.dialogueBy
 state.imageRouting = readImageRouting(localStorage);
 const readingPrefsKey = 'dancheong-vn-reading-prefs-v1';
 let storedReading = {}; try { storedReading = JSON.parse(localStorage.getItem(readingPrefsKey) || '{}'); } catch { /* Defaults remain usable. */ }
-state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off',
+state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', typeface: TYPEFACES[storedReading?.typeface] ? storedReading.typeface : 'auto', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off',
   ambience: storedReading?.ambience === 'on' ? 'on' : 'off', cg: eventSceneSetting(storedReading),
-  shots: storedReading?.shots === 'on' ? 'on' : 'off', cinema: storedReading?.cinema === 'off' ? 'off' : 'on', actorMotion: storedReading?.actorMotion === 'masked' ? 'masked' : 'off', music: ['on', 'tracks'].includes(storedReading?.music) ? storedReading.music : 'off', voice: storedReading?.voice === 'on' ? 'on' : 'off', musicVolume: Number.isFinite(storedReading?.musicVolume) ? Math.max(0, Math.min(1, storedReading.musicVolume)) : .22 };
+  shots: storedReading?.shots === 'on' ? 'on' : 'off', cinema: storedReading?.cinema === 'off' ? 'off' : 'on', actorMotion: storedReading?.actorMotion === 'masked' ? 'masked' : 'off', faceCompose: storedReading?.faceCompose === 'on' ? 'on' : 'off', music: ['on', 'tracks'].includes(storedReading?.music) ? storedReading.music : 'off', voice: storedReading?.voice === 'on' ? 'on' : 'off', voiceProvider: TTS_PROVIDERS[storedReading?.voiceProvider] ? storedReading.voiceProvider : 'openai', narratorVoice: typeof storedReading?.narratorVoice === 'string' ? storedReading.narratorVoice.slice(0, 40) : '', voiceContinue: storedReading?.voiceContinue === 'on' ? 'on' : 'off', voiceVolume: Number.isFinite(storedReading?.voiceVolume) ? Math.max(0, Math.min(1, storedReading.voiceVolume)) : 1, musicVolume: Number.isFinite(storedReading?.musicVolume) ? Math.max(0, Math.min(1, storedReading.musicVolume)) : .22 };
 const artStyleKey = slug => `dancheong-vn-art-style-v1:${slug}`;
 function loadArtStyle(slug) { try { return localStorage.getItem(artStyleKey(slug)) || ''; } catch { return ''; } }
 state.artStyle = loadArtStyle(state.activeSlug);
@@ -244,22 +262,32 @@ fullAutoButton.textContent = '완전 자동'; fullAutoButton.setAttribute('aria-
 fullAutoButton.title = '문장·AI 음성·장면 이어가기 자동 진행 (Shift+A) · API 사용료 발생';
 $('vn-auto').after(fullAutoButton);
 const fullAutoHelp = document.createElement('p'); fullAutoHelp.className = 'vn-settings-help';
-fullAutoHelp.textContent = '완전 자동은 서술·대사를 AI 음성으로 읽고, 현재 장면의 인물이 화면에 표시된 뒤 다음 문장으로 넘어갑니다. 입력 차례마다 장면 이어가기를 실행합니다. 본문·이미지·음성 API 사용료가 계속 발생합니다. OpenAI 음성 키가 필요하며, 자동 중지·화면 이동·탭 전환·오류 시 멈춥니다. 새로고침 후에는 직접 다시 켜 주세요.';
+fullAutoHelp.textContent = '완전 자동은 서술·대사를 AI 음성으로 읽고, 현재 장면의 인물이 화면에 표시된 뒤 다음 문장으로 넘어갑니다. 대사는 화자 확인이 끝난 뒤 그 인물의 목소리로 읽고, 서술은 인물과 겹치지 않는 낭독 목소리로 읽습니다. 입력 차례마다 장면 이어가기를 실행합니다. 본문·이미지·음성 API 사용료가 계속 발생합니다. 선택한 음성 모델의 API 키가 필요하며, 자동 중지·화면 이동·탭 전환·오류 시 멈춥니다. 새로고침 후에는 직접 다시 켜 주세요.';
 readingFields.append(fullAutoHelp);
 const sound = createSound(() => state.reading.sound === 'on');
 const ambience = createAmbience(() => state.reading.ambience === 'on' && state.screen === 'stage' && !document.hidden);
 const musicDirection = createMusicDirection();
-const score = createScore(() => state.reading.music === 'on' && state.screen === 'stage' && !document.hidden, { getVolume: () => state.reading.musicVolume * (voice.phase === 'playing' ? .3 : 1) });
-const voice = createVoice({ getEnabled: () => (state.reading.voice === 'on' || state.playback === 'full') && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && $('vn-history').hidden && state.playback !== 'skip', getKey: () => state.keys.openai, read: readAsset, write: writeAsset, onState: () => { updateVoiceControls(); queueMicrotask(schedulePlayback); },
-  // Trim, level, EQ and a room matched to the current environment on the device.
-  makeAudio: createVoicePlayer({ getRoom: () => ({ bed: state.ambienceTarget?.bed || '', mood: $('vn-stage')?.dataset.mood || '' }) }) });
-const workMusic = createWorkMusic({ enabled: () => state.reading.music === 'tracks' && state.screen === 'stage' && !document.hidden, volume: () => state.reading.musicVolume * (voice.phase === 'playing' ? .3 : 1), onStatus: text => musicSettings.status(text) });
+const score = createScore(() => state.reading.music === 'on' && state.screen === 'stage' && !document.hidden, { getVolume: () => state.reading.musicVolume * (voiceBusy() ? .3 : 1) });
+// Trim, level, EQ and a room matched to the current environment on the device.
+const voicePlayer = createVoicePlayer({ getRoom: () => ({ bed: state.ambienceTarget?.bed || '', mood: $('vn-stage')?.dataset.mood || '' }),
+  getVolume: speakerId => state.reading.voiceVolume * (readVoiceVolumes()[speakerId] ?? 1) });
+const voiceKey = (provider = state.reading.voiceProvider) => state.keys[ttsProvider(provider).keyName] || '';
+const voice = createVoice({ getEnabled: () => (state.reading.voice === 'on' || state.playback === 'full') && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && (state.backlogVoice || $('vn-history').hidden) && state.playback !== 'skip', getKey: voiceKey, read: readAsset, write: writeAsset,
+  onState: phase => { if (['preparing', 'playing'].includes(phase)) stopReleasedVoice(); updateVoiceControls(); queueMicrotask(schedulePlayback); },
+  makeAudio: voicePlayer });
+// "Voice continues on click": the previous line may finish under the next
+// page until another voice starts.
+function stopReleasedVoice() { const held = state.releasedVoice; state.releasedVoice = null; try { held?.pause(); } catch { /* ended */ } }
+const voiceBusy = () => voice.phase === 'playing' || Boolean(state.releasedVoice);
+const workMusic = createWorkMusic({ enabled: () => state.reading.music === 'tracks' && state.screen === 'stage' && !document.hidden, volume: () => state.reading.musicVolume * (voiceBusy() ? .3 : 1), onStatus: text => musicSettings.status(text) });
 const musicSettings = createMusicSettings({ parent: presentationFields.querySelector('.vn-settings-fields'), getWork: () => state.activeSlug, onChange: () => workMusic.invalidate(),
   getGeminiKey: () => state.keys.gemini || '',
   getWorkInfo: () => { const work = currentWork(), scenario = state.api?._scenario(); return { title: work?.title || scenario?.title || '', subtitle: work?.subtitle || '', genre: work?.genre || '', summary: scenario?.summary || '', location: scenario?.world?.location || '' }; } });
 state.voiceLine = null;
 Object.assign(state, { stageOrder: [], speakerNames: new Map(), firedEffects: new Set(), focusId: '', ambienceTarget: null, met: [], metKey: '' });
 root.dataset.motion = state.reading.motion;
+function applyTypeface() { root.dataset.typeface = state.reading.typeface; loadTypeface(state.reading.typeface); }
+applyTypeface();
 const meter = installCostMeter({ context: () => ({ slug: state.activeSlug, title: currentWork()?.title || '' }), onChange: () => { if ($('vn-settings-dialog').open && !$('vn-cost-panel').hidden) void renderCosts(); } });
 const castDirector = createCastDirector({ getConnection: () => ({ key: textKey(), model: state.provider === 'muse' ? providerModels.muse : 'gpt-5.6-luna', endpoint: state.provider === 'openai' ? '/api/openai/responses' : '/api/go/responses' }), read: readAsset, write: writeAsset,
   onChange: requestRender, onError: toast });
@@ -306,20 +334,53 @@ const editionDialog = createEditionDialog({ root, getWork: currentWorkForEdition
 function currentWorkForEdition() { return state.catalog.find(work => work.slug === state.activeSlug); }
 const editionButton = document.createElement('button'); editionButton.id = 'vn-title-editions'; editionButton.type = 'button'; editionButton.textContent = '덧칠 관리';
 $('vn-title-new').after(editionButton); editionButton.onclick = () => void editionDialog.show();
+const galleryButton = document.createElement('button'); galleryButton.id = 'vn-title-gallery'; galleryButton.type = 'button'; galleryButton.textContent = '갤러리 · 음악 감상';
+$('vn-title-cast').after(galleryButton);
+// Only media already stored on this device for the current story.
+const gallery = createGalleryDialog({ root, onOpen: () => { stopPlayback(); voice.stop(); },
+  listImages: async () => galleryImages(await workAssets(sceneScope())),
+  listMusic: async () => {
+    const tracks = [], packaged = state.api?._scenario()?.runtime?.packageContract?.presentation?.music || {};
+    for (const [mood, label] of Object.entries(musicMoods)) {
+      const local = await readAsset(musicKey(state.activeSlug, mood)).catch(() => null);
+      if (local?.blob instanceof Blob && !local.disabled) tracks.push({ label, title: local.title || '', credit: local.credit || '', blob: local.blob });
+      else { const linked = licensedTrack(local) || licensedTrack(packaged[mood]); if (linked) tracks.push({ label, title: linked.title, credit: linked.credit, url: linked.url }); }
+    }
+    return tracks;
+  } });
+galleryButton.onclick = () => void gallery.show();
 const dialogueGrace = createDialogueGrace();
 let dialogueGraceTimer = 0;
 let toastTimer = 0;
 const voiceControls = document.createElement('div'); voiceControls.className = 'vn-voice-controls';
 voiceControls.innerHTML = '<button type="button" id="vn-voice-toggle">AI 음성 OFF</button><button type="button" id="vn-voice-replay" hidden>다시 듣기</button><span id="vn-voice-status" role="status"></span>';
 $('vn-stage').append(voiceControls);
-function readVoiceChoices() { try { return JSON.parse(localStorage.getItem(`dancheong-vn-voices-v1:${state.activeSlug}`) || '{}'); } catch { return {}; } }
+const voiceFamily = (provider = state.reading.voiceProvider) => ttsProvider(provider).keyName === 'gemini' ? 'gemini' : 'openai';
+const voiceChoicesKey = (provider = state.reading.voiceProvider) => voiceFamily(provider) === 'gemini' ? `dancheong-vn-voices-gemini-v1:${state.activeSlug}` : `dancheong-vn-voices-v1:${state.activeSlug}`;
+function readVoiceChoices(provider) { try { return JSON.parse(localStorage.getItem(voiceChoicesKey(provider)) || '{}'); } catch { return {}; } }
+function readVoiceVolumes() { try { return JSON.parse(localStorage.getItem(`dancheong-vn-voice-volume-v1:${state.activeSlug}`) || '{}'); } catch { return {}; } }
+// Gemini casting is stored per story, so a person keeps the voice they were
+// first given and two people do not share one while the pool allows.
+function speakerVoice(view) {
+  const id = view?.speakerId; if (!id) return '';
+  const chosen = readVoiceChoices()[id];
+  if (voiceOptions(state.reading.voiceProvider).includes(chosen)) return chosen;
+  if (voiceFamily() !== 'gemini') return '';
+  const key = `dancheong-vn-voice-cast-v1:gemini:${sceneScope()}`;
+  let cast = {}; try { cast = JSON.parse(localStorage.getItem(key) || '{}'); } catch { cast = {}; }
+  if (GEMINI_VOICES[cast[id]] && cast[id] !== NARRATOR_VOICE.gemini) return cast[id];
+  const person = view.portraits?.find(row => row.id === id);
+  cast = castVoices([{ id, profile: view.speakerProfile || person?.profile || '' }], state.reading.voiceProvider, cast);
+  try { localStorage.setItem(key, JSON.stringify(cast)); } catch { /* This tab keeps the choice. */ }
+  return cast[id];
+}
 function updateVoiceControls() {
   if (!$('vn-voice-toggle')) return;
   const on = state.reading.voice === 'on' || state.playback === 'full';
   $('vn-voice-toggle').textContent = `AI 음성 ${on ? 'ON' : 'OFF'}`; $('vn-voice-toggle').setAttribute('aria-pressed', String(on));
   $('vn-voice-replay').hidden = !on || !state.voiceLine;
   $('vn-voice-replay').textContent = voice.phase === 'playing' || voice.phase === 'preparing' ? '음성 중지' : voice.phase === 'error' ? '음성 다시 시도' : '다시 듣기';
-  $('vn-voice-status').textContent = state.playback === 'full' ? (state.fullAutoArt?.action === 'wait' ? `완전 자동 · ${state.fullAutoArt.reason}` : ({ preparing: '완전 자동 · 음성 준비 중', playing: '완전 자동 · 읽는 중', done: '완전 자동 · 다음 문장으로' }[voice.phase] || '완전 자동 · 장면 이어가기')) : on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', error: '음성 생성 실패', 'needs-key': 'OpenAI API 키 필요' }[voice.phase] || '') : '';
+  $('vn-voice-status').textContent = state.playback === 'full' ? (state.fullAutoArt?.action === 'wait' ? `완전 자동 · ${state.fullAutoArt.reason}` : ({ preparing: '완전 자동 · 음성 준비 중', playing: '완전 자동 · 읽는 중', done: '완전 자동 · 다음 문장으로' }[voice.phase] || '완전 자동 · 장면 이어가기')) : on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', error: '음성 생성 실패', 'needs-key': `${ttsProvider(state.reading.voiceProvider).keyLabel} API 키 필요` }[voice.phase] || '') : '';
 }
 $('vn-voice-toggle').onclick = event => {
   event.stopPropagation();
@@ -461,6 +522,26 @@ async function loadManualSlot(slot, revision) {
   });
 }
 
+async function quickSave() {
+  if (state.screen !== 'stage') return;
+  try {
+    const current = await slotStore.get(QUICK_SLOT);
+    await saveManualSlot(QUICK_SLOT, current?.revision || '');
+    toast('퀵 세이브했습니다 · F9로 불러옵니다.');
+  } catch (error) { toast(error?.message || '퀵 세이브하지 못했습니다.'); }
+}
+async function quickLoad() {
+  try {
+    const current = await slotStore.get(QUICK_SLOT);
+    if (!current) return toast('퀵 세이브가 없습니다. 플레이 중 F5로 먼저 저장해 주세요.');
+    stopPlayback(); voice.stop();
+    const when = new Date(current.savedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (!confirm(`퀵 세이브 「${current.title}」 (${when})를 불러올까요? 현재 진행은 이어하기에 먼저 보관합니다.`)) return;
+    await loadManualSlot(QUICK_SLOT, current.revision);
+    toast('퀵 세이브를 불러왔습니다.');
+  } catch (error) { toast(error?.message || '퀵 세이브를 불러오지 못했습니다.'); }
+}
+
 async function startNewGame() {
   return withSlotLock(async () => {
     const problem = slotSaveProblem(); if (problem) throw new Error(problem);
@@ -470,7 +551,7 @@ async function startNewGame() {
     try {
       // Validate/download first; a network or package error leaves play intact.
       const activeEdition = state.api._scenario()?.runtime?.vnEdition;
-      const revision = activeEdition ? { revision: activeEdition.revision, sha256: activeEdition.sha256 } : currentWork()?.currentRevision ? revisionDescriptor(currentWork()) : null;
+      const revision = activeEdition ? { revision: activeEdition.revision, sha256: activeEdition.sha256 } : catalogRevision(currentWork());
       const record = await prepareNewGame({ slug, title: currentWork()?.title, api: state.api, storage: localStorage, revision });
       saveReadingPosition(); await saveActiveWork();
       // Reuse the durable activation journal, never overwrite a numbered slot.
@@ -571,7 +652,7 @@ function waitUntil(check, timeout = 120000) {
 
 async function importPackage(slug) {
   const work = state.catalog.find(row => row.slug === slug);
-  const revision = revisionDescriptor(work);
+  const revision = catalogRevision(work);
   const record = await prepareNewGame({ slug, title: work.title, api: state.api, storage: localStorage, revision });
   await withSlotLock(() => activateSlot({ record, store: slotStore, api: state.api, apply: applySlotPresentation, remember: rememberSlot }));
 }
@@ -656,7 +737,7 @@ async function openWork(slug) {
 function showScreen(screen) {
   stopPlayback();
   state.screen = screen;
-  if (screen !== 'stage') { cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.reset(); }
+  if (screen !== 'stage') { cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.reset(); stopReleasedVoice(); }
   root.classList.toggle('is-playing', screen !== 'library');
   root.classList.toggle('is-title', screen === 'title');
   $('vn-title').hidden = screen !== 'title';
@@ -828,6 +909,8 @@ function setPortraits(view, speakerId) {
   const people = [...portraits, ...ghosts.filter(ghost => !portraits.some(person => person.id === ghost.id))];
   const ids = new Set(people.map(person => person.id));
   for (const node of [...container.children]) if (!ids.has(node.dataset.characterId) && !node.classList.contains('is-leaving')) {
+    // Leave toward the nearer edge of the stage.
+    node.style.setProperty('--exit', Number(node.style.getPropertyValue('--x') || .5) < .5 ? '-34px' : '34px');
     node.classList.add('is-leaving'); setTimeout(() => { if (node.classList.contains('is-leaving')) node.remove(); }, 480);
   }
   state.stageOrder = stageOrder(state.stageOrder, people.map(person => person.id));
@@ -840,6 +923,7 @@ function setPortraits(view, speakerId) {
     let slot = [...container.children].find(node => node.dataset.characterId === person.id && !node.classList.contains('is-leaving'));
     if (!slot) {
       slot = document.createElement('div'); slot.className = 'vn-character is-entering'; slot.dataset.characterId = person.id;
+      slot.style.setProperty('--breath-delay', `${breathDelay(person.id).toFixed(2)}s`);
       // Enter from the side the person will stand on.
       slot.style.setProperty('--enter', positions[index] < 0.5 ? '-28px' : '28px');
       container.append(slot); requestAnimationFrame(() => requestAnimationFrame(() => slot.classList.remove('is-entering')));
@@ -864,7 +948,7 @@ function setPortraits(view, speakerId) {
     // Keep the already visible face while a needed new expression is being made.
     if (person.expressionReady === false && slot.vnReadyUrl && slot.vnBaseKey === person.baseKey) continue;
     slot.vnBaseKey = person.baseKey;
-    const url = person.url, displayKey = url;
+    const url = person.url, displayKey = `${url}|${state.reading.faceCompose}`;
     const motionSources = [url, person.motion?.blink || '', person.motion?.talk || ''];
     if (!slot.vnMotionSources || motionSources.some((src, index) => src !== slot.vnMotionSources[index])) {
       slot.vnMotionSources = motionSources; slot.vnMotion = null;
@@ -880,7 +964,10 @@ function setPortraits(view, speakerId) {
       slot.vnFailedUrl = url; slot.vnReadyUrl = '';
       toast('인물 이미지를 표시하지 못했습니다. 새로고침 후 다시 시도해 주세요.'); requestRender();
     };
-    void displaySprite(url).then(src => {
+    // Optional face-only expression change; never with motion frames, which
+    // were cut from the full expression picture.
+    const compose = state.reading.faceCompose === 'on' && person.base && person.base !== url && person.expression !== 'neutral' && !person.motion?.blink && !person.motion?.talk;
+    void (compose ? faceComposite(person.base, url) : Promise.resolve(url)).then(source => displaySprite(source)).then(src => {
       if (!slot.isConnected || slot.vnDisplayKey !== displayKey) return;
       const incoming = document.createElement('img'); incoming.src = src; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
       const previous = [...slot.children];
@@ -888,8 +975,9 @@ function setPortraits(view, speakerId) {
         if (!slot.isConnected || slot.vnDisplayKey !== displayKey) return incoming.remove();
         incoming.onload = null;
         incoming.classList.add('is-visible'); slot.vnReadyUrl = url;
-        for (const node of previous) node.classList.remove('is-visible');
-        setTimeout(() => previous.forEach(node => node.remove()), 260);
+        // The new expression fades in over the old one; the old face is only
+        // removed once covered, so the figure never turns see-through.
+        setTimeout(() => { for (const node of previous) node.classList.remove('is-visible'); setTimeout(() => previous.forEach(node => node.remove()), 200); }, 240);
         requestRender();
       };
       incoming.onerror = displayFailed;
@@ -991,7 +1079,7 @@ function renderRevealedText(page) {
   const compactLandscape = innerHeight <= 600 && innerWidth > innerHeight;
   const columns = Math.max(14, Math.floor((compactLandscape ? innerWidth * .54 : innerWidth < 760 ? innerWidth - 48 : Math.min(innerWidth * 0.72, 980)) / (compactLandscape ? 18 : innerWidth < 760 ? 20 : 27) / (state.reading.font === 'large' ? 1.18 : 1)));
   const frame = nvl ? readingFrame(state.pages, state.cursor, { columns, lineBudget: innerHeight < 500 ? 5 : 8 }) : [{ page, index: state.cursor, text: page.text }];
-  const full = String(frame.at(-1)?.text || '…');
+  const layout = typeset(String(frame.at(-1)?.text || '…')), full = layout.visible || '…';
   const key = pageKey(page), frameKey = `${key}:${state.reading.layout}:${columns}:${frame[0]?.index}`;
   if (key !== reveal.key || full !== reveal.text) { clearTimeout(state.playbackTimer); state.playbackTimer = 0; }
   const surface = $('vn-dialogue-text');
@@ -1026,7 +1114,7 @@ function renderRevealedText(page) {
       line.className = index === frame.length - 1 ? 'vn-current-line' : 'vn-read-line';
       const label = document.createElement('span'); label.className = 'vn-line-speaker'; label.hidden = true;
       const copy = document.createElement('span'); copy.className = 'vn-line-text';
-      copy.textContent = index === frame.length - 1 ? '' : row.text;
+      if (index < frame.length - 1) { renderTypeset(copy, typeset(row.text)); copy.vnSource = row.text; }
       line.append(label, copy); surface.append(line);
       if (index === frame.length - 1) {
         reveal.element = copy;
@@ -1047,8 +1135,9 @@ function renderRevealedText(page) {
     label.title = speaker?.tentative ? '작가 주석 기준 · 현장 인물 확인 전' : '';
     if (speaker && label.textContent !== speaker.name) label.textContent = speaker.name;
     if (speaker) line.style.setProperty('--speaker-hue', String(speakerHue(speaker.id)));
-    if (index < frame.length - 1 && copy.textContent !== row.text) copy.textContent = row.text;
+    if (index < frame.length - 1 && copy.vnSource !== row.text) { renderTypeset(copy, typeset(row.text)); copy.vnSource = row.text; }
   }
+  if (!reveal.layout || reveal.layout.visible !== layout.visible || JSON.stringify(reveal.layout.segments) !== JSON.stringify(layout.segments)) reveal.layout = layout;
   reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed,
     immediate: !state.dialogueWaiting && (state.cursor <= state.readThrough || state.playback === 'skip') });
   $('vn-stage').classList.toggle('is-revealing', reveal.length < reveal.glyphs.length);
@@ -1104,7 +1193,7 @@ function fullPlaybackStep() {
   const ended = storyComplete(scenario), locked = Boolean($('send')?.disabled);
   const problem = storageProblem(state.api)?.message || (state.api?._pendingRecovery?.() ? '먼저 진행상황에서 복구를 완료해 주세요.' : '')
     || (pendingAdjudication(state.api) && !locked && !state.awaitingTurn && !autoContinuation.running ? '판정 보완이 필요해 완전 자동을 멈췄습니다. 진행상황을 확인해 주세요.' : '')
-    || (!textKey() || !state.keys.openai ? '본문 생성과 AI 음성을 위한 API 키를 확인해 주세요.' : '')
+    || (!textKey() || !voiceKey() ? `본문 생성과 AI 음성(${ttsProvider(state.reading.voiceProvider).keyLabel})을 위한 API 키를 확인해 주세요.` : '')
     || (mediaPaused(state.activeSlug, 'voice') ? '저장 공간 관리에서 음성 생성을 다시 켜 주세요.' : '');
   return fullAutoStep({ problem, visual: state.fullAutoArt, ended, tailStatus: last?.status, hasPage: Boolean(state.pages[state.cursor]), hasNext: state.cursor < state.pages.length - 1,
     blocked: playbackBlocked(true), revealing: Boolean(state.reveal.timer), growing: state.pages[state.cursor]?.isGrowing,
@@ -1159,7 +1248,7 @@ function toggleFullPlayback() {
   if (state.playback === 'full') { stopPlayback(); return; }
   if (state.screen !== 'stage' || document.hidden || document.querySelector('dialog[open]')) return;
   if (!$('vn-history').hidden || root.classList.contains('vn-menu-open')) return toast('기록이나 메뉴를 닫고 완전 자동을 켜 주세요.');
-  if (!textKey() || !state.keys.openai) { openSettings(); toast('완전 자동에는 본문 생성 키와 AI 음성용 OpenAI API 키가 필요합니다.'); return; }
+  if (!textKey() || !voiceKey()) { openSettings(); toast(`완전 자동에는 본문 생성 키와 AI 음성용 ${ttsProvider(state.reading.voiceProvider).keyLabel} API 키가 필요합니다.`); return; }
   if (autoContinuation.running || state.awaitingTurn) return toast('현재 요청이 끝난 뒤 완전 자동을 켜 주세요.');
   if ($('vn-input').value.trim() || $('input')?.value.trim()) return toast('입력 중인 내용을 먼저 전송하거나 지워 주세요.');
   const issue = storageProblem(state.api)?.message;
@@ -1201,6 +1290,14 @@ function playEffect(kind) {
   if (kind === 'flash_white') { flash('#ffffff', 420, 0.95); playEffect('shake'); }
   if (kind === 'flash_red') { flash('radial-gradient(circle,#b3121b55 30%,#6d0008 100%)', 760, 0.8); playEffect('shake'); }
 }
+const EYECATCH_LABEL = { dawn: 'DAWN', day: 'DAY', dusk: 'EVENING', night: 'NIGHT' };
+function showEyecatch(world) {
+  eyecatch.querySelector('span').textContent = EYECATCH_LABEL[lightFor(world.time)] || '';
+  eyecatch.querySelector('strong').textContent = String(world.time || '').slice(0, 40);
+  eyecatch.querySelector('small').textContent = String(world.location || '').slice(0, 60);
+  eyecatch.hidden = false; eyecatch.classList.remove('is-playing'); void eyecatch.offsetWidth; eyecatch.classList.add('is-playing');
+  clearTimeout(state.eyecatchTimer); state.eyecatchTimer = setTimeout(() => { eyecatch.hidden = true; eyecatch.classList.remove('is-playing'); }, 2300);
+}
 function applyDirection(page, scene, view) {
   const stage = $('vn-stage');
   // Environment grading works on every beat, including streaming ones.
@@ -1213,7 +1310,11 @@ function applyDirection(page, scene, view) {
   // framing updates; location cuts belong to the first arrival on the beat.
   const refresh = state.lastDirectionKey.startsWith(`${key}:`);
   const transition = refresh ? 'none' : transitionFor(state.lastScene, scene);
+  const previousLight = state.lastScene?.world?.time ? lightFor(state.lastScene.world.time) : '';
   state.lastDirectionKey = directionKey; state.lastScene = scene;
+  // Eyecatch: a short full-screen time card when the story moves to another
+  // part of the day, the first time it is read.
+  if (transition !== 'none' && previousLight && scene?.world?.time && previousLight !== lightFor(scene.world.time) && state.cursor > state.readThrough && state.reading.cinema === 'on' && !motionReduced()) showEyecatch(scene.world);
   const direction = mergeDirection(directionAt(state.pages, state.cursor, scene), model);
   state.focusId = direction.focusId;
   stage.dataset.shot = direction.shot;
@@ -1272,11 +1373,14 @@ function renderPage() {
   const music = musicDirection.update({ scope: sceneScope(), scene: String(scene?.world?.location || ''), pageKey: pageKey(page), index: state.cursor,
     mood: view?.direction?.mood || $('vn-stage').dataset.mood || 'normal', music: view?.direction?.music,
     dramatic: ['heavy_shake', 'flash_red', 'flash_white'].includes(view?.direction?.fx),
+    // Only read on the first beat after a reset (load, new story).
+    seed: () => musicSeed(state.cursor, index => { const row = state.pages[index], rowScene = pageScene(row), rowView = rowScene ? assets.view(rowScene, row) : null; return rowView?.direction ? { music: rowView.direction.music, mood: rowView.direction.mood } : null; }, { limit: 40 }),
     provisional: page.isLive || ['publishing', 'checking', 'pending'].includes(view?.castStatus) });
   score.update(music);
   void workMusic.update(state.activeSlug, music, scenario?.runtime?.packageContract?.presentation?.music);
   $('vn-stage').dataset.drawnShot = view?.shotKind || '';
-  const voiceChoice = readVoiceChoices()[view?.speakerId] || '';
+  const voiceChoice = speakerVoice(view);
+  const tts = { provider: state.reading.voiceProvider, narrator: state.reading.narratorVoice };
   const speakingPortrait = view?.portraits.find(person => person.id === view.speakerId);
   const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && (slot.vnReadyUrl === speakingPortrait.url || speakingPortrait.expressionReady === false && slot.vnReadyUrl && slot.vnBaseKey === speakingPortrait.baseKey)));
   // Start the deadline on the first published page, even if it is narration.
@@ -1288,11 +1392,13 @@ function renderPage() {
   if (state.dialogueWaiting) dialogueGraceTimer = setTimeout(() => { dialogueGraceTimer = 0; if (state.screen === 'stage') renderPage(); }, graceRemaining + 1);
   $('vn-dialogue-wait').hidden = !state.dialogueWaiting;
   if (state.playback === 'full') {
-    const key = JSON.stringify([sceneScope(), pageKey(page), page.rawText || page.text]);
+    // Re-evaluated when the speaker check settles: a quotation is never read
+    // in the narrator's voice just because its speaker was not known yet.
+    const key = JSON.stringify([sceneScope(), pageKey(page), page.rawText || page.text, view?.castStatus || '', view?.speakerId || '', voiceChoice, tts.provider, tts.narrator]);
     if (page.isGrowing || state.dialogueWaiting) state.fullAutoVoice = null;
-    else if (state.fullAutoVoice?.key !== key) state.fullAutoVoice = { key, line: readingVoiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view)) };
+    else if (state.fullAutoVoice?.key !== key) state.fullAutoVoice = { key, line: readingVoiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view), tts) };
     state.voiceLine = state.fullAutoVoice?.line || null;
-  } else state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view));
+  } else state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view), tts);
   voice.update(state.voiceLine); updateVoiceControls();
   cinema.update({ pageKey: pageKey(page), turnId: page.turnId, turnIndex: page.turnIndex, title: scene?.world?.location || scenario?.event?.title, direction: view?.direction || {}, portraits: view?.portraits || [], fresh: state.cursor > state.readThrough && !page.isLive && state.playback !== 'skip', enabled: state.reading.cinema === 'on' && state.screen === 'stage', waiting: state.dialogueWaiting, eventArt: Boolean(view?.eventBackground || view?.shotKind) });
   const selectedTurn = turns[page.turnIndex];
@@ -1397,7 +1503,11 @@ function nextPage(fromPlayback = false) {
   if (state.actions) return;
   if (state.dialogueWaiting) return;
   if (finishReveal()) return;
-  if (state.cursor < state.pages.length - 1) { if (!fromPlayback) sound.play(); state.cursor += 1; state.following = false; renderPage(); return; }
+  if (state.cursor < state.pages.length - 1) {
+    if (!fromPlayback) sound.play();
+    if (state.reading.voiceContinue === 'on' && voice.phase === 'playing') { stopReleasedVoice(); state.releasedVoice = voice.release(); if (state.releasedVoice) state.releasedVoice.onended = () => { state.releasedVoice = null; }; }
+    state.cursor += 1; state.following = false; renderPage(); return;
+  }
   if (state.awaitingTurn || busy()) return;
   const last = state.api._turns().at(-1);
   if (last && ['STREAMING', 'ADJUDICATION_PENDING'].includes(last.status)) return toast('장면이 완성되는 중입니다.');
@@ -1405,7 +1515,7 @@ function nextPage(fromPlayback = false) {
 }
 
 function prevPage() {
-  stopPlayback();
+  stopPlayback(); stopReleasedVoice();
   if (state.hideText) return setTextHidden(false);
   if (state.actions) { state.actions = false; renderPage(); return; }
   if (state.cursor > 0) { state.cursor -= 1; state.following = false; renderPage(); }
@@ -1471,6 +1581,7 @@ function openSettings() {
   $('vn-reading-layout').value = state.reading.layout;
   $('vn-auto-pace').value = state.reading.pace;
   $('vn-font-size').value = state.reading.font;
+  $('vn-typeface').value = state.reading.typeface;
   $('vn-motion').value = state.reading.motion;
   $('vn-sound').value = state.reading.sound;
   $('vn-ambience').value = state.reading.ambience;
@@ -1478,18 +1589,15 @@ function openSettings() {
   $('vn-drawn-shots').value = state.reading.shots;
   $('vn-cinema-setting').value = state.reading.cinema;
   $('vn-actor-motion').value = state.reading.actorMotion;
+  $('vn-face-compose').value = state.reading.faceCompose;
   $('vn-music').value = state.reading.music;
   void musicSettings.refresh();
   $('vn-music-volume').value = String(state.reading.musicVolume * 100);
   $('vn-voice-setting').value = state.reading.voice;
-  const voiceChoices = readVoiceChoices(); $('vn-voice-actors').replaceChildren();
-  for (const person of state.met) {
-    const label = document.createElement('label'); label.textContent = `${person.name} · 목소리`;
-    const select = document.createElement('select'); select.dataset.voiceId = person.id;
-    select.add(new Option('자동 · 인물별 고정', ''));
-    for (const name of voices) select.add(new Option(name, name));
-    select.value = voiceChoices[person.id] || ''; label.append(select); $('vn-voice-actors').append(label);
-  }
+  $('vn-voice-provider').value = state.reading.voiceProvider;
+  $('vn-voice-continue').value = state.reading.voiceContinue;
+  $('vn-voice-volume').value = String(Math.round(state.reading.voiceVolume * 100));
+  renderVoiceActors(state.reading.voiceProvider, state.reading.narratorVoice);
   $('vn-art-style').value = state.artStyle;
   $('vn-art-style').disabled = !state.activeSlug;
   const artPrefs = readWorkArt(localStorage, sceneScope());
@@ -1500,6 +1608,27 @@ function openSettings() {
   if (!dialog.open) dialog.showModal();
   if (!$('vn-cost-panel').hidden) void renderCosts();
   if (!storagePanel.hidden) void storageManager.refresh();
+}
+
+// Per-person voice and volume for the provider selected in the dialog.
+function renderVoiceActors(provider, narrator) {
+  const choices = readVoiceChoices(provider), volumes = readVoiceVolumes(), list = $('vn-voice-actors');
+  list.replaceChildren();
+  const narratorSelect = $('vn-narrator-voice'); narratorSelect.replaceChildren(new Option(`자동 · ${NARRATOR_VOICE[voiceFamily(provider)]}`, ''));
+  for (const name of narratorOptions(provider)) narratorSelect.add(new Option(voiceFamily(provider) === 'gemini' ? `${name} · ${GEMINI_VOICES[name]}` : name, name));
+  narratorSelect.value = narratorOptions(provider).includes(narrator) ? narrator : '';
+  for (const person of state.met) {
+    const row = document.createElement('div'); row.className = 'vn-voice-actor';
+    const label = document.createElement('label'); label.textContent = `${person.name} · 목소리`;
+    const select = document.createElement('select'); select.dataset.voiceId = person.id;
+    select.add(new Option(voiceFamily(provider) === 'gemini' ? '자동 · 인물마다 다른 목소리' : '자동 · 인물별 고정', ''));
+    for (const name of voiceOptions(provider)) select.add(new Option(voiceFamily(provider) === 'gemini' ? `${name} · ${GEMINI_VOICES[name]}` : name, name));
+    select.value = voiceOptions(provider).includes(choices[person.id]) ? choices[person.id] : '';
+    const volumeLabel = document.createElement('label'); volumeLabel.textContent = '크기';
+    const volume = document.createElement('input'); volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '5'; volume.dataset.volumeId = person.id;
+    volume.value = String(Math.round((volumes[person.id] ?? 1) * 100)); volume.setAttribute('aria-label', `${person.name} 음성 크기`);
+    label.append(select); volumeLabel.append(volume); row.append(label, volumeLabel); list.append(row);
+  }
 }
 
 function updateImageProviderFields() {
@@ -1538,10 +1667,14 @@ async function saveSettings() {
     state.effort = $('vn-muse-effort').value;
     localStorage.setItem(providerKey, state.provider);
     localStorage.setItem(effortKey, state.effort);
-    state.reading = { layout: $('vn-reading-layout').value, pace: $('vn-auto-pace').value, font: $('vn-font-size').value, motion: $('vn-motion').value, sound: $('vn-sound').value,
-      ambience: $('vn-ambience').value, cg: $('vn-cg-setting').value, cinema: $('vn-cinema-setting').value, shots: $('vn-drawn-shots').value, actorMotion: $('vn-actor-motion').value, music: $('vn-music').value, musicVolume: Number($('vn-music-volume').value) / 100, voice: $('vn-voice-setting').value };
+    const voiceProvider = TTS_PROVIDERS[$('vn-voice-provider').value] ? $('vn-voice-provider').value : 'openai';
+    state.reading = { ...state.reading, layout: $('vn-reading-layout').value, pace: $('vn-auto-pace').value, font: $('vn-font-size').value, typeface: TYPEFACES[$('vn-typeface').value] ? $('vn-typeface').value : 'auto', motion: $('vn-motion').value, sound: $('vn-sound').value,
+      ambience: $('vn-ambience').value, cg: $('vn-cg-setting').value, cinema: $('vn-cinema-setting').value, shots: $('vn-drawn-shots').value, actorMotion: $('vn-actor-motion').value, faceCompose: $('vn-face-compose').value === 'on' ? 'on' : 'off', music: $('vn-music').value, musicVolume: Number($('vn-music-volume').value) / 100, voice: $('vn-voice-setting').value,
+      voiceProvider, narratorVoice: $('vn-narrator-voice').value, voiceContinue: $('vn-voice-continue').value === 'on' ? 'on' : 'off', voiceVolume: Number($('vn-voice-volume').value) / 100 };
     const voiceChoices = Object.fromEntries([...$('vn-voice-actors').querySelectorAll('select')].map(select => [select.dataset.voiceId, select.value]));
-    localStorage.setItem(`dancheong-vn-voices-v1:${state.activeSlug}`, JSON.stringify(voiceChoices));
+    localStorage.setItem(voiceChoicesKey(voiceProvider), JSON.stringify(voiceChoices));
+    const volumes = Object.fromEntries([...$('vn-voice-actors').querySelectorAll('input[data-volume-id]')].map(input => [input.dataset.volumeId, Number(input.value) / 100]));
+    if (state.activeSlug) localStorage.setItem(`dancheong-vn-voice-volume-v1:${state.activeSlug}`, JSON.stringify(volumes));
     voice.reset();
     if (state.activeSlug) {
       writeWorkArt(localStorage, sceneScope(), { ...readWorkArt(localStorage, sceneScope()), guideKey: guideSelect.value });
@@ -1549,7 +1682,7 @@ async function saveSettings() {
       try { if (state.artStyle) localStorage.setItem(artStyleKey(state.activeSlug), state.artStyle); else localStorage.removeItem(artStyleKey(state.activeSlug)); } catch { /* Style stays for this tab. */ }
     }
     localStorage.setItem(readingPrefsKey, JSON.stringify({ ...state.reading, eventScenes: state.reading.cg }));
-    root.dataset.motion = state.reading.motion;
+    root.dataset.motion = state.reading.motion; applyTypeface();
     state.reveal.key = ''; state.lastDirectionKey = '';
     applyProvider();
     state.api._setSettings({ styleGuide: $('vn-style-guide').value.trim(), typingSpeed: $('vn-typing-speed').value, imageQuality: $('vn-image-quality').value });
@@ -1563,15 +1696,32 @@ async function saveSettings() {
   finally { $('vn-settings-save').disabled = false; }
 }
 
+// Backlog voice: replays a stored take only, never a new paid request.
+async function replayBacklogVoice(page, control) {
+  if (state.reading.voice !== 'on') { toast('설정에서 AI 대사 음성을 켜면 기록에서 다시 들을 수 있습니다.'); return; }
+  const scene = pageScene(page), view = scene ? assets.view(scene, page) : null, tts = { provider: state.reading.voiceProvider, narrator: state.reading.narratorVoice };
+  const resolved = resolvedSpeaker(page, view);
+  const lines = [voiceLine(resolved, view, sceneScope(), speakerVoice(view), {}, tts), readingVoiceLine(resolved, view, sceneScope(), speakerVoice(view), {}, tts)];
+  state.backlogVoice = true; control.disabled = true;
+  try { if (!await voice.replayStored(lines)) toast('이 문장은 저장된 음성이 없습니다. 장면에서 음성을 켠 상태로 읽은 문장만 다시 들을 수 있습니다.'); }
+  finally { control.disabled = false; }
+}
 function renderHistory() {
   const list = $('vn-history-list'); list.replaceChildren();
   for (const [index, page] of state.pages.entries()) {
     if (index > state.readThrough) break;
-    const button = document.createElement('button'); button.type = 'button';
+    const row = document.createElement('div'); row.className = 'vn-history-row';
+    const button = document.createElement('button'); button.type = 'button'; button.title = '이 문장으로 돌아가기';
     const title = document.createElement('strong'); title.textContent = `${String(index + 1).padStart(2, '0')} · ${page.kind === 'dialogue' ? page.speaker || '대화' : '이야기'}`;
-    const copy = document.createElement('span'); copy.textContent = pageText(page);
-    button.append(title, copy); button.addEventListener('click', () => { state.cursor = index; state.following = index === state.pages.length - 1; state.actions = false; $('vn-history').hidden = true; renderPage(); });
-    list.append(button);
+    const copy = document.createElement('span'); renderTypeset(copy, typeset(pageText(page)));
+    button.append(title, copy); button.addEventListener('click', () => { voice.stop(); state.backlogVoice = false; state.cursor = index; state.following = index === state.pages.length - 1; state.actions = false; $('vn-history').hidden = true; renderPage(); });
+    row.append(button);
+    if (page.kind === 'dialogue' || page.quoted) {
+      const replay = document.createElement('button'); replay.type = 'button'; replay.className = 'vn-history-voice'; replay.textContent = '▶'; replay.setAttribute('aria-label', '이 대사 음성 다시 듣기');
+      replay.addEventListener('click', event => { event.stopPropagation(); void replayBacklogVoice(page, replay); });
+      row.append(replay);
+    }
+    list.append(row);
   }
   list.lastElementChild?.scrollIntoView({ block: 'nearest' });
 }
@@ -1603,10 +1753,11 @@ $('vn-settings-close').addEventListener('click', () => $('vn-settings-dialog').c
 $('vn-settings-cancel').addEventListener('click', () => $('vn-settings-dialog').close());
 $('vn-settings-save').addEventListener('click', () => void saveSettings());
 imageProviderFields.addEventListener('change', updateImageProviderFields);
+$('vn-voice-provider').addEventListener('change', () => renderVoiceActors($('vn-voice-provider').value, ''));
 $('vn-settings-dialog').querySelector('form').addEventListener('submit', event => { event.preventDefault(); void saveSettings(); });
 $('vn-history-toggle').addEventListener('click', openHistory);
 $('vn-dialogue-bypass').addEventListener('click', () => { state.dialogueBypass.add(pageKey(state.pages[state.cursor])); state.dialogueWaiting = false; renderPage(); });
-$('vn-history-close').addEventListener('click', () => { $('vn-history').hidden = true; });
+$('vn-history-close').addEventListener('click', () => { $('vn-history').hidden = true; voice.stop(); state.backlogVoice = false; });
 $('vn-reader-log').addEventListener('click', openHistory);
 $('vn-reader-settings').addEventListener('click', openSettings);
 visualStatus.addEventListener('click', () => {
@@ -1618,6 +1769,8 @@ visualStatus.addEventListener('click', () => {
   }
 });
 $('vn-auto').addEventListener('click', () => togglePlayback('auto'));
+quickSaveButton.addEventListener('click', () => void quickSave());
+quickLoadButton.addEventListener('click', () => void quickLoad());
 $('vn-full-auto').addEventListener('click', toggleFullPlayback);
 $('vn-skip').addEventListener('click', () => togglePlayback('skip'));
 $('vn-hide-text').addEventListener('click', () => setTextHidden(true));
@@ -1634,20 +1787,24 @@ $('vn-stage').addEventListener('click', event => {
   nextPage();
 });
 $('vn-stage').addEventListener('contextmenu', event => { if (!event.target.closest('input, textarea')) { event.preventDefault(); setTextHidden(!state.hideText); } });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPlayback(); cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.stop(); } else if (state.screen === 'stage') { ambience.update(state.ambienceTarget); renderPage(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPlayback(); cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.stop(); stopReleasedVoice(); } else if (state.screen === 'stage') { ambience.update(state.ambienceTarget); renderPage(); } });
 
+// Blink and mouth frames (when prepared): irregular blinks, and a mouth that
+// follows the level of the voice actually playing for this person.
 setInterval(() => {
   const enabled = state.reading.actorMotion === 'masked' && !motionReduced() && state.screen === 'stage' && !document.hidden && !$('vn-settings-dialog').open;
+  const time = performance.now(), voiced = voicePlayer.speaker(), level = voiced ? voicePlayer.level() : 0;
   for (const slot of $('vn-characters').children) {
-    const frames = slot.vnMotion, img = slot.querySelector('.vn-character-image.is-visible');
+    const frames = slot.vnMotion, img = [...slot.querySelectorAll('.vn-character-image.is-visible')].at(-1);
     if (!frames || !img || slot.hidden) continue;
-    let seed = 0; for (const ch of slot.dataset.characterId || '') seed += ch.codePointAt(0);
-    const time = performance.now() + seed * 17;
-    const speaking = slot.classList.contains('is-speaking') && (voice.phase === 'playing' || $('vn-stage').classList.contains('is-revealing'));
-    const src = enabled && time % 4900 < 140 && frames.blink ? frames.blink : enabled && speaking && Math.floor(time / 160) % 2 && frames.talk ? frames.talk : frames.base;
+    const id = slot.dataset.characterId || '';
+    slot.vnBlink ||= createBlinker(id, { now: time }); slot.vnMouth ||= createMouth();
+    const byVoice = voiced === id, typing = !voiced && slot.classList.contains('is-speaking') && $('vn-stage').classList.contains('is-revealing');
+    const mouth = slot.vnMouth.update(time, { speaking: byVoice || typing, level: byVoice ? level : null });
+    const src = enabled && frames.blink && slot.vnBlink.closed(time) ? frames.blink : enabled && frames.talk && mouth ? frames.talk : frames.base;
     if (img.src !== src) img.src = src;
   }
-}, 80);
+}, 50);
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (state.screen === 'stage') renderPage(); }, 120); });
 $('vn-prev').addEventListener('click', prevPage);
@@ -1667,12 +1824,13 @@ document.addEventListener('keydown', event => {
   if (state.screen !== 'stage' || document.querySelector('dialog[open]') || ['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName) || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.key === 'Escape') {
     event.preventDefault(); stopPlayback();
-    if (!$('vn-history').hidden) $('vn-history').hidden = true;
+    if (!$('vn-history').hidden) { $('vn-history').hidden = true; voice.stop(); state.backlogVoice = false; }
     else if (state.hideText) setTextHidden(false);
     else if (state.actions) prevPage();
     else $('vn-menu-toggle').click();
     return;
   }
+  if (event.key === 'F5' || event.key === 'F9') { event.preventDefault(); if (event.key === 'F5') void quickSave(); else void quickLoad(); return; }
   if (!$('vn-history').hidden) return;
   const shortcut = event.key.toLowerCase();
   if (['a', 's', 'h', 'l', 'f'].includes(shortcut)) {

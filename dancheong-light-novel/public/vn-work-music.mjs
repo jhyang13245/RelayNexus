@@ -239,7 +239,7 @@ export function createMusicSettings({ parent, getWork, onChange, getGeminiKey = 
     const work = getWork(), key = getGeminiKey(), moods = chosen(), model = ai('model').value;
     const info = { ...getWorkInfo(), slug: work }, direction = ai('direction').value.trim();
     if (!work || running || !moods.length) return;
-    if (!key) { ai('status').textContent = '설정의 Nano Banana 2 · Gemini API 키를 먼저 입력하고 저장해 주세요.'; return; }
+    if (!key) { ai('status').textContent = '설정의 Gemini API 키를 먼저 입력하고 저장해 주세요.'; return; }
     running = new AbortController(); ai('cancel').hidden = false; estimate();
     void requestDurableStorage();
     let done = 0;
