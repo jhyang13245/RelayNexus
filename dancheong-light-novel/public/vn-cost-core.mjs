@@ -9,6 +9,8 @@ const count = value => Number.isFinite(Number(value)) && Number(value) >= 0 ? Nu
 const GEMINI_TTS = { 'gemini-3.8-flash-tts': [0.5, 9], 'gemini-3.8-flash-lite-tts': [0.5, 6] };
 export function estimateCost({ provider, model = '', usage, serviceTier, state, at }) {
   if (provider === 'go') return { usd: null, kind: 'subscription' };
+  // Typecast bills plan credits per character, not a published per-call USD rate.
+  if (provider === 'typecast') return { usd: null, kind: 'credits' };
   // Lyria is billed per generated song (Gemini API pricing: clip $0.04, full song $0.08).
   if (provider === 'gemini' && /^lyria-/u.test(model)) return state === 'complete' ? { usd: model === 'lyria-3-clip-preview' ? 0.04 : 0.08, kind: 'estimate' } : { usd: null, kind: 'unknown' };
   if (!usage || !Number.isFinite(usage.input_tokens) || !Number.isFinite(usage.output_tokens)) return { usd: null, kind: 'unknown' };
@@ -53,10 +55,11 @@ export function sumCosts(rows) {
     if (typeof price.usd === 'number') sum.usd += price.usd;
     if (price.kind === 'unknown') sum.unknown++;
     if (price.kind === 'subscription') sum.subscription++;
+    if (price.kind === 'credits') sum.credits++;
     sum.input += count(row.usage?.input_tokens); sum.output += count(row.usage?.output_tokens);
     sum.calls++;
     return sum;
-  }, { usd: 0, unknown: 0, subscription: 0, input: 0, output: 0, calls: 0 });
+  }, { usd: 0, unknown: 0, subscription: 0, credits: 0, input: 0, output: 0, calls: 0 });
 }
 export function usageReceipt(payload) {
   const response = payload?.response || payload;

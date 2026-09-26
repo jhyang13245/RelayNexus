@@ -54,13 +54,14 @@ export async function loadDeviceKeys() {
     let openai = await readSecret(db, key, 'openai');
     const go = await readSecret(db, key, 'go');
     const gemini = await readSecret(db, key, 'gemini');
+    const typecast = await readSecret(db, key, 'typecast');
     const legacy = localStorage.getItem(LEGACY_KEY) || '';
     if (legacy && !openai) {
       await storeDeviceKeys({ openai: legacy, go, gemini });
       openai = legacy;
     }
     if (legacy) localStorage.removeItem(LEGACY_KEY);
-    return { openai, go, gemini };
+    return { openai, go, gemini, typecast };
   } finally { db.close(); }
 }
 
@@ -69,7 +70,7 @@ export async function storeDeviceKeys(values) {
   try {
     const key = await encryptionKey(db);
     // A partial update never erases another provider's existing key.
-    const records = await Promise.all(['openai', 'go', 'gemini'].filter(name => Object.hasOwn(values, name)).map(async name => {
+    const records = await Promise.all(['openai', 'go', 'gemini', 'typecast'].filter(name => Object.hasOwn(values, name)).map(async name => {
       const value = values[name];
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(value));

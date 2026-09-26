@@ -19,7 +19,7 @@ import { displaySprite } from './vn-sprite.mjs';
 import { createAmbience, ambienceFor } from './vn-audio.mjs';
 import { createScore } from './vn-music.mjs';
 import { createMusicDirection, musicSeed } from './vn-music-direction.mjs';
-import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, NARRATOR_VOICE } from './vn-voice.mjs';
+import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs';
 import { createVoicePlayer } from './vn-voice-post.mjs';
 import { prepareMotion } from './vn-motion.mjs';
 import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs';
@@ -60,7 +60,7 @@ root.innerHTML = `
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <button id="vn-library-slots" class="vn-slot-open" type="button">저장·불러오기</button>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.14.0 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.15.0 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -127,8 +127,10 @@ settingsForm.querySelector('h2').textContent = '설정';
 settingsForm.querySelector('.vn-kicker').textContent = 'PREFERENCES';
 const settingsTabs = document.createElement('div');
 settingsTabs.className = 'vn-settings-tabs'; settingsTabs.setAttribute('role', 'tablist');
-settingsTabs.innerHTML = '<button type="button" id="vn-connection-tab" role="tab" aria-controls="vn-connection-panel" aria-selected="true">연결·화면</button><button type="button" id="vn-cost-tab" role="tab" aria-controls="vn-cost-panel" aria-selected="false">사용량·비용</button>';
-settingsTabs.insertAdjacentHTML('beforeend', '<button type="button" id="vn-storage-tab" role="tab" aria-controls="vn-storage-panel" aria-selected="false">저장 공간</button>');
+// Settings tabs: connection keys and models, presentation, voice and music,
+// usage and storage. Save/cancel is shared by the three editable tabs.
+const SETTINGS_TABS = [['connection', '연결'], ['direction', '연출'], ['audio', '음성·음악'], ['cost', '사용량·비용'], ['storage', '저장 공간']];
+settingsTabs.innerHTML = SETTINGS_TABS.map(([name, label], index) => `<button type="button" id="vn-${name}-tab" role="tab" aria-controls="vn-${name}-panel" aria-selected="${index === 0}">${label}</button>`).join('');
 settingsForm.querySelector('header').after(settingsTabs);
 const connectionPanel = document.createElement('div'); connectionPanel.id = 'vn-connection-panel'; connectionPanel.setAttribute('role', 'tabpanel'); connectionPanel.setAttribute('aria-labelledby', 'vn-connection-tab');
 for (const selector of ['.vn-provider-grid', '.vn-settings-fields', '.vn-settings-help', '.vn-settings-footer']) connectionPanel.append(settingsForm.querySelector(selector));
@@ -162,11 +164,26 @@ presentationFields.innerHTML = `<legend>추가 연출 · 베타</legend><div cla
   <div class="vn-settings-row"><label>AI 대사 음성<select id="vn-voice-setting"><option value="off">OFF · 끔</option><option value="on">ON · 음성 생성</option></select></label><label>음성 모델<select id="vn-voice-provider">${Object.entries(TTS_PROVIDERS).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('')}</select></label></div>
   <div class="vn-settings-row"><label>음성 크기<input id="vn-voice-volume" type="range" min="0" max="100" step="1"></label><label>다음 문장으로 넘길 때<select id="vn-voice-continue"><option value="off">음성 멈춤</option><option value="on">끝까지 재생 · 다음 음성이 나오면 교체</option></select></label></div>
   <label>낭독 목소리 · 완전 자동의 서술<select id="vn-narrator-voice"></select></label>
-  <small>AI가 생성한 음성입니다. OpenAI는 OpenAI API 키, Gemini 3.8 TTS는 위의 Gemini API 키를 사용하며 대사별 음성 비용이 추가됩니다. Gemini는 인물마다 서로 다른 목소리를 자동으로 배정하고 장면의 감정·상황을 연기 지시로 전달합니다. 같은 대사는 한 번만 생성해 저장하고, 다시 듣기와 되돌아가기는 추가 비용 없이 재생합니다. 모델을 바꾸면 이후 대사부터 새 목소리로 생성합니다. 전문 성우와 같은 연기 품질은 보장하지 않으며 음성 없이도 글은 바로 진행합니다.</small>
+  <label id="vn-typecast-field" hidden>Typecast API 키 <small>Typecast 캐릭터 보이스에 사용 · 이 기기에 암호화해 보관</small><input id="vn-typecast-key" type="password" autocomplete="off" maxlength="512" placeholder="Typecast API 키"><a class="vn-key-link" href="https://typecast.ai/developers/api" target="_blank" rel="noopener noreferrer">Typecast API 키 발급 ↗</a></label>
+  <div class="vn-typecast-tools" id="vn-typecast-tools" hidden><button type="button" id="vn-typecast-load">내 Typecast 캐릭터 목록 불러오기</button><span id="vn-typecast-status" role="status"></span></div>
+  <small id="vn-voice-help">AI가 생성한 음성입니다. OpenAI는 OpenAI API 키, Gemini 3.8 TTS는 연결 탭의 Gemini API 키, Typecast는 이 탭의 Typecast API 키를 사용하며 대사별 음성 비용(Typecast는 요금제 크레딧)이 추가됩니다. Gemini와 Typecast는 인물마다 서로 다른 목소리를 자동으로 배정합니다. Typecast는 목록을 불러온 뒤 인물별 캐릭터를 고를 수 있고, 표정·속삭임·외침 같은 연출은 감정 프리셋으로, 그 밖의 대사는 앞뒤 문장을 읽는 스마트 감정으로 연기합니다. 같은 대사는 한 번만 생성해 저장하고, 다시 듣기와 되돌아가기는 추가 비용 없이 재생합니다. 모델을 바꾸면 이후 대사부터 새 목소리로 생성합니다. 전문 성우와 같은 연기 품질은 보장하지 않으며 음성 없이도 글은 바로 진행합니다.</small>
   <div id="vn-voice-actors"></div></div>`;
-readingFields.after(presentationFields);
+// 연출 tab: reading and presentation. 음성·음악 tab: voices, sound, music.
+const settingsPanel = name => { const node = document.createElement('div'); node.id = `vn-${name}-panel`; node.hidden = true; node.setAttribute('role', 'tabpanel'); node.setAttribute('aria-labelledby', `vn-${name}-tab`); return node; };
+const directionPanel = settingsPanel('direction'), audioPanel = settingsPanel('audio');
+const fieldset = legend => { const node = document.createElement('fieldset'); node.className = 'vn-reading-settings'; node.innerHTML = `<legend>${legend}</legend><div class="vn-settings-fields"></div>`; return node; };
+const voiceFields = fieldset('AI 대사 음성'), soundFields = fieldset('효과음·배경음악');
+const moveTo = (target, ...nodes) => target.querySelector('.vn-settings-fields').append(...nodes);
+const rowOf = (source, id) => source.querySelector(`#${id}`).closest('.vn-settings-row') || source.querySelector(`#${id}`).closest('label');
+moveTo(voiceFields, rowOf(presentationFields, 'vn-voice-setting'), presentationFields.querySelector('#vn-typecast-field'), presentationFields.querySelector('#vn-typecast-tools'),
+  rowOf(presentationFields, 'vn-voice-volume'), rowOf(presentationFields, 'vn-narrator-voice'), presentationFields.querySelector('#vn-voice-help'), presentationFields.querySelector('#vn-voice-actors'));
+moveTo(soundFields, rowOf(readingFields, 'vn-sound'), rowOf(presentationFields, 'vn-music'));
+presentationFields.querySelector('legend').textContent = '추가 연출 · 베타';
+directionPanel.append(readingFields, presentationFields); audioPanel.append(voiceFields, soundFields);
+connectionPanel.after(directionPanel, audioPanel);
 const costPanel = document.createElement('div'); costPanel.id = 'vn-cost-panel'; costPanel.hidden = true; costPanel.setAttribute('role', 'tabpanel'); costPanel.setAttribute('aria-labelledby', 'vn-cost-tab'); settingsForm.append(costPanel);
 const storagePanel = document.createElement('div'); storagePanel.id = 'vn-storage-panel'; storagePanel.hidden = true; storagePanel.setAttribute('role', 'tabpanel'); storagePanel.setAttribute('aria-labelledby', 'vn-storage-tab'); settingsForm.append(storagePanel);
+const settingsFooter = connectionPanel.querySelector('.vn-settings-footer'); settingsForm.append(settingsFooter);
 
 const $ = (id) => document.getElementById(id);
 // Keep the engine's original recovery controls and their handlers, but put them
@@ -280,7 +297,7 @@ const voice = createVoice({ getEnabled: () => (state.reading.voice === 'on' || s
 function stopReleasedVoice() { const held = state.releasedVoice; state.releasedVoice = null; try { held?.pause(); } catch { /* ended */ } }
 const voiceBusy = () => voice.phase === 'playing' || Boolean(state.releasedVoice);
 const workMusic = createWorkMusic({ enabled: () => state.reading.music === 'tracks' && state.screen === 'stage' && !document.hidden, volume: () => state.reading.musicVolume * (voiceBusy() ? .3 : 1), onStatus: text => musicSettings.status(text) });
-const musicSettings = createMusicSettings({ parent: presentationFields.querySelector('.vn-settings-fields'), getWork: () => state.activeSlug, onChange: () => workMusic.invalidate(),
+const musicSettings = createMusicSettings({ parent: soundFields.querySelector('.vn-settings-fields'), getWork: () => state.activeSlug, onChange: () => workMusic.invalidate(),
   getGeminiKey: () => state.keys.gemini || '',
   getWorkInfo: () => { const work = currentWork(), scenario = state.api?._scenario(); return { title: work?.title || scenario?.title || '', subtitle: work?.subtitle || '', genre: work?.genre || '', summary: scenario?.summary || '', location: scenario?.world?.location || '' }; } });
 state.voiceLine = null;
@@ -355,8 +372,18 @@ let toastTimer = 0;
 const voiceControls = document.createElement('div'); voiceControls.className = 'vn-voice-controls';
 voiceControls.innerHTML = '<button type="button" id="vn-voice-toggle">AI 음성 OFF</button><button type="button" id="vn-voice-replay" hidden>다시 듣기</button><span id="vn-voice-status" role="status"></span>';
 $('vn-stage').append(voiceControls);
-const voiceFamily = (provider = state.reading.voiceProvider) => ttsProvider(provider).keyName === 'gemini' ? 'gemini' : 'openai';
-const voiceChoicesKey = (provider = state.reading.voiceProvider) => voiceFamily(provider) === 'gemini' ? `dancheong-vn-voices-gemini-v1:${state.activeSlug}` : `dancheong-vn-voices-v1:${state.activeSlug}`;
+const familyOf = (provider = state.reading.voiceProvider) => voiceFamily(provider);
+const voiceChoicesKey = (provider = state.reading.voiceProvider) => familyOf(provider) === 'openai' ? `dancheong-vn-voices-v1:${state.activeSlug}` : `dancheong-vn-voices-${familyOf(provider)}-v1:${state.activeSlug}`;
+// The Typecast character list belongs to the visitor's account, not a work.
+const typecastCatalogKey = 'dancheong-vn-typecast-voices-v1';
+try { setTypecastVoices(JSON.parse(localStorage.getItem(typecastCatalogKey) || '{}').voices); } catch { /* Load again in settings. */ }
+const TYPECAST_AGE = { child: '어린이', teenager: '10대', young_adult: '청년', middle_age: '중년', elder: '노년' };
+function voiceLabel(name, provider) {
+  if (familyOf(provider) === 'gemini') return `${name} · ${GEMINI_VOICES[name] || ''}`;
+  if (familyOf(provider) !== 'typecast') return name;
+  const row = typecastVoices().find(item => item.id === name);
+  return row ? [row.name, [row.gender === 'male' ? '남' : row.gender === 'female' ? '여' : '', TYPECAST_AGE[row.age] || ''].filter(Boolean).join('·'), (row.useCases || []).slice(0, 2).join('/')].filter(Boolean).join(' · ') : name;
+}
 function readVoiceChoices(provider) { try { return JSON.parse(localStorage.getItem(voiceChoicesKey(provider)) || '{}'); } catch { return {}; } }
 function readVoiceVolumes() { try { return JSON.parse(localStorage.getItem(`dancheong-vn-voice-volume-v1:${state.activeSlug}`) || '{}'); } catch { return {}; } }
 // Gemini casting is stored per story, so a person keeps the voice they were
@@ -365,12 +392,16 @@ function speakerVoice(view) {
   const id = view?.speakerId; if (!id) return '';
   const chosen = readVoiceChoices()[id];
   if (voiceOptions(state.reading.voiceProvider).includes(chosen)) return chosen;
-  if (voiceFamily() !== 'gemini') return '';
-  const key = `dancheong-vn-voice-cast-v1:gemini:${sceneScope()}`;
+  const family = familyOf();
+  if (family === 'openai') return '';
+  const key = `dancheong-vn-voice-cast-v1:${family}:${sceneScope()}`;
   let cast = {}; try { cast = JSON.parse(localStorage.getItem(key) || '{}'); } catch { cast = {}; }
-  if (GEMINI_VOICES[cast[id]] && cast[id] !== NARRATOR_VOICE.gemini) return cast[id];
+  if (voiceOptions(state.reading.voiceProvider).includes(cast[id])) return cast[id];
+  // Assignments to voices that are no longer offered are dropped, not reused.
+  cast = Object.fromEntries(Object.entries(cast).filter(([, name]) => voiceOptions(state.reading.voiceProvider).includes(name)));
   const person = view.portraits?.find(row => row.id === id);
   cast = castVoices([{ id, profile: view.speakerProfile || person?.profile || '' }], state.reading.voiceProvider, cast);
+  if (!cast[id]) return '';
   try { localStorage.setItem(key, JSON.stringify(cast)); } catch { /* This tab keeps the choice. */ }
   return cast[id];
 }
@@ -380,12 +411,13 @@ function updateVoiceControls() {
   $('vn-voice-toggle').textContent = `AI 음성 ${on ? 'ON' : 'OFF'}`; $('vn-voice-toggle').setAttribute('aria-pressed', String(on));
   $('vn-voice-replay').hidden = !on || !state.voiceLine;
   $('vn-voice-replay').textContent = voice.phase === 'playing' || voice.phase === 'preparing' ? '음성 중지' : voice.phase === 'error' ? '음성 다시 시도' : '다시 듣기';
+  if (on && familyOf() === 'typecast' && !typecastVoices().length) { $('vn-voice-status').textContent = 'Typecast 캐릭터 목록을 설정에서 불러와 주세요'; return; }
   $('vn-voice-status').textContent = state.playback === 'full' ? (state.fullAutoArt?.action === 'wait' ? `완전 자동 · ${state.fullAutoArt.reason}` : ({ preparing: '완전 자동 · 음성 준비 중', playing: '완전 자동 · 읽는 중', done: '완전 자동 · 다음 문장으로' }[voice.phase] || '완전 자동 · 장면 이어가기')) : on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', error: '음성 생성 실패', 'needs-key': `${ttsProvider(state.reading.voiceProvider).keyLabel} API 키 필요` }[voice.phase] || '') : '';
 }
 $('vn-voice-toggle').onclick = event => {
   event.stopPropagation();
   if (state.playback === 'full') { stopPlayback(); return; }
-  if (state.reading.voice !== 'on') { settingsTab(false); openSettings(); $('vn-voice-setting').focus(); return; }
+  if (state.reading.voice !== 'on') { settingsTab('audio'); openSettings(); $('vn-voice-setting').focus(); return; }
   state.reading.voice = 'off'; voice.reset();
   localStorage.setItem(readingPrefsKey, JSON.stringify({ ...state.reading, eventScenes: state.reading.cg })); updateVoiceControls();
 };
@@ -1166,7 +1198,9 @@ function voiceDelivery(page, view) {
   const near = [state.pages[at - 1], state.pages[at + 1]].filter(row => row && row.turnId === page.turnId && !row.quoted && row.kind !== 'dialogue' && Math.min(Math.abs(row.start - page.end), Math.abs(page.start - row.end)) <= 3);
   const emphasis = view?.direction?.emphasis;
   const spoken = String(page.rawText || page.text || '');
-  return { cue: near.map(row => String(row.rawText || row.text || '')).join(' ').slice(0, 240),
+  // Neighbouring published lines, for Typecast's context-aware ("smart") emotion.
+  const around = (from, to) => state.pages.slice(Math.max(0, from), Math.max(0, to)).filter(row => row?.turnId === page.turnId && !row.isGrowing).map(row => String(row.rawText || row.text || '')).join(' ');
+  return { cue: near.map(row => String(row.rawText || row.text || '')).join(' ').slice(0, 240), before: around(at - 3, at).slice(-600), after: around(at + 1, at + 3).slice(0, 600),
     emphasis: Boolean(emphasis?.kind && emphasis.kind !== 'none' && emphasis.text && spoken.includes(emphasis.text)) };
 }
 function stopPlayback() {
@@ -1571,6 +1605,7 @@ function openSettings() {
   $('vn-openai-key').value = state.keys.openai;
   $('vn-go-key').value = state.keys.go;
   $('vn-gemini-key').value = state.keys.gemini || '';
+  $('vn-typecast-key').value = state.keys.typecast || '';
   $('vn-background-provider').value = state.imageRouting.background;
   $('vn-character-provider').value = state.imageRouting.character;
   updateImageProviderFields();
@@ -1614,20 +1649,35 @@ function openSettings() {
 function renderVoiceActors(provider, narrator) {
   const choices = readVoiceChoices(provider), volumes = readVoiceVolumes(), list = $('vn-voice-actors');
   list.replaceChildren();
-  const narratorSelect = $('vn-narrator-voice'); narratorSelect.replaceChildren(new Option(`자동 · ${NARRATOR_VOICE[voiceFamily(provider)]}`, ''));
-  for (const name of narratorOptions(provider)) narratorSelect.add(new Option(voiceFamily(provider) === 'gemini' ? `${name} · ${GEMINI_VOICES[name]}` : name, name));
+  const typecast = familyOf(provider) === 'typecast';
+  $('vn-typecast-field').hidden = !typecast; $('vn-typecast-tools').hidden = !typecast;
+  if (typecast) $('vn-typecast-status').textContent = typecastVoices().length ? `캐릭터 ${typecastVoices().length}명 · 인물마다 다른 캐릭터를 자동 배정합니다` : 'API 키를 입력하고 목록을 불러와 주세요.';
+  const narratorSelect = $('vn-narrator-voice'); narratorSelect.replaceChildren(new Option(defaultNarrator(provider) ? `자동 · ${voiceLabel(defaultNarrator(provider), provider)}` : '자동 · 목록을 불러온 뒤 선택', ''));
+  for (const name of narratorOptions(provider)) narratorSelect.add(new Option(voiceLabel(name, provider), name));
   narratorSelect.value = narratorOptions(provider).includes(narrator) ? narrator : '';
   for (const person of state.met) {
     const row = document.createElement('div'); row.className = 'vn-voice-actor';
     const label = document.createElement('label'); label.textContent = `${person.name} · 목소리`;
     const select = document.createElement('select'); select.dataset.voiceId = person.id;
-    select.add(new Option(voiceFamily(provider) === 'gemini' ? '자동 · 인물마다 다른 목소리' : '자동 · 인물별 고정', ''));
-    for (const name of voiceOptions(provider)) select.add(new Option(voiceFamily(provider) === 'gemini' ? `${name} · ${GEMINI_VOICES[name]}` : name, name));
+    select.add(new Option(familyOf(provider) === 'openai' ? '자동 · 인물별 고정' : '자동 · 인물마다 다른 목소리', ''));
+    for (const name of voiceOptions(provider)) select.add(new Option(voiceLabel(name, provider), name));
     select.value = voiceOptions(provider).includes(choices[person.id]) ? choices[person.id] : '';
     const volumeLabel = document.createElement('label'); volumeLabel.textContent = '크기';
     const volume = document.createElement('input'); volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '5'; volume.dataset.volumeId = person.id;
     volume.value = String(Math.round((volumes[person.id] ?? 1) * 100)); volume.setAttribute('aria-label', `${person.name} 음성 크기`);
-    label.append(select); volumeLabel.append(volume); row.append(label, volumeLabel); list.append(row);
+    label.append(select); volumeLabel.append(volume); row.append(label, volumeLabel);
+    if (typecast) {
+      // Typecast's own sample of the chosen character (no credits used).
+      const preview = document.createElement('button'); preview.type = 'button'; preview.className = 'vn-voice-preview'; preview.textContent = '샘플 ▶';
+      preview.setAttribute('aria-label', `${person.name} 캐릭터 샘플 듣기`);
+      preview.addEventListener('click', () => {
+        const url = typecastVoices().find(item => item.id === select.value)?.preview;
+        if (!url) { toast(select.value ? '이 캐릭터는 샘플이 없습니다.' : '캐릭터를 먼저 골라 주세요.'); return; }
+        state.previewAudio?.pause(); state.previewAudio = new Audio(url); void state.previewAudio.play().catch(() => toast('샘플을 재생하지 못했습니다.'));
+      });
+      row.append(preview);
+    }
+    list.append(row);
   }
 }
 
@@ -1641,9 +1691,11 @@ function updateImageProviderFields() {
 }
 
 async function renderCosts() { await meter.render($('vn-cost-panel'), state.activeSlug); }
-function settingsTab(costs) {
-  const selected = costs === 'storage' ? 'storage' : costs ? 'cost' : 'connection';
-  for (const name of ['connection', 'cost', 'storage']) { $(`vn-${name}-panel`).hidden = name !== selected; $(`vn-${name}-tab`).setAttribute('aria-selected', String(name === selected)); }
+function settingsTab(target) {
+  // Legacy calls: false = connection, true = costs.
+  const selected = target === true ? 'cost' : typeof target === 'string' && SETTINGS_TABS.some(([name]) => name === target) ? target : 'connection';
+  for (const [name] of SETTINGS_TABS) { $(`vn-${name}-panel`).hidden = name !== selected; $(`vn-${name}-tab`).setAttribute('aria-selected', String(name === selected)); }
+  settingsFooter.hidden = ['cost', 'storage'].includes(selected);
   if (selected === 'cost') void renderCosts();
   if (selected === 'storage') void storageManager.refresh();
 }
@@ -1654,13 +1706,14 @@ async function saveSettings() {
   const openai = $('vn-openai-key').value.trim();
   const go = $('vn-go-key').value.trim();
   const gemini = $('vn-gemini-key').value.trim();
+  const typecast = $('vn-typecast-key').value.trim();
   const imageRouting = { background: $('vn-background-provider').value === 'gemini' ? 'gemini' : 'openai', character: $('vn-character-provider').value === 'gemini' ? 'gemini' : 'openai' };
-  if ([openai, go, gemini].some(key => key && !/^\S{1,512}$/u.test(key))) return toast('API 키에 공백이 있거나 길이가 너무 깁니다.');
+  if ([openai, go, gemini, typecast].some(key => key && !/^\S{1,512}$/u.test(key))) return toast('API 키에 공백이 있거나 길이가 너무 깁니다.');
   $('vn-settings-save').disabled = true;
   try {
-    await storeDeviceKeys({ openai, go, gemini });
+    await storeDeviceKeys({ openai, go, gemini, typecast });
     if (JSON.stringify(state.imageRouting) !== JSON.stringify(imageRouting) || state.keys.openai !== openai || state.keys.gemini !== gemini) assets.resetFailures();
-    state.keys = { openai, go, gemini };
+    state.keys = { openai, go, gemini, typecast };
     state.imageRouting = imageRouting;
     localStorage.setItem(imageRoutingKey, JSON.stringify(state.imageRouting));
     state.provider = provider in providerModels ? provider : 'openai';
@@ -1745,15 +1798,28 @@ $('vn-title-cast-close').addEventListener('click', () => { $('vn-title-cast-pane
 for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => { void ambience.resume(); void score.resume(); workMusic.resume(); }, { passive: true });
 $('vn-menu-toggle').addEventListener('click', () => { stopPlayback(); const open = root.classList.toggle('vn-menu-open'); $('vn-menu-toggle').setAttribute('aria-expanded', String(open)); });
 $('vn-settings').addEventListener('click', () => { closeMenu(); openSettings(); });
-$('vn-connection-tab').addEventListener('click', () => settingsTab(false));
-$('vn-cost-tab').addEventListener('click', () => settingsTab(true));
-$('vn-storage-tab').addEventListener('click', () => settingsTab('storage'));
-settingsTabs.addEventListener('keydown', event => { if (['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); const tabs = [...settingsTabs.querySelectorAll('[role="tab"]')], index = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true'), next = (index + (event.key === 'ArrowRight' ? 1 : 2)) % 3; settingsTab([false, true, 'storage'][next]); tabs[next].focus(); } });
+for (const [name] of SETTINGS_TABS) $(`vn-${name}-tab`).addEventListener('click', () => settingsTab(name));
+settingsTabs.addEventListener('keydown', event => { if (['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); const tabs = [...settingsTabs.querySelectorAll('[role="tab"]')], index = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true'), next = (index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length; settingsTab(SETTINGS_TABS[next][0]); tabs[next].focus(); } });
 $('vn-settings-close').addEventListener('click', () => $('vn-settings-dialog').close());
 $('vn-settings-cancel').addEventListener('click', () => $('vn-settings-dialog').close());
 $('vn-settings-save').addEventListener('click', () => void saveSettings());
 imageProviderFields.addEventListener('change', updateImageProviderFields);
 $('vn-voice-provider').addEventListener('change', () => renderVoiceActors($('vn-voice-provider').value, ''));
+$('vn-typecast-load').addEventListener('click', async () => {
+  const key = $('vn-typecast-key').value.trim() || state.keys.typecast || '', status = $('vn-typecast-status');
+  if (!key) { status.textContent = 'Typecast API 키를 먼저 입력해 주세요.'; $('vn-typecast-key').focus(); return; }
+  $('vn-typecast-load').disabled = true; status.textContent = '불러오는 중…';
+  try {
+    const response = await fetch('/api/typecast/voices?model=ssfm-v30', { headers: { Authorization: `Bearer ${key}` }, cache: 'no-store' });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !Array.isArray(result.voices)) throw new Error(result?.error?.message || '캐릭터 목록을 불러오지 못했습니다.');
+    setTypecastVoices(result.voices);
+    try { localStorage.setItem(typecastCatalogKey, JSON.stringify({ at: Date.now(), voices: result.voices })); } catch { /* Kept for this tab. */ }
+    renderVoiceActors($('vn-voice-provider').value, $('vn-narrator-voice').value);
+    status.textContent = `캐릭터 ${result.voices.length}명을 불러왔습니다. 저장하면 적용됩니다.`;
+  } catch (error) { status.textContent = error?.message || '캐릭터 목록을 불러오지 못했습니다.'; }
+  finally { $('vn-typecast-load').disabled = false; }
+});
 $('vn-settings-dialog').querySelector('form').addEventListener('submit', event => { event.preventDefault(); void saveSettings(); });
 $('vn-history-toggle').addEventListener('click', openHistory);
 $('vn-dialogue-bypass').addEventListener('click', () => { state.dialogueBypass.add(pageKey(state.pages[state.cursor])); state.dialogueWaiting = false; renderPage(); });

@@ -352,3 +352,17 @@
 .vn-gallery-view [data-prev] { left:8px; } .vn-gallery-view [data-next] { right:8px; }
 @media (max-width:640px) { .vn-gallery-grid { grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px 16px 16px; } .vn-gallery-track { grid-template-columns:1fr auto; } .vn-gallery-track small { grid-column:1 / -1; grid-row:2; } #vn-voice-actors .vn-voice-actor { grid-template-columns:1fr; } }
 .vn-save-slot.is-quick { border-color:#e9dfc466; }
+
+/* v13.15: five settings tabs scroll sideways on narrow screens; Typecast tools. */
+.vn-settings-tabs { overflow-x:auto; scrollbar-width:none; }
+.vn-settings-tabs::-webkit-scrollbar { display:none; }
+.vn-settings-tabs button { flex:none; white-space:nowrap; }
+@media (max-width:640px) { .vn-settings-tabs { gap:16px; } }
+.vn-settings-footer[hidden] { display:none; }
+.vn-typecast-tools { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.vn-typecast-tools[hidden], #vn-typecast-field[hidden] { display:none; }
+.vn-typecast-tools button, .vn-voice-preview { padding:8px 14px; border:1px solid #aacbf966; border-radius:999px; background:transparent; color:#dfeaff; cursor:pointer; }
+.vn-typecast-tools button:disabled { opacity:.5; }
+#vn-typecast-status { color:#aab6c6; font-size:13px; }
+#vn-voice-actors .vn-voice-actor:has(.vn-voice-preview) { grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto; }
+@media (max-width:640px) { #vn-voice-actors .vn-voice-actor:has(.vn-voice-preview) { grid-template-columns:1fr auto; } }

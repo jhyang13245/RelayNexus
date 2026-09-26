@@ -1,5 +1,5 @@
 {
-  "release": "v13.14.0",
+  "release": "v13.15.0",
   "description": "Complete application source; shared Neoreum/Jieum services and browser-local data are external.",
   "files": [
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 16992,
-      "sha256": "dfa12b3b755bde712e536671cdbfaccf19645e4b6551b6ee7697207fa86b89f5"
+      "bytes": 17535,
+      "sha256": "c376e261e6fccf42c81a7388b8da0203b4aa8ab74f444574ec2b4f395ef5c51e"
     },
     {
       "path": "app/api/catalog/route.ts",
@@ -56,6 +56,16 @@
       "path": "app/api/openai/[...path]/route.ts",
       "bytes": 2183,
       "sha256": "cac2b784857604eb07cb2e5fd5044da3c5d2024b92266d2ab572f7cebc8b2a1b"
+    },
+    {
+      "path": "app/api/typecast/voice/route.ts",
+      "bytes": 5825,
+      "sha256": "f9c37eb0b43c64375281dd9e527d8df4a7793d96b970e57a6a624772fd834d56"
+    },
+    {
+      "path": "app/api/typecast/voices/route.ts",
+      "bytes": 2771,
+      "sha256": "d47c0af40452fa562040c15ed5d2daac24affb3ca0684d7b5da4891c1d9c0d5c"
     },
     {
       "path": "app/api/voice/route.ts",
@@ -548,6 +558,11 @@
       "sha256": "379082da9e5884f20f7ce40654c3613f0393547f5c5e03c649daf1e79004062c"
     },
     {
+      "path": "docs/v13.15.0-settings-typecast.md",
+      "bytes": 5525,
+      "sha256": "35991005b7360b827dc1cac1cbe2039e5ea1198c9c43de0146905c8d705b0fb7"
+    },
+    {
       "path": "docs/v13.2-expression-redraw.md",
       "bytes": 2041,
       "sha256": "35f497325c3bdc58950ffdf00068a3b37aeb013fcad65d364c766d50697075cc"
@@ -705,7 +720,7 @@
     {
       "path": "public/cortex.html",
       "bytes": 1422036,
-      "sha256": "e19f9cb488ebb3048c2dbf22296c1179e38108a3127b49753ed12005f070f965"
+      "sha256": "381bfc01e211627f73cae75f81d1d8175aa83c51f6f6a7d94430112c23c2f203"
     },
     {
       "path": "public/favicon.svg",
@@ -804,13 +819,13 @@
     },
     {
       "path": "public/vn-cost-core.mjs",
-      "bytes": 4823,
-      "sha256": "b6b66aec17306f4bfbe34d6f4219c09225f3f0637c09cc99e6835cbdc5518372"
+      "bytes": 5037,
+      "sha256": "6072bb4e4956ff7ca44f00393cad6d2a090744c09bfa627ccc34a83207eb1f06"
     },
     {
       "path": "public/vn-costs.mjs",
-      "bytes": 11411,
-      "sha256": "094d23ba8487e25ef47183190790742c1dd17508880424f8b3144924052a01a1"
+      "bytes": 11790,
+      "sha256": "0a7603574bea4d2052f0a4b216406c60468859ff26a63b101f175e7bd9f8ded6"
     },
     {
       "path": "public/vn-direction.mjs",
@@ -884,8 +899,8 @@
     },
     {
       "path": "public/vn-key-vault.mjs",
-      "bytes": 3085,
-      "sha256": "bd87788e875400494871de763cca9c385e03950fccd24afaa7a655c1ba8f9bab"
+      "bytes": 3167,
+      "sha256": "f58aeec6518ba30625490a6bf784de487af6257f209574ffe43fee9e5bd1fd2d"
     },
     {
       "path": "public/vn-loop.mjs",
@@ -944,8 +959,8 @@
     },
     {
       "path": "public/vn-reader.css",
-      "bytes": 36312,
-      "sha256": "e81157a06fb8981883e4a408c1e721d02ff757f475d425170e90d4cb5e182878"
+      "bytes": 37350,
+      "sha256": "3bea4edf3fb6a2a1b562b8ea5a180eafacbb5e611ae908722c26bd6a08cb8609"
     },
     {
       "path": "public/vn-reader.mjs",
@@ -1029,8 +1044,8 @@
     },
     {
       "path": "public/vn-voice.mjs",
-      "bytes": 14750,
-      "sha256": "cb9c7a9eaf066902ce76299328f766dbfa4e8ad883ea7c20158d275d2c9312bc"
+      "bytes": 18425,
+      "sha256": "f8ba242dc6bdc9891539b8392ac824086450da60ce8e902e2690bf98b7a5aa95"
     },
     {
       "path": "public/vn-wardrobe.mjs",
@@ -1049,8 +1064,8 @@
     },
     {
       "path": "public/vn.js",
-      "bytes": 156667,
-      "sha256": "d78ff585fa8a4c540cb40f28e7406809d49ce8eccd418e2f1e19e61dac2c32a7"
+      "bytes": 163784,
+      "sha256": "3ae535828b0d5240020e042a5f633854f5f7ddf892a2524dad173f9f3504bbd4"
     },
     {
       "path": "public/window.svg",
@@ -1105,7 +1120,7 @@
     {
       "path": "scripts/package-source.mjs",
       "bytes": 2730,
-      "sha256": "815e9d56faf3d777f152634fb179444115734e85fef7422c28679385ac42a303"
+      "sha256": "d2b90d943af90108e3e1775aad3d91df322130695cb2820b83534796281f696f"
     },
     {
       "path": "scripts/pnpm-install.mjs",
@@ -1391,6 +1406,11 @@
       "path": "tests/vn-v1314-voice.test.mjs",
       "bytes": 11281,
       "sha256": "c2a82d882a239d849a33f1511747bf3c18eb70fc7e1053a8898a16164ccbdc9f"
+    },
+    {
+      "path": "tests/vn-v1315-typecast.test.mjs",
+      "bytes": 8402,
+      "sha256": "7e8337c015a171a66f0e0fdc9cea2c568272b936d0907ce3b82bc044d3d400c5"
     },
     {
       "path": "tests/vn-voice-regressions.test.mjs",
