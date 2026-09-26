@@ -43,6 +43,14 @@ test('a physical speaker must be drawn and decoded before dialogue; remote quote
   assert.equal(dialogueWait(page, view, { enabled: true, bypass: true }), false);
 });
 
+test('a stored event satisfies the next-page participant hint but not an observer portrait', () => {
+  const view = { castStatus: 'ready', speakerId: 'nadia', portraits: [], eventBackground: 'stored-event', eventCharacterIds: ['nadia'] };
+  const options = { complete: true, imagesEnabled: true, nextPage: { quoted: true }, nextView: view };
+  assert.equal(nextWaitReason(options), '');
+  assert.equal(nextWaitReason({ ...options, nextView: { ...view, speakerId: 'observer' } }), '다음 대사의 인물 준비 중');
+  assert.equal(dialogueWait(options.nextPage, view, { enabled: true }), true, 'current-page decode remains required');
+});
+
 test('verified attribution replaces the writer grandmother guess, including a grounded generic professor', () => {
   const page = { quoted: true, kind: 'dialogue', speaker: '한명진', characterId: 'grandmother', text: '수업을 마치겠습니다.' };
   const verified = resolvedSpeaker(page, { castStatus: 'ready', speakerName: '교수', speakerId: '' });

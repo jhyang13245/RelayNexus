@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     try { body = JSON.parse(new TextDecoder().decode(bytes)); } catch { return failure('요청 형식이 올바르지 않습니다.', 400); }
     if (!body || typeof body !== 'object' || Array.isArray(body)) return failure('요청 형식이 올바르지 않습니다.', 400);
     if (body.model && body.model !== MODEL) return failure('지원하지 않는 이미지 모델입니다.', 400);
+    if (body.maskImage !== undefined) return failure('픽셀 마스크 눈·입 편집은 OpenAI 인물 모델에서만 지원합니다.', 400);
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     if (prompt.length < 10 || prompt.length > 16000) return failure('이미지 프롬프트는 10~16,000자여야 합니다.', 400);
     if (body.quality !== undefined && !['low', 'medium'].includes(body.quality)) return failure('이미지 품질이 올바르지 않습니다.', 400);
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       if (!size || size > 8 * 1024 * 1024 || total > 18 * 1024 * 1024) return failure('참조 이미지 용량이 너무 큽니다.', 413);
       parts.push({ inlineData: { mimeType: match[1], data: match[2] } });
     }
-    const instructions = portrait ? `${prompt.replace(/(?:fully )?transparent background/giu, 'solid chroma-key background').replace(/, colored backdrop/giu, '')}\nOUTPUT BACKGROUND REQUIREMENT: Fill every pixel outside the person, including gaps between limbs, with perfectly uniform ${mattes[matte]} (${matte}), for later removal. No gradient, shadows, texture, checkerboard or transparency grid. The matte is a flat separation layer, not a light source: no reflected matte colour, coloured rim light, glow, outline or colour spill on hair, skin, clothes or fine strands. Use the character's own natural lineart colours right up to the silhouette, with clean fine detail and a crisp separation from the matte. Do not use this matte color on the person. Preserve reference identity, costume and framing. Output one image.` : prompt;
+    const instructions = portrait ? `${prompt.replace(/(?:fully )?transparent background/giu, 'solid chroma-key background').replace(/, colored backdrop/giu, '')}\nOUTPUT BACKGROUND REQUIREMENT: Fill every pixel outside the person, including gaps between limbs, with perfectly uniform ${mattes[matte]} (${matte}), for later removal. No gradient, shadows, texture, checkerboard or transparency grid. The matte is a flat separation layer, not a light source: no reflected matte colour, coloured rim light, glow, outline or colour spill on hair, skin, clothes or fine strands. Use the character's own natural lineart colours right up to the silhouette, with clean fine detail and a crisp separation from the matte. Do not use this matte color on the person. Preserve the target character identity and requested framing. Follow the current wardrobe specified in the prompt; default reference clothes must not override an explicitly requested outfit change. For an expression-only image, preserve the matching outfit shown in its reference. Output one image.` : prompt;
     parts.push({ text: instructions });
     // Spend detail on faces and event art; environment plates can be smaller.
     const imageSize = body.quality === 'medium' ? '2K' : body.purpose === 'background' ? '0.5K' : '1K';

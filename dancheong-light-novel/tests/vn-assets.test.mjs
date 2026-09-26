@@ -47,7 +47,7 @@ test('실패는 턴 진행이나 페이지 이동으로 자동 반복 청구하�
   assert.equal(h.requests.length, 4);
 });
 
-test('old expression art stays available offline; only the needed face is regenerated once', async () => {
+test('old expression art stays available offline; the paid base is preserved and only the needed face is upgraded', async () => {
   const first = scene(), smiling = scene('교실', 'smile');
   const saved = new Map([
     [first.environmentKey, { key: first.environmentKey, url: 'data:image/png;base64,Ymc=' }],
@@ -59,14 +59,14 @@ test('old expression art stays available offline; only the needed face is regene
   assert.equal(h.assets.view(smiling, {}).portraits[0].url, 'data:image/png;base64,b2xk');
   assert.equal(h.requests.length, 0);
   await h.assets.prepare(smiling, {});
-  assert.deepEqual(h.requests.map(row => row.purpose), ['expression']);
-  assert.deepEqual(h.requests[0].referenceImages, ['data:image/png;base64,YmFzZQ==']);
+  assert.deepEqual(h.requests.map(row => row.purpose), ['portrait', 'expression']);
+  assert.deepEqual(h.requests[1].referenceImages, [h.assets.view(smiling, {}).portraits[0].base], 'the new expression uses the preserved base');
   const newFace = h.assets.view(smiling, {}).portraits[0].url;
   assert.notEqual(newFace, 'data:image/png;base64,b2xk');
   for (let line = 0; line < 8; line++) await h.assets.prepare(smiling, {});
   const restored = harness({ saved });
   await restored.assets.prepare(smiling, {});
-  assert.equal(h.requests.length, 1);
+  assert.equal(h.requests.length, 2);
   assert.equal(restored.requests.length, 0);
   assert.equal(restored.assets.view(smiling, {}).portraits[0].url, newFace);
 });
@@ -108,7 +108,7 @@ test('the previous face-redraw cache remains an offline fallback and receives ju
   assert.equal(h.requests.length, 0);
   await h.assets.prepare(sc, { text: '서현은 친구의 무사 귀환을 반겼다.' });
   await h.assets.prepare(sc, { text: '대화가 이어졌다.' });
-  assert.deepEqual(h.requests.map(row => row.purpose), ['expression']);
+  assert.deepEqual(h.requests.map(row => row.purpose), ['portrait', 'expression']);
   assert.equal(saved.get(oldKey).url, 'prior-face', 'previous paid image remains stored');
   const restored = harness({ saved });
   await restored.assets.prepare(sc, {});
@@ -171,7 +171,8 @@ test('old Gemini portraits are cleaned once offline without regenerating or touc
   const assets = make(); await assets.prepare(sc, {}, { generate: false });
   assert.equal(assets.view(sc, {}).portraits[0].url, 'clean-edge');
   assert.equal(assets.view(sc, {}).background, 'background');
-  assert.deepEqual(calls, ['old-green-edge']); assert.equal(writes.length, 1); assert.equal(saved.get(key).chromaVersion, chromaVersion);
+  assert.deepEqual(calls, ['old-green-edge']); assert.equal(writes.filter(row => row.key === key).length, 1); assert.equal(saved.get(key).chromaVersion, chromaVersion);
+  assert.equal(writes.some(row => row.key === sc.environmentKey), false, 'adopting a place anchor never rewrites the paid environment');
   await make().prepare(sc, {}, { generate: false }); assert.equal(calls.length, 1);
   saved.set(key, { key, url: 'openai-art', provider: 'openai' });
   await make().prepare(sc, {}, { generate: false }); assert.equal(calls.length, 1);
@@ -193,13 +194,13 @@ test('all four background/character model combinations route matching keys, expr
     sc.publicText = '서현이 친구를 보호했다.'; sc.castPages = [{ start: 0, text: sc.publicText }];
     const selected = purpose => imageProviderFor(routing, purpose);
     const assets = createStageAssets({ getProvider: selected, getKey: purpose => `${selected(purpose)}-key`, getQuality: () => 'low', getReferences: () => [],
-      getCgEnabled: () => true, castDirector: { prepare: async s => s, view: s => s, timeline: () => [{ start: 0, characters: [person], direction: { cg: true } }] },
+      getCgEnabled: () => true, castDirector: { prepare: async s => s, view: s => s, timeline: () => [{ start: 0, characters: [person], direction: { cg: true, event: { characterIds: [person.id], castComplete: true } } }] },
       onChange() {}, onError: assert.fail, read: async () => null, write: async () => {}, chooseMatte: async () => 'green', removeMatte: async url => url,
       fetchImage: async (url, init) => { calls.push({ url, authorization: init.headers.Authorization, body: JSON.parse(init.body) }); return Response.json({ imageUrl: 'data:image/png;base64,aW1hZ2U=' }); } });
     await assets.prepare(sc, sc.castPages[0]);
     assert.deepEqual(calls.map(row => row.body.purpose).sort(), ['background', 'expression', 'portrait', 'scene']);
     for (const call of calls) {
-      const expected = call.body.purpose === 'background' ? background : character;
+      const expected = ['background', 'scene'].includes(call.body.purpose) ? background : character;
       assert.equal(call.url, expected === 'gemini' ? '/api/gemini/image' : '/api/image');
       assert.equal(call.authorization, `Bearer ${expected}-key`);
       assert.equal(call.body.model, expected === 'gemini' ? 'gemini-3.1-flash-image' : 'gpt-image-2.5-flare');

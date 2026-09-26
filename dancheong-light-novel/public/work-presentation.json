@@ -1,0 +1,16 @@
+{
+  "fate-seoul": {
+    "publicAliases": {
+      "NPC_SERVANT_SABER_JEONGJO_TS": ["소녀 검사", "소녀검사"]
+    },
+    "roleNames": ["세이버", "Saber"],
+    "eventPublicAliases": [
+      {
+        "characterId": "NPC_SERVANT_ARCHER_TESLA",
+        "eventIds": ["EV_ACT1_HISHIRI_05_FAKE_LIGHTNING", "EV_ACT1_HISHIRI_06_LIGHTNING_USER", "EV_ACT1_HISHIRI_07_STRANGERS", "EV_ACT1_HISHIRI_08_SECOND_MIMIC"],
+        "name": "정체불명의 남자",
+        "aliases": ["능선의 남자", "장신의 남자", "정체불명의 뇌전 사용자", "남자"]
+      }
+    ]
+  }
+}

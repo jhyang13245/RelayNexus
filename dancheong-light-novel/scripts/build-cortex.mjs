@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 const source = new URL('../vendor/Cortex_v1.42.0.html', import.meta.url);
 const output = new URL('../public/cortex.html', import.meta.url);
-const expectedSha256 = '1e5fbc6ac09532852a3492b2821efd99d7b16961bff23cc52693d05bdfc77a43';
+const expectedSha256 = 'e0b43be5f6eee30cf6908cea694545457c0cee48adbe43ac49348c5fd743b394';
 const bytes = await readFile(source);
 const actualSha256 = createHash('sha256').update(bytes).digest('hex');
 if (actualSha256 !== expectedSha256) throw new Error('Cortex source changed; review the new runtime before building.');
@@ -11,10 +11,20 @@ if (actualSha256 !== expectedSha256) throw new Error('Cortex source changed; rev
 const original = bytes.toString('utf8');
 const bootHead = await readFile(new URL('../public/vn-boot.html', import.meta.url), 'utf8');
 if (!original.includes('</head>') || !original.includes('</body>')) throw new Error('Unexpected Cortex HTML structure.');
-const modules = ['vn-core.mjs', 'vn-key-vault.mjs', 'vn-image-routing.mjs', 'vn-progress.mjs', 'vn-scene.mjs', 'vn-cast.mjs', 'vn-stage-timing.mjs', 'vn-reader.mjs', 'vn-direction.mjs', 'vn-stage.mjs', 'vn-sprite.mjs', 'vn-audio.mjs', 'vn-chroma.mjs', 'vn-assets.mjs', 'vn-cost-core.mjs', 'vn-costs.mjs', 'vn.js'];
+const modules = ['vn-core.mjs', 'vn-key-vault.mjs', 'vn-image-routing.mjs', 'vn-progress.mjs', 'vn-public-cast.mjs', 'vn-scene.mjs', 'vn-wardrobe.mjs', 'vn-cast.mjs', 'vn-stage-timing.mjs', 'vn-reader.mjs', 'vn-direction.mjs', 'vn-stage.mjs', 'vn-sprite.mjs', 'vn-audio.mjs', 'vn-chroma.mjs', 'vn-character-art.mjs', 'vn-assets.mjs', 'vn-cost-core.mjs', 'vn-costs.mjs', 'vn.js'];
 const shellHash = createHash('sha256').update(await readFile(new URL('../public/vn.css', import.meta.url)));
+modules.push('vn-music.mjs', 'vn-voice.mjs', 'vn-shots.mjs', 'vn-motion.mjs', 'vn-saves.mjs', 'vn-save-ui.mjs', 'vn-cinema.mjs', 'vn-work-music.mjs');
+modules.push('vn-raster.mjs', 'vn-raster-worker.mjs');
+modules.push('vn-event-progress.mjs', 'vn-event-progress-ui.mjs');
+modules.push('vn-new-game.mjs');
+modules.push('vn-storage.mjs', 'vn-storage-ui.mjs', 'vn-backup.mjs');
+modules.push('vn-identity.mjs');
 shellHash.update(bootHead);
+shellHash.update(await readFile(new URL('../public/vn-cinema.css', import.meta.url)));
 shellHash.update(await readFile(new URL('../public/vn-reader.css', import.meta.url)));
+shellHash.update(await readFile(new URL('../public/vn-saves.css', import.meta.url)));
+shellHash.update(await readFile(new URL('../public/vn-storage.css', import.meta.url)));
+shellHash.update(await readFile(new URL('../public/vn-event-progress.css', import.meta.url)));
 for (const name of modules) shellHash.update(await readFile(new URL(`../public/${name}`, import.meta.url)));
 const shellVersion = shellHash.digest('hex').slice(0, 12);
 function replaceExactly(sourceText, before, after) {
@@ -47,13 +57,14 @@ const adapted = shell
   .replace('<body>', '<body><section id="vn-boot" aria-label="단청 시작" role="status" aria-live="polite"><span class="vn-boot-mark" aria-hidden="true">丹</span><h1>단청</h1><span class="vn-boot-line" aria-hidden="true"></span><p class="vn-boot-loading">장면을 준비하고 있습니다</p><p class="vn-boot-error">화면을 불러오지 못했습니다.<br>연결을 확인한 뒤 다시 불러와 주세요.</p><a class="vn-boot-retry" href="/cortex">다시 불러오기</a><noscript><p>플레이하려면 브라우저에서 JavaScript를 켜 주세요.</p><a href="/cortex">다시 불러오기</a></noscript></section>')
   .replace('<div class="app">', '<div class="app" aria-hidden="true">')
   .replace(/<title>[^<]*<\/title>/u, '<title>단청 · 라이트노벨 시뮬레이터</title>')
-  .replace('</head>', `<meta name="description" content="너름의 단청 작품을 비주얼노벨 화면에서 이어가는 라이트노벨 시뮬레이터"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link id="vn-style-main" rel="stylesheet" href="/vn.css?v=${shellVersion}"><link id="vn-style-reader" rel="stylesheet" href="/vn-reader.css?v=${shellVersion}"></head>`)
+  .replace('</head>', `<meta name="description" content="너름의 단청 작품을 비주얼노벨 화면에서 이어가는 라이트노벨 시뮬레이터"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link id="vn-style-main" rel="stylesheet" href="/vn.css?v=${shellVersion}"><link id="vn-style-reader" rel="stylesheet" href="/vn-reader.css?v=${shellVersion}"><link rel="stylesheet" href="/vn-saves.css?v=${shellVersion}"><link rel="stylesheet" href="/vn-cinema.css?v=${shellVersion}"><link rel="stylesheet" href="/vn-event-progress.css?v=${shellVersion}"></head>`)
+  .replace('</head>', `<link rel="stylesheet" href="/vn-storage.css?v=${shellVersion}"></head>`)
   .replace('</body>', `<script id="vn-entry" type="module" src="/vn-runtime/vn.js?v=${shellVersion}"></script></body>`);
 await mkdir(new URL('../public/', import.meta.url), { recursive: true });
 // Version every module dependency, including imports further down the graph.
 await mkdir(new URL('../public/vn-runtime/', import.meta.url), { recursive: true });
 for (const name of modules) {
-  const code = (await readFile(new URL(`../public/${name}`, import.meta.url), 'utf8')).replace(/from '(\.\/vn-[^']+\.mjs)'/gu, `from '$1?v=${shellVersion}'`);
+  const code = (await readFile(new URL(`../public/${name}`, import.meta.url), 'utf8')).replace(/from '(\.\/vn-[^']+\.mjs)'/gu, `from '$1?v=${shellVersion}'`).replace(/new URL\('(\.\/vn-[^']+\.mjs)'/gu, `new URL('$1?v=${shellVersion}'`);
   await writeFile(new URL(`../public/vn-runtime/${name}`, import.meta.url), code);
 }
 await writeFile(output, adapted);

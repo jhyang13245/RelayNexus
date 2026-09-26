@@ -40,9 +40,29 @@ export function reconcileReadThrough(previous, next, readThrough, bookmark) {
   return anchor ? next.findIndex(page => pageKey(page) === anchor) : -1;
 }
 export function glyphDelay(glyph, speed = 'natural') {
-  const base = speed === 'instant' ? 0 : speed === 'fast' ? 9 : speed === 'slow' ? 36 : 22;
+  const base = speed === 'instant' ? 0 : speed === 'fast' ? 9 : speed === 'slow' ? 60 : 36;
   if (!base) return 0;
   return base * (/[。.!?！？]/u.test(glyph) ? 8 : /[…—]/u.test(glyph) ? 5 : /[,，、:;]/u.test(glyph) ? 3 : 1);
+}
+// Measure visible progress, not request activity. A stream can be between
+// chunks while its network flag is already clear, or a reveal can stall while
+// more text is queued. Normal punctuation pauses (up to 480ms) are not buffering.
+export function createTextWaitTracker({ now = () => performance.now(), delay = 700 } = {}) {
+  let page = '', visible = -1, changedAt = now();
+  const progress = (key, length) => {
+    if (page !== key || visible !== length) { page = key; visible = length; changedAt = now(); }
+  };
+  return {
+    progress,
+    reason({ key, length, total, paused = false, growing = false, loading = false, hasNext = false, waitingImages = false }) {
+      progress(key, length);
+      if (paused) { changedAt = now(); return ''; }
+      if (!length || now() - changedAt < delay) return '';
+      if (waitingImages) return '인물 준비 중';
+      if (length < total) return '본문 표시 준비 중';
+      return growing || loading && !hasNext ? '다음 문장 준비 중' : '';
+    },
+  };
 }
 // One persistent reveal clock for both incoming public text and finished pages.
 // Appending a chunk changes only the target, never the scheduled next glyph.

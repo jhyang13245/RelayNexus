@@ -5,14 +5,14 @@ import { createStageAssets, expressionPrompt } from '../public/vn-assets.mjs';
 import { createPreparationQueue, prepareAhead, preparationTier, resolvedSpeaker } from '../public/vn-stage-timing.mjs';
 import { portraitKey } from '../public/vn-scene.mjs';
 
-// 1. Lookahead: cast for the whole turn, images near the reader, CG on arrival.
-test('prefetch generates images only near the reader, CG only for the current paragraph, at most 2 at once', async () => {
+// Cast for the whole turn, all images (including events) only near the reader.
+test('prefetch generates images and events only near the reader, at most 2 at once', async () => {
   const people = [1, 2, 3, 4, 5, 6].map(i => ({ id: `p${i}`, name: `인물${i}`, referenceMode: 'PRIMARY', primaryAssetRef: `p${i}.webp` }));
-  const units = people.map((person, i) => ({ scope: 'probe', environmentKey: 'room', world: { location: '방', time: '12:00' }, publicText: `${person.name}이 방에 들어왔다. “왔어.”`, previousText: '', candidates: [person],
-    castPages: [{ start: i * 100, text: `${person.name}이 방에 들어왔다.` }, { start: i * 100 + 20, text: '“왔어.”' }] }));
+  const units = people.map((person, i) => ({ scope: 'probe', environmentKey: 'room', world: { location: '방', time: '12:00' }, publicText: `${person.name}이 방에 들어왔다. ${person.name}이 낡은 문짝을 부쉈다. “왔어.”`, previousText: '', candidates: [person],
+    castPages: [{ start: i * 100, text: `${person.name}이 방에 들어왔다.` }, { start: i * 100 + 20, text: `${person.name}이 낡은 문짝을 부쉈다. “왔어.”` }] }));
   const decisionFor = scene => ({ beats: scene.castPages.map((page, b) => ({ beat: `P${page.start}`, speaker: b ? 'C0' : '', speakerLabel: b ? scene.candidates[0].name : '', speakerEvidence: b ? scene.castPages[0].text : '',
     onStage: [{ candidate: 'C0', evidence: scene.castPages[0].text, identityEvidence: scene.castPages[0].text }],
-    expressions: [{ candidate: 'C0', expression: 'smile', evidence: scene.castPages[0].text }], focus: 'C0', shot: 'medium', transition: 'none', fx: 'none', mood: 'normal', cg: b === 1 })) });
+    expressions: [{ candidate: 'C0', expression: 'smile', evidence: scene.castPages[0].text }], focus: 'C0', shot: 'medium', transition: 'none', fx: 'none', mood: 'normal', cg: b === 1, eventEvidence: b ? `${scene.candidates[0].name}이 낡은 문짝을 부쉈다.` : '', eventFocus: b ? '문짝을 부수는 인물' : '', eventParticipants: ['C0'], eventCastComplete: true })) });
   let casts = 0, inFlight = 0, peak = 0; const calls = [];
   const cast = createCastDirector({ getConnection: () => ({ key: 'k', endpoint: '/x', model: 'gpt-5.6-luna' }), read: async () => null, write: async () => {},
     fetchDecision: async (_u, init) => { casts++; const input = JSON.parse(JSON.parse(init.body).input); return new Response(JSON.stringify({ output_text: JSON.stringify(decisionFor(units.find(u => u.publicText === input.current))) })); } });
@@ -31,7 +31,8 @@ test('prefetch generates images only near the reader, CG only for the current pa
   const count = purpose => calls.filter(row => row === purpose).length;
   assert.equal(casts, 6, 'every published paragraph gets its cast check');
   assert.equal(count('portrait'), 3, 'sprites only for the reader paragraph and the next two');
-  assert.equal(count('scene'), 1, 'event CG only for the paragraph being read');
+  assert.equal(count('background'), 1, 'one shared environment');
+  assert.equal(count('scene'), 3, 'three event backgrounds in the opt-in lookahead window');
   assert.ok(peak <= 2, `image requests were capped (peak ${peak})`);
 });
 
@@ -85,12 +86,49 @@ test('label and sprite follow one rule: an unverified candidate name is not show
   assert.equal(row.speakerName, '교수');
 });
 
+test('an old identity anchor cannot substitute for current physical presence', () => {
+  const anchor = '나디아가 자리에 앉았다.';
+  const previous = anchor + '\n' + '비가 내렸다. 방 안은 조용했다. '.repeat(240);
+  assert.throws(() => decide('방 안에는 아무도 없었다.', previous, anchor, anchor), /본문 근거/u);
+});
+
+test('a reader arriving during cache restoration still gets a missing cast decision', async () => {
+  const current = '나디아가 말했다. “왔어요.”';
+  const scene = { scope: 'restoring', publicText: current, candidates: [nadia], castPages: [{ start: 0, text: current }] };
+  let releaseRead, calls = 0;
+  const cast = createCastDirector({ getConnection: () => ({ key: 'fixture', endpoint: '/fixture', model: 'gpt-5.6-luna' }),
+    read: () => new Promise(resolve => { releaseRead = resolve; }), write: async () => {},
+    fetchDecision: async () => { calls++; return new Response(JSON.stringify({ output_text: JSON.stringify({ beats: [{ beat: 'P0', speaker: 'C0', onStage: [{ candidate: 'C0', evidence: '나디아가 말했다.', identityEvidence: '나디아가 말했다.' }] }] }) })); } });
+  const cached = cast.prepare(scene, { generate: false, page: scene.castPages[0] });
+  assert.equal(calls, 0);
+  const arriving = cast.prepare(scene, { generate: true, page: scene.castPages[0] });
+  const alsoArriving = cast.prepare(scene, { generate: true, page: scene.castPages[0] });
+  releaseRead(null);
+  await Promise.all([cached, arriving, alsoArriving]);
+  assert.equal(calls, 1);
+  assert.equal(cast.view(scene, scene.castPages[0]).speakerName, '나디아');
+});
+
+test('an old identity anchor cannot establish an unlisted current speaker label', () => {
+  const anchor = '나디아가 교수에게 말했다.';
+  const current = '방 안에는 아무도 없었다.';
+  const scene = { scope: 's', publicText: current, previousText: anchor + '\n' + '비가 내렸다. '.repeat(650), candidates: [nadia], castPages: [{ start: 0, text: current }] };
+  const [row] = validateCast(scene, { beats: [{ beat: 'P0', speaker: '', speakerLabel: '교수', speakerEvidence: anchor, onStage: [] }] });
+  assert.equal(row.speakerName, '');
+});
+
 // 3. The emotion bucket is part of the drawing request.
 test('expression prompt requires the bucket emotion; comparison prompts without one are unchanged', () => {
   const prompt = expressionPrompt({ person: { name: '나디아' }, context: { current: '그녀는 쓴웃음을 지었다.' }, expression: 'smile' });
   assert.match(prompt, /Required emotion: .*warm, genuine smile/u);
   assert.doesNotMatch(prompt, /choose an appropriate, believable expression yourself/u);
   assert.match(expressionPrompt({ person: { name: '나디아' }, context: { current: 'x' } }), /choose an appropriate, believable expression yourself/u);
+  for (const expression of ['angry', 'sad', 'surprised', 'worried', 'serious']) {
+    const natural = expressionPrompt({ person: nadia, context: { current: '그녀가 검을 들었다.' }, expression });
+    assert.match(natural, /Required emotion/u);
+    assert.doesNotMatch(natural, /brows|jaw|lips|mouth|clench|grit/iu);
+    assert.match(natural, /Draw the face afresh/u);
+  }
 });
 
 test('old unconstrained story expressions are shown only as a fallback while the constrained one is made', async () => {

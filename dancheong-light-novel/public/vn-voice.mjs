@@ -1,0 +1,78 @@
+import { withMediaTask } from './vn-storage.mjs';
+export const VOICE_MODEL = 'gpt-4o-mini-tts-2025-12-15';
+export const VOICE_CACHE_LIMIT = 48;
+export const voices = ['marin', 'cedar', 'coral', 'sage', 'ash', 'verse'];
+export function defaultVoice(id, profile = '') {
+  const pool = /남성|남자|아버지|할아버지|\bmale\b/iu.test(profile) ? ['cedar', 'ash', 'verse'] : ['marin', 'coral', 'sage'];
+  let hash = 0; for (const c of String(id)) hash = (Math.imul(hash, 31) + c.codePointAt(0)) >>> 0;
+  return pool[hash % pool.length];
+}
+export function voiceLine(page, view, scope, voice = '') {
+  // Do not speak a growing sentence, unknown attribution, quotation memory or
+  // unverified writer annotation. Voice never gates text or character display.
+  if (!page || page.isGrowing || view?.castStatus !== 'ready' || !view.speakerId || (!page.quoted && page.kind !== 'dialogue')) return null;
+  const text = String(page.rawText || page.text || '').trim().replace(/^[“「『"]|[”」』"]$/gu, '').trim();
+  if (!text || text.length > 900) return null;
+  const person = view.portraits?.find(p => p.id === view.speakerId);
+  const selectedVoice = voices.includes(voice) ? voice : defaultVoice(view.speakerId, view.speakerProfile || person?.profile);
+  const mood = view.direction?.mood || 'normal', emotion = view.direction?.expressions?.[view.speakerId] || 'neutral';
+  const context = JSON.stringify({ speaker: view.speakerName, mood, emotion }).slice(0, 700);
+  return { key: JSON.stringify(['vn-voice-1', scope, view.speakerId, selectedVoice, text, context]), playbackKey: `${page.turnId}:${page.start}`, text, context, voice: selectedVoice, speakerId: view.speakerId };
+}
+export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...args) => fetch(...args), makeAudio = url => new Audio(url), onState = () => {} }) {
+  const cache = new Map(), jobs = new Map(), failed = new Set();
+  const remember = record => { cache.delete(record.key); cache.set(record.key, record); while (cache.size > VOICE_CACHE_LIMIT) cache.delete(cache.keys().next().value); return record; };
+  let current = '', generation = 0, audio = null, phase = 'idle';
+  let lastJob = Promise.resolve();
+  const playKey = line => `${line.key}:${line.playbackKey || ''}`;
+  const set = value => { phase = value; onState(value); };
+  const halt = () => { if (audio) { audio.pause(); audio.currentTime = 0; audio = null; } };
+  function stop() { generation++; halt(); set('idle'); }
+  async function prepare(line, active) {
+    if (cache.has(line.key)) return remember(cache.get(line.key));
+    if (jobs.has(line.key)) return jobs.get(line.key);
+    if (failed.has(line.key)) return null;
+    const key = getKey();
+    const preceding = lastJob;
+    const job = withMediaTask(async () => {
+      try {
+        let record; try { record = await read(line.key); } catch { /* Memory works. */ }
+        if (record?.url?.startsWith('data:audio/mpeg;base64,')) return remember(record);
+        await preceding;
+        if (!getEnabled() || !active() || !key) return null;
+        const response = await fetchVoice('/api/voice', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-Dancheong-Purpose': 'voice' }, signal: AbortSignal.timeout(95000), body: JSON.stringify({ model: VOICE_MODEL, text: line.text, voice: line.voice, context: line.context }) });
+        const result = await response.json();
+        if (!response.ok || !/^data:audio\/mpeg;base64,/u.test(result.audioUrl || '')) throw new Error('voice');
+        record = { key: line.key, url: result.audioUrl, savedAt: Date.now() }; remember(record);
+        try { await write(record); } catch { /* Replays in this tab remain free. */ }
+        return record;
+      } catch { failed.add(line.key); while (failed.size > VOICE_CACHE_LIMIT) failed.delete(failed.values().next().value); return null; }
+      finally { jobs.delete(line.key); }
+    }); jobs.set(line.key, job); lastJob = job; return job;
+  }
+  async function play(line, token) {
+    const active = () => token === generation && getEnabled() && current === playKey(line);
+    set('preparing');
+    const record = await prepare(line, active);
+    if (!active()) return;
+    if (!record) { set(getKey() ? 'error' : 'needs-key'); return; }
+    audio = makeAudio(record.url); const instance = audio;
+    instance.onended = () => { if (active()) { audio = null; set('done'); } };
+    instance.onerror = () => { if (active()) { halt(); set('error'); } };
+    try { await instance.play(); if (active() && audio === instance) set('playing'); else instance.pause(); }
+    catch { if (active()) { halt(); set('blocked'); } }
+  }
+  return {
+    update(line) {
+      if (!getEnabled() || !line) { if (current || phase !== 'idle') { stop(); current = ''; } return; }
+      if (current === playKey(line)) return;
+      stop(); current = playKey(line); void play(line, generation);
+    },
+    replay(line) { if (!line || !getEnabled()) return; stop(); current = playKey(line); failed.delete(line.key); void play(line, generation); },
+    stop,
+    reset() { stop(); current = ''; },
+    clearMemory() { stop(); current = ''; cache.clear(); failed.clear(); },
+    get busy() { return jobs.size > 0; },
+    get phase() { return phase; },
+  };
+}

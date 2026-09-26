@@ -1,0 +1,75 @@
+/* vn-cinema.css: additive cinema overlays for the dark Korean VN reader. Scoped to #vn-stage only. */
+#vn-stage .vn-cutin[hidden],#vn-stage .vn-emphasis[hidden],#vn-stage .vn-chapter-card[hidden],#vn-stage .vn-film[hidden]{display:none!important;}
+#vn-stage .vn-letterbox,#vn-stage .vn-cutin,#vn-stage .vn-emphasis,#vn-stage .vn-chapter-card,#vn-stage .vn-film{pointer-events:none;}
+/* Letterbox bars exist only while the stage opts in. */
+#vn-stage .vn-letterbox{position:absolute;inset:0;z-index:7;}
+#vn-stage .vn-letterbox::before,#vn-stage .vn-letterbox::after{content:"";position:absolute;left:0;right:0;height:clamp(38px,9vh,96px);background:#000;transform:scaleY(0);transition:transform .6s ease;}
+#vn-stage .vn-letterbox::before{top:0;transform-origin:top;}
+#vn-stage .vn-letterbox::after{bottom:0;transform-origin:bottom;}
+#vn-stage[data-cinema-bars="on"] .vn-letterbox::before,#vn-stage[data-cinema-bars="on"] .vn-letterbox::after{transform:scaleY(1);}
+/* Eye/face strip: right-aligned horizontal band with angled ends. */
+#vn-stage .vn-cutin{position:absolute;right:0;top:50%;z-index:8;width:min(68vw,920px);max-width:100%;height:20vh;min-height:96px;max-height:184px;transform:translateY(-50%);overflow:hidden;background:#000;border-top:1px solid #e8d6ab8c;border-bottom:1px solid #e8d6ab8c;clip-path:polygon(3% 0,97% 0,100% 50%,97% 100%,3% 100%,0 50%);}
+#vn-stage .vn-cutin img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 32%;}
+#vn-stage .vn-play-area{z-index:10;}
+/* Abstract impact grain: layered gradients only, gentle opacity. JS hides it within 500ms. */
+#vn-stage .vn-film{position:absolute;inset:0;z-index:9;opacity:.48;background:repeating-linear-gradient(0deg,#ffffff10 0 1px,transparent 1px 3px),linear-gradient(90deg,#ff3c3c24 0,transparent 14%,transparent 86%,#3c8cff24 100%),radial-gradient(ellipse at center,transparent 55%,#00000059 100%);}
+/* Full-black serif emphasis quote, at most three lines. */
+#vn-stage .vn-emphasis{position:absolute;inset:0;z-index:14;display:grid;place-items:center;align-content:center;gap:14px;background:#000;text-align:center;padding:clamp(20px,5vh,56px) clamp(20px,6vw,72px);}
+#vn-stage .vn-emphasis-mark{display:block;color:#e6d3a3;font:500 13px/1.6 "Noto Sans KR",sans-serif;letter-spacing:.44em;}
+#vn-stage .vn-emphasis-text{margin:0;max-width:18em;color:#f7f3ea;font:500 clamp(26px,4.4vw,52px)/1.6 "Noto Serif KR",Georgia,serif;letter-spacing:.02em;word-break:keep-all;overflow-wrap:break-word;display:block;max-height:calc(100dvh - 160px);overflow:auto;}
+#vn-stage .vn-emphasis.is-trembling .vn-emphasis-text{animation:vn-cinema-tremble .36s linear 1;}
+@keyframes vn-cinema-tremble{25%{transform:translate(.7px,-.6px);}50%{transform:translate(-.7px,.5px);}75%{transform:translate(.5px,.5px);}}
+/* A chapter label never covers/pauses the reading area. */
+#vn-stage .vn-chapter-card{position:absolute;right:max(68px,env(safe-area-inset-right));top:18px;z-index:12;max-width:min(38vw,360px);background:#05080fe6;border-left:1px solid #e6d3a366;text-align:right;padding:10px 16px;}
+#vn-stage .vn-chapter-card small{display:block;color:#b9c4d4;font:500 12px/1.6 "Noto Sans KR",sans-serif;letter-spacing:.42em;}
+#vn-stage .vn-chapter-card strong{display:block;margin-top:3px;color:#f2ede1;font:600 clamp(14px,1.4vw,20px)/1.5 "Noto Serif KR",Georgia,serif;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* Close-up: soften only the painted backdrop, never sprites or text. */
+#vn-stage.is-cinema-close .vn-backdrop{filter:blur(3px);}
+/* Crimson memory tone on the scene visual; UI layers above stay untouched. */
+#vn-stage.is-crimson .vn-scene-visual{filter:grayscale(1) sepia(1) saturate(5) hue-rotate(-50deg) brightness(.62) contrast(1.08);}
+#vn-stage.is-crimson .vn-scene-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(#5d0a0e59,#2a050733);}
+/* Opt-in breathing: vertical scale only, feet stay planted. */
+#vn-stage[data-cinema-motion="on"] .vn-character.is-present img.is-visible{transform-origin:50% 100%;animation:vn-cinema-breathe 4.6s ease-in-out infinite;}
+@keyframes vn-cinema-breathe{0%,100%{transform:translateX(-50%) scaleY(1);}50%{transform:translateX(-50%) scaleY(1.006);}}
+/* Small portrait phones: keep the quote and card clear of bottom controls. */
+@media (max-width:760px) and (orientation:portrait){
+#vn-stage .vn-cutin{height:14vh;min-height:84px;}
+#vn-stage .vn-emphasis{padding:20px 22px 132px;}
+#vn-stage .vn-emphasis-text{font-size:clamp(22px,6vw,30px);line-height:1.7;}
+#vn-stage .vn-chapter-card{padding:7px 10px;top:20px;right:56px;max-width:44vw;}
+#vn-stage .vn-chapter-card small{font-size:10px;letter-spacing:.15em;}
+}
+/* Short landscape phones: low strip, lifted quote, compact card. */
+@media (max-height:500px) and (orientation:landscape){
+#vn-stage .vn-letterbox::before,#vn-stage .vn-letterbox::after{height:clamp(12px,5vh,26px);}
+#vn-stage .vn-cutin{height:30vh;min-height:72px;}
+#vn-stage .vn-emphasis{padding:14px 24px 84px;}
+#vn-stage .vn-emphasis-text{font-size:clamp(20px,3.6vw,28px);line-height:1.6;}
+#vn-stage .vn-chapter-card{padding:6px 12px;top:12px;}
+}
+/* No added movement when motion is reduced. */
+#vn-stage .vn-rule-mask{position:absolute;inset:0;width:100%;height:100%;z-index:13;pointer-events:none;}
+#vn-stage .vn-rule-mask[hidden]{display:none!important;}
+#vn-stage.has-cinema-card .vn-stage-tools{z-index:16;}
+#vn-stage.has-cinema-card .vn-play-area{visibility:hidden;}
+.vn-work-music-settings{display:grid;gap:12px;padding-top:16px;border-top:1px solid #dce4f038;}
+.vn-work-music-settings h3,.vn-work-music-settings p{margin:0;}
+.vn-work-music-settings p{font-size:14px;line-height:1.6;color:#a9b8cc;overflow-wrap:anywhere;}
+.vn-work-music-settings>div{display:flex;gap:10px;flex-wrap:wrap;}
+.vn-work-music-settings button{min-height:44px;padding:8px 14px;}
+#vn-stage .vn-emphasis-text{scrollbar-width:none;}
+@media(max-width:760px) and (orientation:portrait){
+  #vn-stage .vn-cutin{top:62%;width:94%;height:14vh;max-height:130px;}
+  #vn-stage .vn-letterbox::before,#vn-stage .vn-letterbox::after{height:4vh;}
+  #vn-stage .vn-emphasis-text{font-size:clamp(18px,5.7vw,25px);max-width:100%;line-height:1.65;max-height:calc(100dvh - 240px);}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #vn-stage .vn-cutin{top:52%;width:45%;height:20vh;min-height:54px;}
+  #vn-stage .vn-emphasis-text{font-size:clamp(17px,4.6vh,23px);line-height:1.45;max-height:calc(100dvh - 115px);}
+}
+@media (prefers-reduced-motion:reduce){
+#vn-stage .vn-letterbox::before,#vn-stage .vn-letterbox::after{transition:none!important;}
+#vn-stage[data-cinema-motion="on"] .vn-character.is-present img.is-visible,#vn-stage .vn-emphasis.is-trembling .vn-emphasis-text{animation:none!important;}
+}
+#vn-root[data-motion="reduced"] #vn-stage .vn-letterbox::before,#vn-root[data-motion="reduced"] #vn-stage .vn-letterbox::after{transition:none!important;}
+#vn-root[data-motion="reduced"] #vn-stage[data-cinema-motion="on"] .vn-character.is-present img.is-visible,#vn-root[data-motion="reduced"] #vn-stage .vn-emphasis.is-trembling .vn-emphasis-text{animation:none!important;}

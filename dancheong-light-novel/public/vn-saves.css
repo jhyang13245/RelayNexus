@@ -1,0 +1,437 @@
+/* vn-saves.css — standalone SAVE/LOAD dialog. Scoped to .vn-saves-dialog (+ .vn-slot-open library button). No external assets. */
+.vn-saves-dialog {
+  --saves-ink: #070f16;
+  --saves-panel: #0b1620;
+  --saves-card: #111f2b;
+  --saves-cream: #f5efe3;
+  --saves-muted: #b9c6c9;
+  --saves-gold: #e8c68a;
+  --saves-gold-soft: #f6d6a8;
+  --saves-line: rgba(232, 198, 138, 0.28);
+  --saves-line-soft: rgba(215, 229, 224, 0.16);
+  box-sizing: border-box;
+  width: min(1040px, calc(100vw - 24px));
+  max-width: 1040px;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border: 1px solid var(--saves-line);
+  background:
+    radial-gradient(ellipse at 78% 0%, #22374a 0, transparent 42%),
+    linear-gradient(115deg, #080e15, #101e2a 58%, #080d14);
+  color: var(--saves-cream);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75);
+  font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+}
+
+.vn-saves-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.vn-saves-dialog *,
+.vn-saves-dialog *::before,
+.vn-saves-dialog *::after {
+  box-sizing: border-box;
+}
+
+.vn-saves-dialog [hidden] {
+  display: none !important;
+}
+
+/* Header stays reachable while the list scrolls. */
+.vn-saves-dialog header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px clamp(16px, 3vw, 30px) 14px;
+  background: #070f16;
+  border-bottom: 1px solid var(--saves-line);
+}
+
+.vn-saves-dialog header > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vn-saves-dialog .vn-kicker {
+  font: 700 10px/1.3 ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.22em;
+  color: var(--saves-gold-soft);
+}
+
+.vn-saves-dialog header h2 {
+  margin: 0;
+  font: 600 clamp(20px, 2.4vw, 27px)/1.2 Georgia, "Noto Serif KR", serif;
+  letter-spacing: -0.01em;
+  color: var(--saves-cream);
+}
+
+.vn-saves-dialog .vn-saves-close {
+  flex: none;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 3px;
+  background: transparent;
+  color: #eef3f0;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.vn-saves-dialog .vn-saves-close:hover {
+  border-color: var(--saves-gold);
+  color: #fff;
+}
+
+.vn-saves-dialog .vn-saves-help {
+  margin: 0;
+  padding: 12px clamp(16px, 3vw, 30px) 0;
+  color: var(--saves-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.vn-saves-dialog .vn-saves-status {
+  margin: 0;
+  padding: 8px clamp(16px, 3vw, 30px) 0;
+  min-height: 1.4em;
+  color: var(--saves-gold-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vn-saves-dialog .vn-saves-status:empty {
+  padding-top: 0;
+  min-height: 0;
+}
+
+/* Slot grid: desktop 2 compact horizontal cards. */
+.vn-saves-dialog .vn-saves-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px clamp(16px, 3vw, 30px) 20px;
+  align-content: start;
+}
+
+.vn-saves-dialog .vn-save-slot {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 4px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--saves-line-soft);
+  background: var(--saves-card);
+}
+
+.vn-saves-dialog .vn-save-slot:hover {
+  border-color: var(--saves-line);
+}
+
+.vn-saves-dialog .vn-save-slot.is-empty {
+  border-style: dashed;
+  background: rgba(17, 31, 43, 0.55);
+}
+
+.vn-saves-dialog .vn-save-preview {
+  position: relative;
+  grid-row: span 2;
+  align-self: start;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid rgba(246, 214, 168, 0.22);
+  background:
+    radial-gradient(circle at 30% 20%, #2c4257 0, transparent 60%),
+    linear-gradient(135deg, #1c303f, #0a141d);
+}
+
+.vn-saves-dialog .vn-save-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.vn-saves-dialog .vn-save-slot.is-empty .vn-save-preview {
+  display: grid;
+  place-items: center;
+}
+
+.vn-saves-dialog .vn-save-number {
+  position: absolute;
+  left: 6px;
+  bottom: 4px;
+  padding: 2px 7px;
+  background: rgba(4, 8, 12, 0.82);
+  border: 1px solid rgba(246, 214, 168, 0.4);
+  color: var(--saves-gold-soft);
+  font: 700 11px/1.5 ui-monospace, monospace;
+  letter-spacing: 0.12em;
+}
+
+.vn-saves-dialog .vn-save-info {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  align-content: start;
+}
+
+.vn-saves-dialog .vn-save-info h3 {
+  margin: 0;
+  font: 600 16px/1.35 Georgia, "Noto Serif KR", serif;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vn-saves-dialog .vn-save-info time,
+.vn-saves-dialog .vn-save-info .vn-save-scene {
+  font-size: 12px;
+}
+
+.vn-saves-dialog .vn-save-info time {
+  color: var(--saves-gold-soft);
+  letter-spacing: 0.04em;
+}
+
+.vn-saves-dialog .vn-save-info .vn-save-scene {
+  margin: 0;
+  color: #9fb0ba;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vn-saves-dialog .vn-save-info .vn-save-excerpt {
+  margin: 2px 0 0;
+  color: #cfd8dc;
+  font-size: 12px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.9em;
+}
+
+.vn-saves-dialog .vn-save-actions {
+  min-width: 0;
+}
+
+.vn-saves-dialog .vn-save-actions {
+  grid-column: 2;
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.vn-saves-dialog .vn-save-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 2px;
+  background: #1b303d;
+  color: #eef3f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vn-saves-dialog .vn-save-actions button:last-child {
+  background: var(--saves-gold);
+  border-color: var(--saves-gold);
+  color: #1a1206;
+}
+
+.vn-saves-dialog .vn-save-actions button:hover:not(:disabled) {
+  border-color: #fff;
+}
+
+.vn-saves-dialog .vn-save-actions button:last-child:hover:not(:disabled) {
+  background: var(--saves-gold-soft);
+}
+
+/* Confirmation bar: distinct, pinned to dialog bottom. */
+.vn-saves-dialog .vn-save-confirm {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 0;
+  padding: 14px clamp(16px, 3vw, 30px) calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 2px solid var(--saves-gold);
+  background: #16283a;
+  box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.55);
+}
+
+.vn-saves-dialog .vn-save-confirm p {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.vn-saves-dialog .vn-save-confirm > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vn-saves-dialog .vn-save-confirm button {
+  flex: 1 1 140px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 227, 216, 0.35);
+  border-radius: 2px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vn-saves-dialog .vn-save-confirm button:last-child {
+  background: var(--saves-gold);
+  border-color: var(--saves-gold);
+  color: #1a1206;
+}
+
+/* Shared button states. */
+.vn-saves-dialog button {
+  font: inherit;
+  touch-action: manipulation;
+}
+
+.vn-saves-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.vn-saves-dialog button:focus-visible {
+  outline: 2px solid var(--saves-gold-soft);
+  outline-offset: 3px;
+}
+
+/* Small library entry button that opens this dialog. */
+.vn-slot-open {
+  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid rgba(232, 198, 138, 0.45);
+  border-radius: 3px;
+  background: rgba(11, 22, 32, 0.9);
+  color: #f6d6a8;
+  font: 600 12px/1.4 Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.vn-slot-open:hover {
+  border-color: #f6d6a8;
+  color: #fff;
+}
+
+.vn-slot-open:focus-visible {
+  outline: 2px solid #f6d6a8;
+  outline-offset: 3px;
+}
+
+.vn-slot-open:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Phone portrait: single column, tighter cards. */
+@media (max-width: 700px) {
+  .vn-saves-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .vn-saves-dialog .vn-saves-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vn-saves-dialog .vn-save-slot {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 4px 10px;
+  }
+
+  .vn-saves-dialog .vn-save-info h3 {
+    font-size: 15px;
+  }
+  .vn-saves-dialog .vn-save-actions { grid-column:1 / -1; }
+  .vn-saves-dialog .vn-save-preview { grid-row:1; }
+  #vn-root .vn-saves-dialog .vn-save-actions button { min-height:44px; font-size:14px; padding:9px 12px; }
+}
+
+/* Short landscape (e.g. 852x393): keep 2 columns but compress chrome so the
+   list scrolls and header + close + confirm stay reachable. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .vn-saves-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .vn-saves-dialog header {
+    padding: 10px 14px 8px;
+  }
+
+  .vn-saves-dialog header h2 {
+    font-size: 18px;
+  }
+
+  .vn-saves-dialog .vn-saves-help {
+    padding-top: 8px;
+    font-size: 12px;
+  }
+
+  .vn-saves-dialog .vn-saves-grid {
+    padding: 10px 14px 14px;
+    gap: 8px;
+  }
+
+  .vn-saves-dialog .vn-save-slot {
+    grid-template-columns: 120px minmax(0, 1fr);
+    padding: 8px;
+  }
+
+  .vn-saves-dialog .vn-save-info .vn-save-excerpt {
+    -webkit-line-clamp: 1;
+    min-height: 1.5em;
+  }
+
+  .vn-saves-dialog .vn-save-confirm {
+    padding-top: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vn-saves-dialog,
+  .vn-saves-dialog *,
+  .vn-saves-dialog *::before,
+  .vn-saves-dialog *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { stageOrder, stagePositions, slotWidth, heightScale, speakerHue, weatherFor, mergeDirection } from '../public/vn-stage.mjs';
-import { alphaBounds, headCentre, normalisedFrame } from '../public/vn-sprite.mjs';
+import { alphaBounds, headCentre, normalisedFrame, faceLandmarks, faceFrame } from '../public/vn-sprite.mjs';
 import { ambienceFor } from '../public/vn-audio.mjs';
 import { castRequest, validateCast, directionFor, createCastDirector } from '../public/vn-cast.mjs';
 import { createStageAssets, emotionsFor, styledKey, artDirection, ART_DIRECTION, cgKey } from '../public/vn-assets.mjs';
@@ -87,13 +87,34 @@ test('normalised frame puts the hair near the top and keeps a cropped edge flush
   assert.ok(Math.abs(frame.x + 30 - frame.outWidth / 2) <= 1, 'head is centred');
 });
 
+test('full-body and medium sprites use the same face scale and eye line without warping', () => {
+  const measurements = [160, 240].map(height => {
+    const data = sprite(80, height, { top: 10 });
+    const bounds = alphaBounds(data, 80, height), face = faceLandmarks(data, 80, bounds);
+    assert.ok(face);
+    const frame = faceFrame(bounds, face);
+    return { width: face.width / frame.outHeight, eye: (frame.y + face.eyeY - bounds.top) / frame.outHeight };
+  });
+  assert.ok(Math.abs(measurements[0].width - measurements[1].width) < .005);
+  assert.ok(Math.abs(measurements[0].eye - measurements[1].eye) < .01);
+  assert.ok(measurements[0].width >= .14 && measurements[0].width <= .22);
+});
+
+test('a cropped bust retains head scale even when its lower body is missing', () => {
+  const data = sprite(80, 100, { face: [40, 40, 40] }), bounds = alphaBounds(data, 80, 100);
+  assert.equal(faceLandmarks(data, 80, bounds), null);
+  const frame = faceFrame(bounds, { x: 40, eyeY: 30, width: 24 });
+  assert.ok(Math.abs(24 * 1.56 / frame.outHeight - .25) < .002);
+  assert.ok(frame.y + bounds.height < frame.outHeight, 'missing body must not be hidden by enlarging the face');
+});
+
 const nadia = { id: 'visitor', name: '나디아', referenceMode: 'PRIMARY', primaryAssetRef: 'nadia.webp' };
 const scene = () => ({ scope: 'dir', environmentKey: 'room', world: { location: '방', time: '21:00' }, publicText: '나디아가 내 앞에 섰다. 나디아는 미소 지었다. “안녕.” 나디아는 깜짝 놀랐다. 문이 쾅 닫혔다. 나디아는 불안해졌다.', candidates: [nadia],
   castPages: [{ start: 0, text: '나디아가 내 앞에 섰다. 나디아는 미소 지었다.' }, { start: 13, text: '“안녕.” 나디아는 깜짝 놀랐다.' }, { start: 18, text: '문이 쾅 닫혔다. 나디아는 불안해졌다.' }] });
 const beat = (start, extra = {}) => ({ beat: `P${start}`, speaker: '', onStage: [{ candidate: 'C0', evidence: '나디아가 내 앞에 섰다.' }], ...extra });
 const directed = () => ({ beats: [
   beat(0, { expressions: [{ candidate: 'C0', expression: 'smile', evidence: '나디아는 미소 지었다.' }], focus: 'C0', shot: 'medium', transition: 'none', fx: 'none', mood: 'warm', cg: false }),
-  beat(13, { speaker: 'C0', expressions: [{ candidate: 'C0', expression: 'surprised', evidence: '나디아는 깜짝 놀랐다.' }], focus: 'C0', shot: 'close', transition: 'none', fx: 'none', mood: 'tense', cg: true }),
+  beat(13, { speaker: 'C0', expressions: [{ candidate: 'C0', expression: 'surprised', evidence: '나디아는 깜짝 놀랐다.' }], focus: 'C0', shot: 'close', transition: 'none', fx: 'none', mood: 'tense', cg: true, eventEvidence: '나디아는 깜짝 놀랐다.', eventFocus: '나디아가 놀라는 순간', eventParticipants: ['C0'], eventCastComplete: true }),
   beat(18, { expressions: [{ candidate: 'C0', expression: 'worried', evidence: '나디아는 불안해졌다.' }], focus: '', shot: 'medium', transition: 'none', fx: 'heavy_shake', mood: 'tense', cg: false }),
 ] });
 
@@ -154,11 +175,11 @@ test('direction-driven expressions are generated, and one event CG references th
   const cgs = requests.filter(row => row.purpose === 'scene');
   assert.equal(cgs.length, 1, 'at most one CG per paragraph');
   assert.equal(cgs[0].referenceImages.length, 2, 'background + the on-stage sprite');
-  assert.equal(assets.view(sc, sc.castPages[0]).cg, '', 'CG appears from its beat, not before');
-  assert.ok(assets.view(sc, sc.castPages[1]).cg.startsWith('data:image/png'));
+  assert.equal(assets.view(sc, sc.castPages[0]).eventBackground, '', 'CG appears from its beat, not before');
+  assert.ok(assets.view(sc, sc.castPages[1]).eventBackground.startsWith('data:image/png'));
   assert.ok(records.has(cgKey(sc, 13)));
   assert.equal(assets.view(sc, sc.castPages[1]).direction.shot, 'close');
-  assert.ok(records.has(portraitKey('dir', nadia)), 'legacy portrait key is unchanged');
+  assert.ok(records.has(JSON.stringify(['vn-stage-frame-2', JSON.stringify(['vn-character-finish-1', portraitKey('dir', nadia)])])), 'new character finish has a reusable cache identity');
 });
 
 test('event CG is never requested when the setting is off', async () => {
@@ -170,5 +191,5 @@ test('event CG is never requested when the setting is off', async () => {
   const sc = scene();
   for (const page of sc.castPages) await assets.prepare(sc, page);
   assert.equal(requests.filter(row => row.purpose === 'scene').length, 0);
-  assert.equal(assets.view(sc, sc.castPages[1]).cg, '');
+  assert.equal(assets.view(sc, sc.castPages[1]).eventBackground, '');
 });

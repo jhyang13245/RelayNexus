@@ -70,3 +70,25 @@ export function readableTurnPages(turn, turnIndex, maxChars = 150) {
   const pages = pagesForTurn({ ...turn, text, displayText: undefined }, turnIndex, maxChars);
   return pages.map((page, index) => ({ ...page, isLive: !committed, isGrowing: turn.status === 'STREAMING' && index === pages.length - 1 }));
 }
+
+// Cortex mutates the live turn in place. Compare published values (including
+// annotation edits), not object identity or string length, before reusing pages.
+// Weak keys let rewinds/imported sessions release their old parsed history.
+export function createPageCollector() {
+  const cache = new WeakMap();
+  let previousParts = [], previousPages = [];
+  return function collect(turns) {
+    const parts = turns.map((turn, index) => {
+      const signature = JSON.stringify([index, turn.id, turn.status,
+        turn.status === 'COMMITTED' ? turn.text : turn.displayText ?? turn.sameTurnResume?.publicText,
+        (turn.dialogueAnnotations || []).map(row => row && [row.offset, row.quoteText, row.speakerName, row.characterId, row.quoteKind, row.bindingInvalid])]);
+      let item = cache.get(turn);
+      if (!item || item.signature !== signature) { item = { signature, pages: readableTurnPages(turn, index) }; cache.set(turn, item); }
+      return item.pages;
+    });
+    if (parts.length !== previousParts.length || parts.some((part, index) => part !== previousParts[index])) {
+      previousParts = parts; previousPages = parts.flat();
+    }
+    return previousPages;
+  };
+}

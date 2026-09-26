@@ -8,7 +8,7 @@ function failure(message: string, status: number) {
   return Response.json({ error: { message } }, { status, headers: { 'Cache-Control': 'no-store' } });
 }
 
-type ImageRequest = { model?: unknown; prompt?: unknown; purpose?: unknown; quality?: unknown; aspect?: unknown; referenceImages?: unknown; strictModel?: unknown };
+type ImageRequest = { model?: unknown; prompt?: unknown; purpose?: unknown; quality?: unknown; aspect?: unknown; referenceImages?: unknown; strictModel?: unknown; maskImage?: unknown };
 type ImageResult = { data?: Array<{ b64_json?: string }>; usage?: unknown; error?: { code?: string; message?: string } };
 
 function modelUnavailable(status: number, result: ImageResult) {
@@ -52,11 +52,27 @@ export async function POST(request: Request) {
       if (!bytes.byteLength || bytes.byteLength > 8 * 1024 * 1024 || total > 24 * 1024 * 1024) return failure('참조 이미지 용량이 너무 큽니다.', 413);
       imageParts.push({ blob: new Blob([bytes], { type: match[1] }), filename: `reference-${index + 1}.${match[1] === 'image/jpeg' ? 'jpg' : match[1].split('/')[1]}` });
     }
+    let maskBlob: Blob | undefined;
+    if (body.maskImage !== undefined) {
+      const mask = typeof body.maskImage === 'string' ? body.maskImage.match(REFERENCE) : null;
+      if (body.purpose !== 'expression' || imageParts.length !== 1 || !mask || mask[1] !== 'image/png' || imageParts[0].blob.type !== 'image/png') return failure('눈·입 마스크 편집에는 PNG 원본 1장과 PNG 마스크가 필요합니다.', 400);
+      const data = Uint8Array.from(atob(mask[2]), char => char.charCodeAt(0));
+      if (!data.length || data.length > 8 * 1024 * 1024) return failure('마스크 용량이 올바르지 않습니다.', 413);
+      const dimensions = (bytes: Uint8Array) => {
+        if (bytes.length < 26 || bytes[0] !== 137 || bytes[1] !== 80 || bytes[2] !== 78 || bytes[3] !== 71 || bytes[12] !== 73 || bytes[13] !== 72 || bytes[14] !== 68 || bytes[15] !== 82) return null;
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        return [view.getUint32(16), view.getUint32(20), bytes[25]];
+      };
+      const size = dimensions(data), original = dimensions(new Uint8Array(await imageParts[0].blob.arrayBuffer()));
+      if (!size || !original || size[0] !== 768 || size[1] !== 1024 || original[0] !== size[0] || original[1] !== size[1] || ![4, 6].includes(size[2])) return failure('원본과 알파 마스크는 768×1024 PNG여야 합니다.', 400);
+      maskBlob = new Blob([data], { type: 'image/png' });
+    }
     const send = async (model: string) => {
       if (imageParts.length) {
         const form = new FormData();
         for (const [name, value] of Object.entries({ model, prompt, ...imageOptions, quality, moderation: 'auto', n: 1 })) form.append(name, String(value));
         for (const part of imageParts) form.append('image[]', part.blob, part.filename);
+        if (maskBlob) form.append('mask', maskBlob, 'face-mask.png');
         return fetch(`${OPENAI}/images/edits`, { method: 'POST', headers: { Authorization: authorization }, body: form, signal: request.signal });
       }
       return fetch(`${OPENAI}/images/generations`, { method: 'POST', headers: { Authorization: authorization, 'Content-Type': 'application/json' },

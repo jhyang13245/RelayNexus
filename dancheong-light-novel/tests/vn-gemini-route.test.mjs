@@ -45,6 +45,17 @@ test('invalid requests do not call paid endpoint', async t => {
   }
   assert.equal(mock.mock.callCount(), 0);
 });
+
+test('Gemini matte instructions preserve requested outfit changes instead of forcing the reference costume', async t => {
+  let sent;
+  t.mock.method(globalThis, 'fetch', async (_, init) => { sent = JSON.parse(init.body); return Response.json(output); });
+  const response = await POST(request({ ...base, purpose: 'portrait', prompt: 'CURRENT WARDROBE: replace the default clothes with swimwear. Keep the same face and hair.', referenceImages: ['data:image/png;base64,aW1hZ2U='] }));
+  assert.equal(response.status, 200);
+  const prompt = sent.contents[0].parts.at(-1).text;
+  assert.match(prompt, /replace the default clothes with swimwear/);
+  assert.match(prompt, /default reference clothes must not override/);
+  assert.doesNotMatch(prompt, /Preserve reference identity, costume and framing/);
+});
 test('economy keeps faces and event CG at 1K, while selected 2K applies to every purpose', async t => {
   const sizes = { '0.5K': 'IMAGE_SIZE_FIVE_TWELVE', '1K': 'IMAGE_SIZE_ONE_K', '2K': 'IMAGE_SIZE_TWO_K' };
   for (const purpose of ['background', 'portrait', 'expression', 'scene']) {

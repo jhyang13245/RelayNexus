@@ -1,6 +1,6 @@
 const GO_RESPONSES = 'https://opencode.ai/zen/go/v1/responses';
 const MAX_BYTES = 2 * 1024 * 1024;
-const ALLOWED_MODELS = new Set(['muse-spark-1.3-contributor', 'gpt-5.6-luna']);
+const ALLOWED_MODELS = new Set(['muse-spark-1.3-contributor', 'gpt-5.6-luna', 'gpt-6-luna']);
 
 function failure(message: string, status: number) {
   return Response.json({ error: { message } }, { status, headers: { 'Cache-Control': 'no-store' } });

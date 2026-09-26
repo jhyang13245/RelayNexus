@@ -1,4 +1,5 @@
 // Presentation metadata only: the story and its canonical state remain in Cortex.
+import { presentationScenario, publicAppearance } from './vn-public-cast.mjs';
 const clean = value => String(value ?? '').normalize('NFKC').trim().replace(/\s+/gu, ' ').toLowerCase();
 export function lightFor(time = '') {
   const hour = Number(String(time).match(/^(\d{1,2}):/u)?.[1]);
@@ -8,6 +9,9 @@ export function lightFor(time = '') {
 export function environmentKey(scope, world) {
   // Cast, turn number and minute changes do not change an environment.
   return JSON.stringify(['vn-environment-1', scope, clean(world?.location), lightFor(world?.time), clean(world?.weather)]);
+}
+export function locationAnchorKey(scope, world) {
+  return JSON.stringify(['vn-place-anchor-1', scope, clean(world?.location)]);
 }
 export const expressions = {
   // Legacy labels for reuse/transition bookkeeping, not image drawing recipes.
@@ -62,13 +66,14 @@ export function expressionsAt(scene, offset = Infinity) {
   return Object.fromEntries((scene?.expressions || []).filter(event => event.offset <= offset).map(event => [event.characterId, event.expression]));
 }
 export function portraitKey(scope, character, expression = 'neutral') {
-  return JSON.stringify(['vn-portrait-1', scope, character.id, character.referenceMode, character.allowedAssetRefs, character.primaryAssetRef || '', character.publicProfile || '', expression]);
+  return JSON.stringify(['vn-portrait-1', scope, character.id, character.referenceMode, character.allowedAssetRefs, character.primaryAssetRef || '', character.portraitCacheProfile ?? character.publicProfile ?? '', expression]);
 }
-export const sceneVersion = 4;
+export const sceneVersion = 5;
 export function captureScene({ scope, scenario, turn, previous, experience, priorTurns = [], timeline = false }) {
   // Persistence can run before Cortex's next display refresh. Recompute only
   // its public appearance projection on a copy, without changing canonical state.
-  scenario = { ...scenario, runtime: { ...scenario?.runtime } };
+  const originalScenario = scenario;
+  scenario = { ...presentationScenario(scenario, scope, [...priorTurns, turn], experience), runtime: { ...scenario?.runtime } };
   experience.refreshPublicAppearances?.(scenario, [...priorTurns, turn]);
   const world = { location: String(scenario?.world?.location || ''), time: String(scenario?.world?.time || ''), weather: String(scenario?.world?.weather || '') };
   const key = environmentKey(scope, world);
@@ -104,7 +109,15 @@ export function captureScene({ scope, scenario, turn, previous, experience, prio
       const images = original?.source?.images || original?.images || [];
       const primary = images.find(row => row.isPrimary) || images.find(row => /대표/u.test(row.label || '')) || images[0];
       const primaryAssetRef = person.referenceMode === 'PRIMARY' ? String(primary?.assetPath || primary?.path || primary?.ref || primary?.assetRef || '') : '';
-      return { ...person, primaryAssetRef: primaryAssetRef || capsule?.visualReferences?.find(row => row.characterId === person.id)?.primaryAssetRef || '' };
+      const priorPerson = originalScenario.characters?.find(row => row?.id === person.id);
+      const priorPublic = priorPerson && priorPerson !== original ? experience.publicCharacter(priorPerson, scenario) : null;
+      // Public alias/appearance improvements must not charge again for an
+      // already drawn identity. Use the old approved profile for cache lookup
+      // only; prompts and labels use the new public projection above.
+      const cacheProfile = priorPublic?.referenceMode === person.referenceMode ? { portraitCacheProfile: priorPublic.publicProfile || '' } : {};
+      return { ...person, ...cacheProfile,
+        ...(original?.eventAliasScope ? { eventAliasScope: original.eventAliasScope, eventAliasText: original.eventAliasText, ...(original.eventAliasConfirmations ? { eventAliasConfirmations: original.eventAliasConfirmations } : {}), portraitCacheProfile: original.portraitCacheProfile } : {}),
+        publicAppearance: publicAppearance(original, scenario, experience), primaryAssetRef: primaryAssetRef || capsule?.visualReferences?.find(row => row.characterId === person.id)?.primaryAssetRef || '' };
     });
   const priorExpressions = previous?.environmentKey === key ? expressionsAt(previous) : {};
   return { version: sceneVersion, scope, world, environmentKey: key, candidates, characters: [], protagonistId: scenario?.protagonist?.id,

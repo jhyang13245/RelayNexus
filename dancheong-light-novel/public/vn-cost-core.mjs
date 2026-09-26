@@ -1,18 +1,26 @@
-// Standard API rates, USD / 1M tokens, checked 2026-09-24.
+// Standard API rates, USD / 1M tokens, checked 2026-09-25.
 // https://developers.openai.com/api/docs/pricing
 // https://developers.openai.com/api/docs/models/gpt-5.6-luna
-export const pricingDate = '2026-09-24';
+// https://developers.openai.com/api/docs/models/gpt-6-luna
+export const pricingDate = '2026-09-25';
 const count = value => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : 0;
 export function estimateCost({ provider, model = '', usage, serviceTier }) {
   if (provider === 'go') return { usd: null, kind: 'subscription' };
   if (!usage || !Number.isFinite(usage.input_tokens) || !Number.isFinite(usage.output_tokens)) return { usd: null, kind: 'unknown' };
   if (serviceTier && !['auto', 'default', 'standard'].includes(serviceTier)) return { usd: null, kind: 'unknown' };
   const input = count(usage.input_tokens), output = count(usage.output_tokens), details = usage.input_tokens_details || {};
+  if (provider === 'openai' && /^gpt-4o-mini-tts(?:-\d{4}-\d{2}-\d{2})?$/u.test(model)) return { usd: (input * 0.6 + output * 12) / 1e6, kind: 'estimate' };
   if (provider === 'gemini' && /^gemini-3\.1-flash-image(?:-\d+)?$/u.test(model)) {
     const image = usage.output_tokens_details?.image_tokens;
     if (!Number.isFinite(image) || image < 0 || image > output) return { usd: null, kind: 'unknown' };
     // https://ai.google.dev/gemini-api/docs/pricing — text/thinking and image outputs differ.
     return { usd: (input * 0.5 + image * 60 + (output - image) * 3) / 1e6, kind: 'estimate' };
+  }
+  if (/^gpt-6-luna(?:-\d{4}-\d{2}-\d{2})?$/u.test(model)) {
+    const cached = Math.min(input, count(details.cached_tokens));
+    const written = Math.min(input - cached, count(details.cache_write_tokens));
+    const long = input > 272000;
+    return { usd: (((input - cached - written) * 0.1 + cached * 0.01 + written * 0.125) * (long ? 2 : 1) + output * 0.5 * (long ? 1.5 : 1)) / 1e6, kind: 'estimate' };
   }
   if (/^gpt-5\.6-luna(?:-\d{4}-\d{2}-\d{2})?$/u.test(model)) {
     const cached = Math.min(input, count(details.cached_tokens));

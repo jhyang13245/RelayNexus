@@ -1,5 +1,5 @@
 {
-  "release": "v13.9",
+  "release": "v13.11.8",
   "description": "Complete application source; shared Neoreum/Jieum services and browser-local data are external.",
   "files": [
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 7505,
-      "sha256": "56d73510582c1018c4f8a7fd7e4574695e99835d9ffa738f6e90bafbc0a90100"
+      "bytes": 14079,
+      "sha256": "a31a2473c618d2ccb1cd1621851dffe8c1e73756c0f5c5852a4ebe8e48436fe5"
     },
     {
       "path": "app/api/catalog/route.ts",
@@ -29,23 +29,28 @@
     },
     {
       "path": "app/api/gemini/image/route.ts",
-      "bytes": 9463,
-      "sha256": "823273f25f97e5ccdf603514406535b8b6f054a13d80fa65844f04a199fd6535"
+      "bytes": 9839,
+      "sha256": "db78898df4eb31687f1a3b555c50376cfd6e527a0e464812a8ca5193437f803d"
     },
     {
       "path": "app/api/go/responses/route.ts",
-      "bytes": 2758,
-      "sha256": "12c4897054ec7bd288e33c1c51ad4c115bf33f1a32dd2d7791a4752f6367f464"
+      "bytes": 2772,
+      "sha256": "275e0591d5abc6d12d7db8a21db7e78f112ec7f7a1465ea9397be86415b4bdd0"
     },
     {
       "path": "app/api/image/route.ts",
-      "bytes": 6198,
-      "sha256": "8487d0e45ae2412a4c2a417a20227fc961b9be6d8935a3b3c379d7d13928fefa"
+      "bytes": 7754,
+      "sha256": "d6657e362956ca4c7146b7518024189ab765192c646dec67a24100ce6a4cdb61"
     },
     {
       "path": "app/api/openai/[...path]/route.ts",
       "bytes": 2183,
       "sha256": "cac2b784857604eb07cb2e5fd5044da3c5d2024b92266d2ab572f7cebc8b2a1b"
+    },
+    {
+      "path": "app/api/voice/route.ts",
+      "bytes": 4929,
+      "sha256": "fb16a3b1c112b54f1b0aaf1c5d5c9f2f417514626ff86eff9b28d5012abab8e9"
     },
     {
       "path": "app/api/work/[slug]/[kind]/route.ts",
@@ -428,6 +433,66 @@
       "sha256": "4e891ce1c995f5fb8a23cbde0c2cdb1ce593c7de0ad31de93b7fd0e3ff1baa7a"
     },
     {
+      "path": "docs/v13.10.0-presentation.md",
+      "bytes": 5477,
+      "sha256": "b2bfe2f432447c21ce1574c96766a7b03a4e64a71d70eb195e871f0916386113"
+    },
+    {
+      "path": "docs/v13.10.1-character-appearance.md",
+      "bytes": 2933,
+      "sha256": "b8f74335a06410eb48006a92b56abd06584999b981d4dee58e981849b4c43a69"
+    },
+    {
+      "path": "docs/v13.10.2-save-slots.md",
+      "bytes": 4064,
+      "sha256": "b9a5568c1828cce814e147cb29ff6288371c50be7b9054ef50f7774d5f26230a"
+    },
+    {
+      "path": "docs/v13.11.0-cinema-mobile.md",
+      "bytes": 6437,
+      "sha256": "b41a4cd972db1dfca658b847fbbcf97883b5edc421c5bb2e47c5e0df175827e2"
+    },
+    {
+      "path": "docs/v13.11.1-performance-review.md",
+      "bytes": 7053,
+      "sha256": "fe1b1a781a126f4454e685643fcba7ca3b19d77ac5fcf0e1ad3fc828fd6bd12c"
+    },
+    {
+      "path": "docs/v13.11.2-progress-framing.md",
+      "bytes": 4323,
+      "sha256": "76eab0d28042dbfe59c9749c32e60abf19554d7aed8f9e902a7373c246be93c7"
+    },
+    {
+      "path": "docs/v13.11.3-frame-validation.md",
+      "bytes": 2777,
+      "sha256": "29d9e4a507dc0f5436b30e0492326aa7b64f75fb4aff43ec1707bf43b069b8ed"
+    },
+    {
+      "path": "docs/v13.11.4-display-scale.md",
+      "bytes": 2818,
+      "sha256": "d2106b071b9eb9b4d5bc61d42d3451c916a1861830769c6b9e2087912c75a1d1"
+    },
+    {
+      "path": "docs/v13.11.5-new-game.md",
+      "bytes": 1929,
+      "sha256": "db75f28f79ff29fc2c6ba86ef32ab12d80e9f9c559abd74681f77cd9a06f0140"
+    },
+    {
+      "path": "docs/v13.11.6-storage-backup.md",
+      "bytes": 5439,
+      "sha256": "45c218cb1a2972445eb4c441048fc62ac30440744182c60a33b7593bbefa713a"
+    },
+    {
+      "path": "docs/v13.11.7-event-alias.md",
+      "bytes": 2605,
+      "sha256": "e1efb927700eb85d056cbd2b11e6f865b729e76a94b86c1d3e624304e13ea4d9"
+    },
+    {
+      "path": "docs/v13.11.8-identity-buffering.md",
+      "bytes": 4874,
+      "sha256": "a588472e1c300062df2ca1b0d46b98274a3ba985b02ed52bca8f70295e97dab9"
+    },
+    {
       "path": "docs/v13.2-expression-redraw.md",
       "bytes": 2041,
       "sha256": "35f497325c3bdc58950ffdf00068a3b37aeb013fcad65d364c766d50697075cc"
@@ -469,8 +534,48 @@
     },
     {
       "path": "docs/v13.9-review-fixes.md",
-      "bytes": 6152,
-      "sha256": "5331519bf82a0df6692262665f4a6c42a03123d19745d9609491c51826abcf8c"
+      "bytes": 8180,
+      "sha256": "de5c6c84b6acd2b67b1db87a8e1364d78c196909fad2203b5706b54864e263ab"
+    },
+    {
+      "path": "docs/v13.9.1-adjudication-retry.md",
+      "bytes": 2838,
+      "sha256": "91b9bec660bf69f0c552dbc5a49fb32c52847322190a4f97af941dc42b6efdef"
+    },
+    {
+      "path": "docs/v13.9.2-luna6-writing.md",
+      "bytes": 2042,
+      "sha256": "b4adf314cc50e2323e91b08732cf3aca68332683de020c0e72c7b4176a7a18eb"
+    },
+    {
+      "path": "docs/v13.9.3-event-scenes.md",
+      "bytes": 3607,
+      "sha256": "ab180135d6a9848d7eb7479718f14f8e5db2dbc8934fd1e9a5c48a3bcfaacd61"
+    },
+    {
+      "path": "docs/v13.9.4-background-cast-scale.md",
+      "bytes": 2771,
+      "sha256": "8d24fd20db0642a633555748e66cd6d7e988e6fbb7c96b98205420d5942735d0"
+    },
+    {
+      "path": "docs/v13.9.5-character-finish.md",
+      "bytes": 5702,
+      "sha256": "b4a3aa528cfd6e222f4a4c2076d5c2f1a4c5fc967c9c5717a9dccf640822992c"
+    },
+    {
+      "path": "docs/v13.9.6-sprite-framing.md",
+      "bytes": 2273,
+      "sha256": "da1fc7c3f79a88892f74a0772462a9e0ed33688631b3f2b960272bf47a329dad"
+    },
+    {
+      "path": "docs/v13.9.7-ensemble-framing.md",
+      "bytes": 2120,
+      "sha256": "c67fccdac13bb4805ce93d72900644a24a0a4bda54f2e526397102a06d016046"
+    },
+    {
+      "path": "docs/v13.9.9-review-fixes.md",
+      "bytes": 5373,
+      "sha256": "0ddeaab442cab0107e88544c69c492020c93f4bd0459fbfc9eb4a1b314a93ffb"
     },
     {
       "path": "docs/v7-tsukihime-comparison.md",
@@ -544,8 +649,8 @@
     },
     {
       "path": "public/cortex.html",
-      "bytes": 1419314,
-      "sha256": "2d538be9cc673654e9dac0a2120f9450e69aabf611d7dc2d83ef5d9cb22bab77"
+      "bytes": 1419688,
+      "sha256": "a1c2d54e8d86798e831acbd413c0476442f93d02ed03755dabc10dad612651f7"
     },
     {
       "path": "public/favicon.svg",
@@ -569,13 +674,18 @@
     },
     {
       "path": "public/vn-assets.mjs",
-      "bytes": 23841,
-      "sha256": "b707f22667903469f860e234be64e7bd1247944a56be46abcd64f7dc793da7b1"
+      "bytes": 41825,
+      "sha256": "2438e467353025aeab1d4d4d528b3c9bf55a215da5dd2e70e5fc82b99885f453"
     },
     {
       "path": "public/vn-audio.mjs",
       "bytes": 6549,
       "sha256": "f0244c0d388857ab9bb20662e5c2fa560cfdbe3835ae15d6cc6739c6b00550e4"
+    },
+    {
+      "path": "public/vn-backup.mjs",
+      "bytes": 6852,
+      "sha256": "c5b6a199344834d3dc878e382bc5d138d9161f841a5efcaccd8630e918f06da9"
     },
     {
       "path": "public/vn-boot.html",
@@ -584,8 +694,13 @@
     },
     {
       "path": "public/vn-cast.mjs",
-      "bytes": 22047,
-      "sha256": "d6b6189f4584cac6a114874e636b92df037f99e4daf61ed83e076b0d6141319c"
+      "bytes": 37286,
+      "sha256": "450df3c77269f656995ce1cb1e591914c4a8b3c8889779589aacbd8585309891"
+    },
+    {
+      "path": "public/vn-character-art.mjs",
+      "bytes": 7677,
+      "sha256": "a5128212507f10182a4b6daac7bcf88160db53b2edd9796aa59842c99b770a4a"
     },
     {
       "path": "public/vn-chroma.mjs",
@@ -593,24 +708,54 @@
       "sha256": "84c932dcc1c2b1c3cd8c672548513512e412b8fad96a63890907b189cdfe91b1"
     },
     {
+      "path": "public/vn-cinema.css",
+      "bytes": 7173,
+      "sha256": "b458960de69620f0511c73a45aae8b726041d971691582ca1978b33ac7291b44"
+    },
+    {
+      "path": "public/vn-cinema.mjs",
+      "bytes": 9306,
+      "sha256": "3f3f5eefc206e3d6faf75c468e1d650cdbc43bfb9bfa76aaa4d8df674fa32c64"
+    },
+    {
       "path": "public/vn-core.mjs",
-      "bytes": 4182,
-      "sha256": "3251bfe2c0f54ea6643c663745fda5d4c1f73f199c2cda555bd9955004e427e1"
+      "bytes": 5364,
+      "sha256": "9bd1c5e1be87a2e5123276267d5b42ca399b2c2fda59661ff5c04c0b91804657"
     },
     {
       "path": "public/vn-cost-core.mjs",
-      "bytes": 3405,
-      "sha256": "ff6703813d41d04eaf538525c2ab0fb19452291f420ee4cc90b91e28fc50581c"
+      "bytes": 4033,
+      "sha256": "3429cf947a4e38f5fb534b588c9580e54aa5d95b50223f4b09c1399c02426765"
     },
     {
       "path": "public/vn-costs.mjs",
-      "bytes": 11062,
-      "sha256": "71549c2f92623827089920c1444f604009dcf662c775986f6d18c48b813a47db"
+      "bytes": 11281,
+      "sha256": "23a9fac1bdb95b6093dddee7d41b5b19e2bfd8ed7bc982cdde757f6afa9fea46"
     },
     {
       "path": "public/vn-direction.mjs",
       "bytes": 3189,
       "sha256": "81c2bbab744a696238853800bc223bb9d5cb6581cebd8aaef4c748803c31d679"
+    },
+    {
+      "path": "public/vn-event-progress-ui.mjs",
+      "bytes": 8380,
+      "sha256": "52759ce70d8d510bc19cfb9d44d0f174450022fc1ee1192f1fd9b3526364daa2"
+    },
+    {
+      "path": "public/vn-event-progress.css",
+      "bytes": 6212,
+      "sha256": "7612eb632fa86e174ebc1338d588c191106bf8161eacf1a09c6b180f52377626"
+    },
+    {
+      "path": "public/vn-event-progress.mjs",
+      "bytes": 7014,
+      "sha256": "3f440f06aaa75fe580df001810d1a241e63e5fccfbacbb5bc49549325e897550"
+    },
+    {
+      "path": "public/vn-identity.mjs",
+      "bytes": 10011,
+      "sha256": "de1fae8ddcecac85a9ae76a7a1133aacf4bf9864ffdc158ec3c8f39319dac92b"
     },
     {
       "path": "public/vn-image-compare.mjs",
@@ -628,49 +773,129 @@
       "sha256": "bd87788e875400494871de763cca9c385e03950fccd24afaa7a655c1ba8f9bab"
     },
     {
+      "path": "public/vn-motion.mjs",
+      "bytes": 7041,
+      "sha256": "53c82477f1018fa6d614190c36b06ed9f28842d360bda71fc45673c3b7d8db68"
+    },
+    {
+      "path": "public/vn-music.mjs",
+      "bytes": 14058,
+      "sha256": "767c9b6c94f507b72b9da6fae3f7d05d44225aecd6acf7162e8297781c2e754f"
+    },
+    {
+      "path": "public/vn-new-game.mjs",
+      "bytes": 3496,
+      "sha256": "e5d0e217d30440ff9ac582b7d38395ed81c1a64a44fa652d9b4a4276aee369cc"
+    },
+    {
       "path": "public/vn-progress.mjs",
-      "bytes": 2063,
-      "sha256": "ef4b9bb4dc1649bff77ad8f7d3cbafc3eb83ee5c521b1ca80140e0c3d850cc4d"
+      "bytes": 3138,
+      "sha256": "1c830a908a11f9eda67ee9456ae93bb30a0cc2bcbaefc335a280280301d86a12"
+    },
+    {
+      "path": "public/vn-public-cast.mjs",
+      "bytes": 6080,
+      "sha256": "7568a53f6f18830a37d9e28ba0130fb75d4882e1f3ab1a7ff4052a760da61d1c"
+    },
+    {
+      "path": "public/vn-raster-worker.mjs",
+      "bytes": 2421,
+      "sha256": "e8d8abca08afec1e9b65facba9ccce22846089ad9c1bebcd74a9d0c0f9983f43"
+    },
+    {
+      "path": "public/vn-raster.mjs",
+      "bytes": 1403,
+      "sha256": "f3b3ddb58372c793a88d68760f3e44483b081a502ac59d1968dff1047c4dc4be"
     },
     {
       "path": "public/vn-reader.css",
-      "bytes": 22964,
-      "sha256": "b03cf7f9b4bb2cce91c63a00adf76d4884d042dbe974ad2dd954a5c27b3bae45"
+      "bytes": 28022,
+      "sha256": "ab2ec2d25ff06417f95df05209f1e0602e08c08a80ccba9806564c9c54b0f27a"
     },
     {
       "path": "public/vn-reader.mjs",
-      "bytes": 4689,
-      "sha256": "05cb9499009cb594e9a16fe71d978b957a8ba9a184216d950100fc686ecb69f2"
+      "bytes": 5708,
+      "sha256": "4e9414e86f173a5af2a7989aa65d814dc42057f919a6f1c2b962648651205a16"
+    },
+    {
+      "path": "public/vn-save-ui.mjs",
+      "bytes": 11580,
+      "sha256": "ebd396447ffa37c17d7ac8c57896aa2c467a60fd557080de012339420cc42730"
+    },
+    {
+      "path": "public/vn-saves.css",
+      "bytes": 9767,
+      "sha256": "29bce5cc672210ba63a6e73d5922215ea2ec3c57f10272b0d4c63035f8575f6c"
+    },
+    {
+      "path": "public/vn-saves.mjs",
+      "bytes": 9135,
+      "sha256": "091ef9fc5963351898eb306c5b4a4fd2d25fa87680834323c82120332cead40a"
     },
     {
       "path": "public/vn-scene.mjs",
-      "bytes": 8658,
-      "sha256": "6117b6242d2950ef9052f79fc669eecc1e96362608907c6d52f916289c4deacd"
+      "bytes": 9978,
+      "sha256": "a02345db58592ed5af97a08cf481e43b2a3265f6deb076e41de62861e53960ec"
+    },
+    {
+      "path": "public/vn-shots.mjs",
+      "bytes": 2380,
+      "sha256": "67551650400ac156c4bc5c81a3efd79d505dac5ef2f27c334ae1f9cc1c12b66e"
     },
     {
       "path": "public/vn-sprite.mjs",
-      "bytes": 3764,
-      "sha256": "c9a0f9b3e6e17eeb828dcb6f9343f0d9c47153e1be4236b4deec8849025ab252"
+      "bytes": 14938,
+      "sha256": "d60f8d310bb05a4fa6fa94fd0629e7d72ba81cf84b10a786cae8d15eb24df587"
     },
     {
       "path": "public/vn-stage-timing.mjs",
-      "bytes": 5401,
-      "sha256": "9cc62dcfefa6ad6ce92252e73e0737e2933636ba8d40d628ec62e7303c7c883f"
+      "bytes": 6157,
+      "sha256": "6192460ca355d969f6b5f6b58afef19fee421aa4ac433cfb08202529993b399c"
     },
     {
       "path": "public/vn-stage.mjs",
-      "bytes": 3572,
-      "sha256": "8fb06b47597a0b02c3d00f5d7ed57162edd9b3cdb8c14b95251a243ee8b9c12f"
+      "bytes": 4900,
+      "sha256": "adda914b8b67ff8efc0f668fad5c9e717eed4e0482236a8152d73ddc0c7b9709"
+    },
+    {
+      "path": "public/vn-storage-ui.mjs",
+      "bytes": 7252,
+      "sha256": "d18465aa94419ee21a9ec10b3123739521743dcc6da27d1b5f3bcee13353b34c"
+    },
+    {
+      "path": "public/vn-storage.css",
+      "bytes": 9185,
+      "sha256": "188bc6be9fd75c930723f12a99be383ffc5ac047fff70a8f771407ca32ab1e5d"
+    },
+    {
+      "path": "public/vn-storage.mjs",
+      "bytes": 7676,
+      "sha256": "df7d95980e000ba5548cdcee225a5fe1ed6ce3fd686da5a4303b6f0e8d7192c7"
+    },
+    {
+      "path": "public/vn-voice.mjs",
+      "bytes": 5284,
+      "sha256": "41b41961f29f03dd1aae31e94c9e15e0a765daa6b5bdfd1da4b820b3a252d49b"
+    },
+    {
+      "path": "public/vn-wardrobe.mjs",
+      "bytes": 4925,
+      "sha256": "fbcb59b85326b23116172360106fda19873f263674bb70c6c5ef54e26d1199c6"
+    },
+    {
+      "path": "public/vn-work-music.mjs",
+      "bytes": 9392,
+      "sha256": "41e1d30a8b96aedd898b791759672d7280d23ebde201a4b145e2ebc82e156c72"
     },
     {
       "path": "public/vn.css",
-      "bytes": 34534,
-      "sha256": "0387e295404834bcd1b9da54e3096d059850b624fd7cd71e75c01a71252e3f77"
+      "bytes": 35019,
+      "sha256": "40482fe163300d72e916ebea8a66b8ca3a50fda588ff9187d280268c9408ed96"
     },
     {
       "path": "public/vn.js",
-      "bytes": 84988,
-      "sha256": "df7524d33a3196dae7e9a3974a93af183627ed5874b3784e227467948382ac4f"
+      "bytes": 124553,
+      "sha256": "730a515682a94f581e31dbc09b07c1beb504d41ba3536bc0ed9d6488e8eb6784"
     },
     {
       "path": "public/window.svg",
@@ -678,9 +903,14 @@
       "sha256": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66"
     },
     {
+      "path": "public/work-presentation.json",
+      "bytes": 581,
+      "sha256": "74b845981904b529c71c3b587faeeffe71cabbbe2a63cec83c6077bcf3fa958d"
+    },
+    {
       "path": "scripts/build-cortex.mjs",
-      "bytes": 5910,
-      "sha256": "3aa76d41ed7c9ed8c9a8cadb5519a1194c7826c3c989bc104a26202d3b4093d0"
+      "bytes": 7112,
+      "sha256": "ac21c1072f19ab0bea3f2210b24dae0a47005558ea16ac0b13e3599b210a41be"
     },
     {
       "path": "scripts/build-verified.sh",
@@ -714,8 +944,8 @@
     },
     {
       "path": "scripts/package-source.mjs",
-      "bytes": 2727,
-      "sha256": "9c287e5ee9bcc17b2821d07a34914b8ed4e53f0f6a9568b900e22b4767daaacd"
+      "bytes": 2730,
+      "sha256": "f956834ec1f33cd0ec95dc36a9782a7cb58ef4ad4f31deea6921f99ca2e45e6c"
     },
     {
       "path": "scripts/pnpm-install.mjs",
@@ -738,14 +968,24 @@
       "sha256": "df86ebfc27d2f00860036658e933ac0ddd7b5f6879aa5d51218f0863c7e1fb60"
     },
     {
+      "path": "tests/vn-appearance-repair.test.mjs",
+      "bytes": 6911,
+      "sha256": "2e47a0380a66a129973e48960dd0e979ab75df2dfa57fbafbddbb9799980f0c2"
+    },
+    {
       "path": "tests/vn-assets.test.mjs",
-      "bytes": 15066,
-      "sha256": "d436445b510d52d498c39621dbddecae7f6afc0adc4dead4aac1fc9b40af97fa"
+      "bytes": 15414,
+      "sha256": "6760262009e9ecd346763347b720e8aaef02965d59e66d65ea35ca206009b4c3"
     },
     {
       "path": "tests/vn-boot.test.mjs",
       "bytes": 2965,
       "sha256": "b8e29334e54d65009a44b67f0aad4ab2bd2ba7160134c8684d1fef009b540343"
+    },
+    {
+      "path": "tests/vn-buffering.test.mjs",
+      "bytes": 2200,
+      "sha256": "e5e4433b1cb3820efd1ec6c04ec4c70649f66ccf86f2446093c624fbfb214b5b"
     },
     {
       "path": "tests/vn-cast-director.test.mjs",
@@ -754,13 +994,28 @@
     },
     {
       "path": "tests/vn-cast-runtime.test.mjs",
-      "bytes": 3689,
-      "sha256": "d7a05a537f8d137186d1a4336ad7be05da3dac78876f030ca54a48504506b436"
+      "bytes": 6907,
+      "sha256": "781f9f7468e32bc85f541e4ebc90add5ba33f94256d059914954fc6b490c92fc"
+    },
+    {
+      "path": "tests/vn-character-art.test.mjs",
+      "bytes": 4199,
+      "sha256": "3fcc10e2363e4973bae0a6e636cca3ae694c3a5837cf9d9166ab947c885867c5"
+    },
+    {
+      "path": "tests/vn-character-finish.test.mjs",
+      "bytes": 8158,
+      "sha256": "d54734bb139f085c89822240148e92af552b9f8f26b53271b3116b8d4ef71922"
     },
     {
       "path": "tests/vn-chroma.test.mjs",
       "bytes": 8311,
       "sha256": "caf715ff65700eb8014551820eb7cc19f4e323813807b5d533a7b683df3cc823"
+    },
+    {
+      "path": "tests/vn-cinema.test.mjs",
+      "bytes": 6837,
+      "sha256": "fe0331e045691cff15cacdaaf2a0dfb962b2c0ea220bea8a6be4e5eea0fef45e"
     },
     {
       "path": "tests/vn-core.test.mjs",
@@ -783,9 +1038,39 @@
       "sha256": "7446bdd0c811c7bff03606ec2729a29f0099fad336718584704955f501cc5411"
     },
     {
+      "path": "tests/vn-event-alias.test.mjs",
+      "bytes": 5862,
+      "sha256": "5114b74b0309e4f22ba548cd7271b288a2beb1c29cb98a8728424f11c8dda6e6"
+    },
+    {
+      "path": "tests/vn-event-identity.test.mjs",
+      "bytes": 7981,
+      "sha256": "c6914edb5e392747562c6d18380f74ce985a261a7b536d807a100768bf55896b"
+    },
+    {
+      "path": "tests/vn-event-progress.test.mjs",
+      "bytes": 5199,
+      "sha256": "1dd5aa838435ecc146d5a2882cd9efb3f7662afd4f53a3f822d046ebed56e4a0"
+    },
+    {
+      "path": "tests/vn-event-scenes.test.mjs",
+      "bytes": 9812,
+      "sha256": "ce12e9ffb1907fbe8d74912b524a2ff8463717eb3aeed6732e4a8711a5a38d6c"
+    },
+    {
+      "path": "tests/vn-face-framing.test.mjs",
+      "bytes": 6164,
+      "sha256": "064ac7a1ddcc4d45f2c04d93be3b5bd229e8ba03790a880242ef7764f256cf93"
+    },
+    {
       "path": "tests/vn-gemini-route.test.mjs",
-      "bytes": 7698,
-      "sha256": "0bfa688909d663b68330c950a05a68ae6ce44e0f89aed37f5fca15aee21e33ca"
+      "bytes": 8501,
+      "sha256": "5fb37774e89e3526fbc2bc8cec29c505bdda870731db72bc6e32ac1069d41e51"
+    },
+    {
+      "path": "tests/vn-identity.test.mjs",
+      "bytes": 11641,
+      "sha256": "05ca26a930242404d8b0e02f3aa80db49a4d33ebf6e37b5b9150a57567ed8028"
     },
     {
       "path": "tests/vn-image-route.test.mjs",
@@ -798,9 +1083,39 @@
       "sha256": "9d86cfb52d618215e7ec1db364aabc963235d13a6c7ef210c5b830dac95ae818"
     },
     {
+      "path": "tests/vn-luna6.test.mjs",
+      "bytes": 7721,
+      "sha256": "6387a126473e0968b83e8049db6d3ccdec52e78d1000b2029e778eed682ec754"
+    },
+    {
+      "path": "tests/vn-music.test.mjs",
+      "bytes": 5785,
+      "sha256": "edab8c6f565079c2fc0bbf02a4e03738ca66d6f33a7730dd2c7347bbd838e0a0"
+    },
+    {
+      "path": "tests/vn-new-game.test.mjs",
+      "bytes": 4158,
+      "sha256": "60dbefc19843421839515bc13019c9fef301b9b34d1d5bc4ef4b3ef6009fe560"
+    },
+    {
+      "path": "tests/vn-performance.test.mjs",
+      "bytes": 7457,
+      "sha256": "b8e9cc68a893e980c21b7a282aa8acd067c4dd30bec73b46bb8aed00313d8b24"
+    },
+    {
+      "path": "tests/vn-portrait-frame.test.mjs",
+      "bytes": 4323,
+      "sha256": "18c32570a226dc88cfd3365edc707143da122fe7d9baf9e59980a5dbc599adad"
+    },
+    {
+      "path": "tests/vn-presentation-v1310.test.mjs",
+      "bytes": 7564,
+      "sha256": "762a4ae9a0aa412c25ebeb260854d71851e6e0bf0aa8841cdf065f844ff7274e"
+    },
+    {
       "path": "tests/vn-progress.test.mjs",
-      "bytes": 3272,
-      "sha256": "d2ec51d314ba9d4ba4536c148ecc006df6941f8b560333775ca1600d1eb54528"
+      "bytes": 6166,
+      "sha256": "460fb80386f5cf2b3608092fbdfc62b925a547fcf8705128857159e139256894"
     },
     {
       "path": "tests/vn-reader.test.mjs",
@@ -811,6 +1126,16 @@
       "path": "tests/vn-reveal.test.mjs",
       "bytes": 9287,
       "sha256": "3cc17eb28ab03d0aaeeb03ba67e17fe4e9a395c89024105de24d150a09611409"
+    },
+    {
+      "path": "tests/vn-review-v1399.test.mjs",
+      "bytes": 5669,
+      "sha256": "df50cdd6f1c41d4890b931df540909258578f3b567ff162ac2c99de64313f1b9"
+    },
+    {
+      "path": "tests/vn-saves.test.mjs",
+      "bytes": 5686,
+      "sha256": "06c207d2d1d3c7a21b6f2d308222447488b90d5231fd9957ae4f929ab69bc3c1"
     },
     {
       "path": "tests/vn-scene-evidence.test.mjs",
@@ -824,13 +1149,18 @@
     },
     {
       "path": "tests/vn-stage-direction.test.mjs",
-      "bytes": 12592,
-      "sha256": "ef88704d4efb73225bd94a779c2684c747cbddeebb04aec5c3a0577302228e50"
+      "bytes": 14084,
+      "sha256": "571d5d1eff0881eb73654f7c13127ebc1ec37416b36485b2c0ab6fa2f5b9750d"
     },
     {
       "path": "tests/vn-stage-timing.test.mjs",
-      "bytes": 6886,
-      "sha256": "d9f4b3622519c104f9d273278e33d9e2765781bc6da335c2133df532a02e5765"
+      "bytes": 7529,
+      "sha256": "5bb93dd70795a3baef8a370a08397ce9cc75f05c4ebfe4ae6b702c5f2cac02d8"
+    },
+    {
+      "path": "tests/vn-storage.test.mjs",
+      "bytes": 8180,
+      "sha256": "5f8262835ee555f65f763c2d2240b85d8e8943eebf44d6a2c8012aacfc67db5f"
     },
     {
       "path": "tests/vn-streaming.test.mjs",
@@ -839,13 +1169,23 @@
     },
     {
       "path": "tests/vn-v13-9-review.test.mjs",
-      "bytes": 10895,
-      "sha256": "1c7ce4a481c9461bc06568117742d8ca2d1703bf9b28062f341f215da18e34ec"
+      "bytes": 13808,
+      "sha256": "938be24adda566fa4e30e5b8279eb738c4845a5903098a3c1365f934727ada73"
     },
     {
       "path": "tests/vn-v13-review.test.mjs",
-      "bytes": 5585,
-      "sha256": "f55916396701723d6db714328d24eed944ba1cd76758cd246f7c7fb4d37b22fe"
+      "bytes": 5950,
+      "sha256": "0eab7447e7425fac3c64d36b6b499e62e9f0530b54d9e55e7de2771e8e0b888d"
+    },
+    {
+      "path": "tests/vn-voice.test.mjs",
+      "bytes": 4634,
+      "sha256": "667699b5217537dfc51615eb0be7792ed7b6f4f282c3297668a8e3d049cae8dd"
+    },
+    {
+      "path": "tests/vn-wardrobe.test.mjs",
+      "bytes": 9288,
+      "sha256": "906151793fd1ecfe7096ee9e8bda085b3803c6bb4f6153c561c2ea0353eb4816"
     },
     {
       "path": "tsconfig.json",
@@ -854,8 +1194,8 @@
     },
     {
       "path": "vendor/Cortex_v1.42.0.html",
-      "bytes": 1415194,
-      "sha256": "1e5fbc6ac09532852a3492b2821efd99d7b16961bff23cc52693d05bdfc77a43"
+      "bytes": 1415320,
+      "sha256": "e0b43be5f6eee30cf6908cea694545457c0cee48adbe43ac49348c5fd743b394"
     },
     {
       "path": "vendor/shadcn-tailwind-4.13.0.LICENSE.md",

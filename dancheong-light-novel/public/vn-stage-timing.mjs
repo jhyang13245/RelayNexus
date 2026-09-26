@@ -16,12 +16,26 @@ export function publishedUnit(turn, page, previousText = '') {
   };
 }
 
-export function dialogueWait(page, view, { enabled, decoded = false, bypass = false } = {}) {
+export function dialogueWait(page, view, { enabled, decoded = false, eventDecoded = false, bypass = false } = {}) {
   if (!enabled || bypass || (!page?.quoted && page?.kind !== 'dialogue')) return false;
   if (!view || view.castStatus !== 'ready') return true;
   // A quotation/phone voice can be attributed without a person on stage.
   if (!view.speakerId) return false;
+  if (eventDecoded && view.eventBackground && view.eventCharacterIds?.includes(view.speakerId)) return false;
   return !view.portraits.some(person => person.id === view.speakerId) || !decoded;
+}
+
+// A turn gets one short grace period, never another wait for every utterance.
+// Cast attribution remains independent: this only releases readable prose.
+export function createDialogueGrace({ now = () => Date.now(), milliseconds = 5000 } = {}) {
+  const starts = new Map();
+  return {
+    remaining(key) {
+      if (!starts.has(key)) starts.set(key, now());
+      return Math.max(0, milliseconds - (now() - starts.get(key)));
+    },
+    clear() { starts.clear(); },
+  };
 }
 
 // Presentation attribution comes from the verified cast pass, never a stale
@@ -51,7 +65,9 @@ export function preparationPages(pages, cursor) {
 export function nextWaitReason({ complete, blocked, loading, nextPage, nextView, imagesEnabled }) {
   if (!complete || blocked) return '';
   if (!nextPage) return loading ? '다음 문장 준비 중' : '';
-  if (imagesEnabled && dialogueWait(nextPage, nextView, { enabled: true, decoded: true })) return '다음 대사의 인물 준비 중';
+  // This is a readiness hint for the next page; actual decoding is checked
+  // when that page becomes visible, for both portraits and event backgrounds.
+  if (imagesEnabled && dialogueWait(nextPage, nextView, { enabled: true, decoded: true, eventDecoded: Boolean(nextView?.eventBackground) })) return '다음 대사의 인물 준비 중';
   return '';
 }
 
@@ -74,8 +90,7 @@ export function createPreparationQueue({ concurrency = 3, onError = () => {} } =
 // Only cast inference occupies the paragraph queue. Waiting for a shared slow
 // background must not stop checking/generating a later paragraph's speaker.
 // Lookahead tiers: the whole published turn gets cheap cast checks, only the
-// reader's paragraph and the next few generate images, and an event CG waits
-// until the reader reaches its paragraph.
+// reader's paragraph and the next few generate images, including event art.
 export const IMAGE_LOOKAHEAD = 2;
 export function preparationTier(unitIndex, lookahead = IMAGE_LOOKAHEAD) {
   return unitIndex === 0 ? 'current' : unitIndex <= lookahead ? 'images' : 'cast';
@@ -85,7 +100,7 @@ export async function prepareAhead({ scene, pages, castDirector, assets, active,
   if (!active()) return { completion: Promise.resolve() };
   const images = tier !== 'cast';
   // Beyond the image window, only already-stored art is loaded; nothing is paid.
-  const completion = Promise.all(pages.map(page => assets.prepare(scene, page, { active, generate: generate && images, cg: tier === 'current' }))).then(async () => {
+  const completion = Promise.all(pages.map(page => assets.prepare(scene, page, { active, generate: generate && images, cg: images }))).then(async () => {
     if (active() && images) await Promise.all(pages.flatMap(page => assets.view(scene, page)?.portraits || []).map(person => preload(person.url)));
   });
   return { completion };
