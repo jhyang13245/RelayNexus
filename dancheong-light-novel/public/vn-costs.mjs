@@ -17,7 +17,7 @@ async function records(row) {
   }); } finally { db.close(); }
 }
 const money = usd => `$${usd.toFixed(4)}`;
-const labels = { text: '본문·판정', cast: '인물 배치', background: '배경', scene: '장면', portrait: '인물', expression: '표정', voice: 'AI 음성' };
+const labels = { text: '본문·판정', cast: '인물 배치', background: '배경', scene: '장면', portrait: '인물', expression: '표정', voice: 'AI 음성', music: 'AI 음악' };
 function purposeHeader(headers) {
   if (!headers) return '';
   if (typeof headers.get === 'function') {
@@ -38,7 +38,7 @@ function purposeHeader(headers) {
 }
 export function resolveCostCategory({ image = false, purpose = '', headers } = {}) {
   if (image) return ['background', 'scene', 'portrait', 'expression'].includes(purpose) ? purpose : 'scene';
-  return ['cast', 'voice'].includes(purposeHeader(headers).trim()) ? purposeHeader(headers).trim() : 'text';
+  return ['cast', 'voice', 'music'].includes(purposeHeader(headers).trim()) ? purposeHeader(headers).trim() : 'text';
 }
 export function installCostMeter({ context, onChange }) {
   const nativeFetch = globalThis.fetch.bind(globalThis), memory = new Map();
@@ -79,11 +79,11 @@ export function installCostMeter({ context, onChange }) {
   globalThis.fetch = async (input, init) => {
     let url;
     try { url = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url, location.origin); } catch { return nativeFetch(input, init); }
-    if (url.origin !== location.origin || !['/api/voice', '/api/image', '/api/gemini/image', '/api/openai/responses', '/api/go/responses'].includes(url.pathname)) return nativeFetch(input, init);
+    if (url.origin !== location.origin || !['/api/voice', '/api/image', '/api/gemini/image', '/api/gemini/music', '/api/openai/responses', '/api/go/responses'].includes(url.pathname)) return nativeFetch(input, init);
     let body = {};
     try { if (typeof init?.body === 'string') body = JSON.parse(init.body); } catch { /* Request validation belongs to the API. */ }
     const image = url.pathname === '/api/image' || url.pathname === '/api/gemini/image';
-    if (image || url.pathname === '/api/voice') void requestDurableStorage();
+    if (image || url.pathname === '/api/voice' || url.pathname === '/api/gemini/music') void requestDurableStorage();
     const headers = init?.headers ?? (typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined);
     const row = { id: crypto.randomUUID(), at: Date.now(), ...context(), provider: url.pathname.startsWith('/api/go/') ? 'go' : url.pathname.startsWith('/api/gemini/') ? 'gemini' : 'openai', category: resolveCostCategory({ image, purpose: body.purpose, headers }), model: typeof body.model === 'string' ? body.model : '', state: 'pending', usage: null, priceDate: pricingDate };
     void save(row);
@@ -119,7 +119,7 @@ export function installCostMeter({ context, onChange }) {
         const subtotal = sumCosts(rows.filter(row => row.provider === provider));
         const span = document.createElement('span'); span.textContent = `${label} ${money(subtotal.usd)} · ${subtotal.calls}회`; breakdown.append(span);
       }
-      for (const category of ['text', 'cast', 'background', 'scene', 'portrait', 'expression', 'voice']) {
+      for (const category of ['text', 'cast', 'background', 'scene', 'portrait', 'expression', 'voice', 'music']) {
         const subtotal = sumCosts(rows.filter(row => row.category === category));
         const span = document.createElement('span'); span.textContent = `${labels[category]} ${money(subtotal.usd)} · ${subtotal.calls}회`; breakdown.append(span);
       }

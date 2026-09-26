@@ -1,5 +1,5 @@
 {
-  "release": "v13.11.8",
+  "release": "v13.12.0",
   "description": "Complete application source; shared Neoreum/Jieum services and browser-local data are external.",
   "files": [
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 14079,
-      "sha256": "a31a2473c618d2ccb1cd1621851dffe8c1e73756c0f5c5852a4ebe8e48436fe5"
+      "bytes": 14840,
+      "sha256": "848b8c3ece07a57385e9b886891eb98f47712f9c11c02ff9de779e3dd1e64653"
     },
     {
       "path": "app/api/catalog/route.ts",
@@ -31,6 +31,11 @@
       "path": "app/api/gemini/image/route.ts",
       "bytes": 9839,
       "sha256": "db78898df4eb31687f1a3b555c50376cfd6e527a0e464812a8ca5193437f803d"
+    },
+    {
+      "path": "app/api/gemini/music/route.ts",
+      "bytes": 5375,
+      "sha256": "3401fc2ddde8883ea6956f85c76b3f0b1b3c02ff95478ed0c5382caf9d79c7c6"
     },
     {
       "path": "app/api/go/responses/route.ts",
@@ -49,8 +54,8 @@
     },
     {
       "path": "app/api/voice/route.ts",
-      "bytes": 4929,
-      "sha256": "fb16a3b1c112b54f1b0aaf1c5d5c9f2f417514626ff86eff9b28d5012abab8e9"
+      "bytes": 5095,
+      "sha256": "04c0e902a513185950461094ff3281c22132bde0a28a71d69dbfe2c471f3a1a4"
     },
     {
       "path": "app/api/work/[slug]/[kind]/route.ts",
@@ -493,6 +498,11 @@
       "sha256": "a588472e1c300062df2ca1b0d46b98274a3ba985b02ed52bca8f70295e97dab9"
     },
     {
+      "path": "docs/v13.12.0-voice-music.md",
+      "bytes": 10612,
+      "sha256": "199fb4a311657bafc9a4f56d79902e25888f822e365f9f6b2e9e11cb182eece9"
+    },
+    {
       "path": "docs/v13.2-expression-redraw.md",
       "bytes": 2041,
       "sha256": "35f497325c3bdc58950ffdf00068a3b37aeb013fcad65d364c766d50697075cc"
@@ -650,7 +660,7 @@
     {
       "path": "public/cortex.html",
       "bytes": 1419688,
-      "sha256": "a1c2d54e8d86798e831acbd413c0476442f93d02ed03755dabc10dad612651f7"
+      "sha256": "0b6d5e58504934174e48abd15cf8abfcb17999a7c966af984263cb336bc117f9"
     },
     {
       "path": "public/favicon.svg",
@@ -724,13 +734,13 @@
     },
     {
       "path": "public/vn-cost-core.mjs",
-      "bytes": 4033,
-      "sha256": "3429cf947a4e38f5fb534b588c9580e54aa5d95b50223f4b09c1399c02426765"
+      "bytes": 4324,
+      "sha256": "32cf572dacc58fac77beb14ed07bb82eb34a6b5ee80a786fa05a26668be87e86"
     },
     {
       "path": "public/vn-costs.mjs",
-      "bytes": 11281,
-      "sha256": "23a9fac1bdb95b6093dddee7d41b5b19e2bfd8ed7bc982cdde757f6afa9fea46"
+      "bytes": 11380,
+      "sha256": "b65f26f3f60368a2056aa7fece7d9dfc2f7c5e69001a223a23e020ebb291dad4"
     },
     {
       "path": "public/vn-direction.mjs",
@@ -773,9 +783,24 @@
       "sha256": "bd87788e875400494871de763cca9c385e03950fccd24afaa7a655c1ba8f9bab"
     },
     {
+      "path": "public/vn-loop.mjs",
+      "bytes": 8937,
+      "sha256": "e391e1b23b166e4e611a699926f3fca62859f1154da010d629ec2c1899c8e18b"
+    },
+    {
+      "path": "public/vn-loudness.mjs",
+      "bytes": 4976,
+      "sha256": "a12348e77bc6ccd0f44ab374a149a1b74206ffee82eddd7c1bb597e7cc022cc0"
+    },
+    {
       "path": "public/vn-motion.mjs",
       "bytes": 7041,
       "sha256": "53c82477f1018fa6d614190c36b06ed9f28842d360bda71fc45673c3b7d8db68"
+    },
+    {
+      "path": "public/vn-music-ai.mjs",
+      "bytes": 7018,
+      "sha256": "7d9435416d05879b9b261d917dc0547682804c3f10a330b7f4236fe316c0fa04"
     },
     {
       "path": "public/vn-music.mjs",
@@ -809,8 +834,8 @@
     },
     {
       "path": "public/vn-reader.css",
-      "bytes": 28022,
-      "sha256": "ab2ec2d25ff06417f95df05209f1e0602e08c08a80ccba9806564c9c54b0f27a"
+      "bytes": 28813,
+      "sha256": "5d7cd9a4ab9c372ded7ecea26192ae244db900fcea1ad86c90ca4fc5f87c10fe"
     },
     {
       "path": "public/vn-reader.mjs",
@@ -843,6 +868,11 @@
       "sha256": "67551650400ac156c4bc5c81a3efd79d505dac5ef2f27c334ae1f9cc1c12b66e"
     },
     {
+      "path": "public/vn-speech-ko.mjs",
+      "bytes": 7432,
+      "sha256": "1c45251920feff572c3a396276372b79616fd2403b9b3d444cd1547f07eb4c23"
+    },
+    {
       "path": "public/vn-sprite.mjs",
       "bytes": 14938,
       "sha256": "d60f8d310bb05a4fa6fa94fd0629e7d72ba81cf84b10a786cae8d15eb24df587"
@@ -873,9 +903,14 @@
       "sha256": "df7d95980e000ba5548cdcee225a5fe1ed6ce3fd686da5a4303b6f0e8d7192c7"
     },
     {
+      "path": "public/vn-voice-post.mjs",
+      "bytes": 5260,
+      "sha256": "e55a78d51495ee28d508927810ae6fab72da836fb831837c227eaaa57e92e3e0"
+    },
+    {
       "path": "public/vn-voice.mjs",
-      "bytes": 5284,
-      "sha256": "41b41961f29f03dd1aae31e94c9e15e0a765daa6b5bdfd1da4b820b3a252d49b"
+      "bytes": 6059,
+      "sha256": "e8754e742ca9dba7368223c9fe8d0613beeb9652c9cbeade85dc46be673cc983"
     },
     {
       "path": "public/vn-wardrobe.mjs",
@@ -884,8 +919,8 @@
     },
     {
       "path": "public/vn-work-music.mjs",
-      "bytes": 9392,
-      "sha256": "41e1d30a8b96aedd898b791759672d7280d23ebde201a4b145e2ebc82e156c72"
+      "bytes": 21074,
+      "sha256": "bb9bf4f307b897d6e7c045c7ba6316802595222c3451abde8a9fc0617242b0b8"
     },
     {
       "path": "public/vn.css",
@@ -894,8 +929,8 @@
     },
     {
       "path": "public/vn.js",
-      "bytes": 124553,
-      "sha256": "730a515682a94f581e31dbc09b07c1beb504d41ba3536bc0ed9d6488e8eb6784"
+      "bytes": 125989,
+      "sha256": "fe355b5daccabe0df24731b8fe7bcd3617129856a4beac1b5ef4ebb42041dca9"
     },
     {
       "path": "public/window.svg",
@@ -909,8 +944,8 @@
     },
     {
       "path": "scripts/build-cortex.mjs",
-      "bytes": 7112,
-      "sha256": "ac21c1072f19ab0bea3f2210b24dae0a47005558ea16ac0b13e3599b210a41be"
+      "bytes": 7205,
+      "sha256": "1d786fc5698252c852f2af4027c0b23fe6aba43f60a766dec57d6ed8e3d3310c"
     },
     {
       "path": "scripts/build-verified.sh",
@@ -945,7 +980,7 @@
     {
       "path": "scripts/package-source.mjs",
       "bytes": 2730,
-      "sha256": "f956834ec1f33cd0ec95dc36a9782a7cb58ef4ad4f31deea6921f99ca2e45e6c"
+      "sha256": "cb624df64e0b64d61cf7a1147b2fa11a4bf77d75cd374a279086dc2d9a6b2986"
     },
     {
       "path": "scripts/pnpm-install.mjs",
@@ -976,6 +1011,11 @@
       "path": "tests/vn-assets.test.mjs",
       "bytes": 15414,
       "sha256": "6760262009e9ecd346763347b720e8aaef02965d59e66d65ea35ca206009b4c3"
+    },
+    {
+      "path": "tests/vn-audio-v1312.test.mjs",
+      "bytes": 15374,
+      "sha256": "53823df43340a773e8d66534508ac121653f3d9a2bbe3c7b2fb71a59eaf5dbf8"
     },
     {
       "path": "tests/vn-boot.test.mjs",

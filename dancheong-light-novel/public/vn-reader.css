@@ -278,3 +278,14 @@
 @media (max-width:1024px), (pointer:coarse) {
   #vn-root input,#vn-root textarea,#vn-root select { font-size:max(16px,1rem) !important; }
 }
+/* v13.12: AI background music section and track preview. */
+.vn-work-music-settings .vn-track-preview { width:100%; margin-top:8px; }
+.vn-work-music-settings .vn-track-revert { margin-top:6px; }
+.vn-ai-music { margin-top:18px; padding-top:14px; border-top:1px solid #dbe8ff30; display:grid; gap:10px; }
+.vn-ai-music h4 { margin:0; font-size:14px; font-weight:500; color:#dce8fa; }
+.vn-ai-music p { margin:0; font-size:12px; line-height:1.6; color:#b9c6d6; }
+.vn-ai-moods { display:flex; flex-wrap:wrap; gap:6px 16px; border:0; margin:0; padding:0; }
+.vn-ai-moods legend { font-size:12px; color:#d8e0e7; margin-bottom:4px; }
+.vn-ai-moods label { display:inline-flex; align-items:center; gap:4px; font-size:13px; }
+.vn-ai-music button { min-height:40px; }
+.vn-ai-status { min-height:1.4em; }

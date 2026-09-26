@@ -16,6 +16,7 @@ import { displaySprite } from './vn-sprite.mjs';
 import { createAmbience, ambienceFor } from './vn-audio.mjs';
 import { createScore } from './vn-music.mjs';
 import { createVoice, voiceLine, voices } from './vn-voice.mjs';
+import { createVoicePlayer } from './vn-voice-post.mjs';
 import { prepareMotion } from './vn-motion.mjs';
 import { createCinema } from './vn-cinema.mjs';
 import { createWorkMusic, createMusicSettings } from './vn-work-music.mjs';
@@ -48,7 +49,7 @@ root.innerHTML = `
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <button id="vn-library-slots" class="vn-slot-open" type="button">저장·불러오기</button>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.11.8 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.12.0 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -220,9 +221,13 @@ Object.assign(state, { playback: 'manual', playbackTimer: 0, readThrough: -1, bo
 const sound = createSound(() => state.reading.sound === 'on');
 const ambience = createAmbience(() => state.reading.ambience === 'on' && state.screen === 'stage' && !document.hidden);
 const score = createScore(() => state.reading.music === 'on' && state.screen === 'stage' && !document.hidden, { getVolume: () => state.reading.musicVolume * (voice.phase === 'playing' ? .3 : 1) });
-const voice = createVoice({ getEnabled: () => state.reading.voice === 'on' && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && $('vn-history').hidden && state.playback !== 'skip', getKey: () => state.keys.openai, read: readAsset, write: writeAsset, onState: () => updateVoiceControls() });
+const voice = createVoice({ getEnabled: () => state.reading.voice === 'on' && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && $('vn-history').hidden && state.playback !== 'skip', getKey: () => state.keys.openai, read: readAsset, write: writeAsset, onState: () => updateVoiceControls(),
+  // Trim, level, EQ and a room matched to the current environment on the device.
+  makeAudio: createVoicePlayer({ getRoom: () => ({ bed: state.ambienceTarget?.bed || '', mood: $('vn-stage')?.dataset.mood || '' }) }) });
 const workMusic = createWorkMusic({ enabled: () => state.reading.music === 'tracks' && state.screen === 'stage' && !document.hidden, volume: () => state.reading.musicVolume * (voice.phase === 'playing' ? .3 : 1), onStatus: text => musicSettings.status(text) });
-const musicSettings = createMusicSettings({ parent: presentationFields.querySelector('.vn-settings-fields'), getWork: () => state.activeSlug, onChange: () => workMusic.invalidate() });
+const musicSettings = createMusicSettings({ parent: presentationFields.querySelector('.vn-settings-fields'), getWork: () => state.activeSlug, onChange: () => workMusic.invalidate(),
+  getGeminiKey: () => state.keys.gemini || '',
+  getWorkInfo: () => { const work = currentWork(), scenario = state.api?._scenario(); return { title: work?.title || scenario?.title || '', subtitle: work?.subtitle || '', genre: work?.genre || '', summary: scenario?.summary || '', location: scenario?.world?.location || '' }; } });
 state.voiceLine = null;
 Object.assign(state, { stageOrder: [], speakerNames: new Map(), firedEffects: new Set(), focusId: '', ambienceTarget: null, met: [], metKey: '' });
 root.dataset.motion = state.reading.motion;
@@ -992,6 +997,16 @@ function setInlineBuffer(reason) {
   indicator.title = reason;
   $('vn-stage').classList.toggle('is-buffering-next', Boolean(reason));
 }
+// Narration attached to a spoken line ("…라고 속삭였다") and whether the
+// director marked it as the paragraph's key line; both shape the acting.
+function voiceDelivery(page, view) {
+  const at = state.pages.indexOf(state.pages[state.cursor]);
+  const near = [state.pages[at - 1], state.pages[at + 1]].filter(row => row && row.turnId === page.turnId && !row.quoted && row.kind !== 'dialogue' && Math.min(Math.abs(row.start - page.end), Math.abs(page.start - row.end)) <= 3);
+  const emphasis = view?.direction?.emphasis;
+  const spoken = String(page.rawText || page.text || '');
+  return { cue: near.map(row => String(row.rawText || row.text || '')).join(' ').slice(0, 240),
+    emphasis: Boolean(emphasis?.kind && emphasis.kind !== 'none' && emphasis.text && spoken.includes(emphasis.text)) };
+}
 function stopPlayback() {
   clearTimeout(state.playbackTimer); state.playbackTimer = 0; state.playback = 'manual';
   for (const id of ['vn-auto', 'vn-skip']) $(id)?.setAttribute('aria-pressed', 'false');
@@ -1121,7 +1136,7 @@ function renderPage() {
   void workMusic.update(state.activeSlug, $('vn-stage').dataset.mood || 'normal', scenario?.runtime?.packageContract?.presentation?.music);
   $('vn-stage').dataset.drawnShot = view?.shotKind || '';
   const voiceChoice = readVoiceChoices()[view?.speakerId] || '';
-  state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice);
+  state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view));
   voice.update(state.voiceLine); updateVoiceControls();
   const speakingPortrait = view?.portraits.find(person => person.id === view.speakerId);
   const decoded = Boolean(speakingPortrait && [...$('vn-characters').children].some(slot => slot.dataset.characterId === speakingPortrait.id && (slot.vnReadyUrl === speakingPortrait.url || speakingPortrait.expressionReady === false && slot.vnReadyUrl && slot.vnBaseKey === speakingPortrait.baseKey)));

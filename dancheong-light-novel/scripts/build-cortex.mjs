@@ -13,7 +13,7 @@ const bootHead = await readFile(new URL('../public/vn-boot.html', import.meta.ur
 if (!original.includes('</head>') || !original.includes('</body>')) throw new Error('Unexpected Cortex HTML structure.');
 const modules = ['vn-core.mjs', 'vn-key-vault.mjs', 'vn-image-routing.mjs', 'vn-progress.mjs', 'vn-public-cast.mjs', 'vn-scene.mjs', 'vn-wardrobe.mjs', 'vn-cast.mjs', 'vn-stage-timing.mjs', 'vn-reader.mjs', 'vn-direction.mjs', 'vn-stage.mjs', 'vn-sprite.mjs', 'vn-audio.mjs', 'vn-chroma.mjs', 'vn-character-art.mjs', 'vn-assets.mjs', 'vn-cost-core.mjs', 'vn-costs.mjs', 'vn.js'];
 const shellHash = createHash('sha256').update(await readFile(new URL('../public/vn.css', import.meta.url)));
-modules.push('vn-music.mjs', 'vn-voice.mjs', 'vn-shots.mjs', 'vn-motion.mjs', 'vn-saves.mjs', 'vn-save-ui.mjs', 'vn-cinema.mjs', 'vn-work-music.mjs');
+modules.push('vn-loudness.mjs', 'vn-loop.mjs', 'vn-speech-ko.mjs', 'vn-voice-post.mjs', 'vn-music-ai.mjs', 'vn-music.mjs', 'vn-voice.mjs', 'vn-shots.mjs', 'vn-motion.mjs', 'vn-saves.mjs', 'vn-save-ui.mjs', 'vn-cinema.mjs', 'vn-work-music.mjs');
 modules.push('vn-raster.mjs', 'vn-raster-worker.mjs');
 modules.push('vn-event-progress.mjs', 'vn-event-progress-ui.mjs');
 modules.push('vn-new-game.mjs');

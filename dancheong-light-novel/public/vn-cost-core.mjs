@@ -4,8 +4,10 @@
 // https://developers.openai.com/api/docs/models/gpt-6-luna
 export const pricingDate = '2026-09-25';
 const count = value => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : 0;
-export function estimateCost({ provider, model = '', usage, serviceTier }) {
+export function estimateCost({ provider, model = '', usage, serviceTier, state }) {
   if (provider === 'go') return { usd: null, kind: 'subscription' };
+  // Lyria is billed per generated song (Gemini API pricing: clip $0.04, full song $0.08).
+  if (provider === 'gemini' && /^lyria-/u.test(model)) return state === 'complete' ? { usd: model === 'lyria-3-clip-preview' ? 0.04 : 0.08, kind: 'estimate' } : { usd: null, kind: 'unknown' };
   if (!usage || !Number.isFinite(usage.input_tokens) || !Number.isFinite(usage.output_tokens)) return { usd: null, kind: 'unknown' };
   if (serviceTier && !['auto', 'default', 'standard'].includes(serviceTier)) return { usd: null, kind: 'unknown' };
   const input = count(usage.input_tokens), output = count(usage.output_tokens), details = usage.input_tokens_details || {};
