@@ -22,6 +22,7 @@ import { createMusicDirection, musicSeed } from './vn-music-direction.mjs';
 import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs';
 import { createVoicePlayer } from './vn-voice-post.mjs';
 import { fetchTypecastCatalog } from './vn-typecast-connection.mjs';
+import { createTypecastTransport } from './vn-typecast-direct.mjs';
 import { createVoiceCredits, TYPECAST_CREDIT, TYPECAST_URL } from './vn-voice-credits.mjs';
 import { prepareMotionFrames } from './vn-motion.mjs';
 import { motionFrameFor } from './vn-motion-playback.mjs';
@@ -64,7 +65,7 @@ root.innerHTML = `
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <button id="vn-library-slots" class="vn-slot-open" type="button">저장·불러오기</button>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.16.3 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.17.0 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -169,7 +170,7 @@ presentationFields.innerHTML = `<legend>추가 연출 · 베타</legend><div cla
   <div class="vn-settings-row"><label>음성 크기<input id="vn-voice-volume" type="range" min="0" max="100" step="1"></label><label>다음 문장으로 넘길 때<select id="vn-voice-continue"><option value="off">음성 멈춤</option><option value="on">끝까지 재생 · 다음 음성이 나오면 교체</option></select></label></div>
   <label>낭독 목소리 · 완전 자동의 서술<select id="vn-narrator-voice"></select></label>
   <label id="vn-typecast-field" hidden>Typecast API 키 <small>Typecast 캐릭터 보이스에 사용 · 이 기기에 암호화해 보관</small><input id="vn-typecast-key" type="password" autocomplete="off" maxlength="512" placeholder="Typecast API 키"><a class="vn-key-link" href="https://typecast.ai/developers/api" target="_blank" rel="noopener noreferrer">Typecast API 키 발급 ↗</a></label>
-  <div class="vn-typecast-tools" id="vn-typecast-tools" hidden><button type="button" id="vn-typecast-load">키 저장·연결 확인</button><span id="vn-typecast-status" role="status"></span><small>키를 이 기기에 보관하고 캐릭터 목록을 불러옵니다. 음성 생성 비용은 들지 않습니다. AI 대사 음성을 ON으로 선택한 뒤 아래 저장을 누르면 적용됩니다.</small></div>
+  <div class="vn-typecast-tools" id="vn-typecast-tools" hidden><button type="button" id="vn-typecast-load">키 저장·연결 확인</button><span id="vn-typecast-status" role="status"></span><label>Typecast 연결 방식<select id="vn-typecast-transport"><option value="auto">자동 · 이 브라우저에서 직접 요청, 안 되면 서버 중계</option><option value="relay">서버 중계만</option></select></label><small>무료 플랜은 여러 사용자가 함께 쓰는 서버 주소의 요청을 이상 활동으로 차단할 수 있어, 자동은 먼저 이 기기의 인터넷 연결로 Typecast에 직접 요청합니다. 이때 키는 이 서버를 거치지 않습니다.</small><small>키를 이 기기에 보관하고 캐릭터 목록을 불러옵니다. 음성 생성 비용은 들지 않습니다. AI 대사 음성을 ON으로 선택한 뒤 아래 저장을 누르면 적용됩니다.</small></div>
   <section id="vn-typecast-credit" class="vn-voice-credit" aria-label="Typecast 음성 출처" hidden><strong>Typecast 음성 출처</strong><p>${TYPECAST_CREDIT}</p><p id="vn-typecast-credit-names"></p><a href="${TYPECAST_URL}" target="_blank" rel="noopener noreferrer">typecast.ai ↗</a><small>무료 플랜으로 만든 음성을 녹화·공유할 때는 이 문구와 사용한 Typecast 캐릭터 이름을 함께 남겨 주세요. <a href="https://typecast.ai/kr/guideline/" target="_blank" rel="noopener noreferrer">출처 표기 안내 ↗</a></small></section>
   <small id="vn-voice-help">AI가 생성한 음성입니다. OpenAI는 OpenAI API 키, Gemini 3.8 TTS는 연결 탭의 Gemini API 키, Typecast는 이 탭의 Typecast API 키를 사용하며 대사별 음성 비용(Typecast는 요금제 크레딧)이 추가됩니다. Gemini와 Typecast는 인물마다 서로 다른 목소리를 자동으로 배정합니다. Typecast는 목록을 불러온 뒤 인물별 캐릭터를 고를 수 있고, 표정·속삭임·외침 같은 연출은 감정 프리셋으로, 그 밖의 대사는 앞뒤 문장을 읽는 스마트 감정으로 연기합니다. 같은 대사는 한 번만 생성해 저장하고, 다시 듣기와 되돌아가기는 추가 비용 없이 재생합니다. 모델을 바꾸면 이후 대사부터 새 목소리로 생성합니다. 전문 성우와 같은 연기 품질은 보장하지 않으며 음성 없이도 글은 바로 진행합니다.</small>
   <div id="vn-voice-actors"></div></div>`;
@@ -273,7 +274,7 @@ const readingPrefsKey = 'dancheong-vn-reading-prefs-v1';
 let storedReading = {}; try { storedReading = JSON.parse(localStorage.getItem(readingPrefsKey) || '{}'); } catch { /* Defaults remain usable. */ }
 state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', typeface: TYPEFACES[storedReading?.typeface] ? storedReading.typeface : 'auto', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off',
   ambience: storedReading?.ambience === 'on' ? 'on' : 'off', cg: eventSceneSetting(storedReading),
-  shots: storedReading?.shots === 'on' ? 'on' : 'off', cinema: storedReading?.cinema === 'off' ? 'off' : 'on', actorMotion: storedReading?.actorMotion === 'masked' ? 'masked' : 'off', faceCompose: storedReading?.faceCompose === 'on' ? 'on' : 'off', music: ['on', 'tracks'].includes(storedReading?.music) ? storedReading.music : 'off', voice: storedReading?.voice === 'on' ? 'on' : 'off', voiceProvider: TTS_PROVIDERS[storedReading?.voiceProvider] ? storedReading.voiceProvider : 'openai', narratorVoice: typeof storedReading?.narratorVoice === 'string' ? storedReading.narratorVoice.slice(0, 40) : '', voiceContinue: storedReading?.voiceContinue === 'on' ? 'on' : 'off', voiceVolume: Number.isFinite(storedReading?.voiceVolume) ? Math.max(0, Math.min(1, storedReading.voiceVolume)) : 1, musicVolume: Number.isFinite(storedReading?.musicVolume) ? Math.max(0, Math.min(1, storedReading.musicVolume)) : .22 };
+  shots: storedReading?.shots === 'on' ? 'on' : 'off', cinema: storedReading?.cinema === 'off' ? 'off' : 'on', actorMotion: storedReading?.actorMotion === 'masked' ? 'masked' : 'off', faceCompose: storedReading?.faceCompose === 'on' ? 'on' : 'off', music: ['on', 'tracks'].includes(storedReading?.music) ? storedReading.music : 'off', voice: storedReading?.voice === 'on' ? 'on' : 'off', voiceProvider: TTS_PROVIDERS[storedReading?.voiceProvider] ? storedReading.voiceProvider : 'openai', narratorVoice: typeof storedReading?.narratorVoice === 'string' ? storedReading.narratorVoice.slice(0, 40) : '', voiceContinue: storedReading?.voiceContinue === 'on' ? 'on' : 'off', typecastTransport: storedReading?.typecastTransport === 'relay' ? 'relay' : 'auto', voiceVolume: Number.isFinite(storedReading?.voiceVolume) ? Math.max(0, Math.min(1, storedReading.voiceVolume)) : 1, musicVolume: Number.isFinite(storedReading?.musicVolume) ? Math.max(0, Math.min(1, storedReading.musicVolume)) : .22 };
 const artStyleKey = slug => `dancheong-vn-art-style-v1:${slug}`;
 function loadArtStyle(slug) { try { return localStorage.getItem(artStyleKey(slug)) || ''; } catch { return ''; } }
 state.artStyle = loadArtStyle(state.activeSlug);
@@ -296,7 +297,9 @@ const voicePlayer = createVoicePlayer({ getRoom: () => ({ bed: state.ambienceTar
   getVolume: speakerId => state.reading.voiceVolume * (readVoiceVolumes()[speakerId] ?? 1) });
 const voiceKey = (provider = state.reading.voiceProvider) => state.keys[ttsProvider(provider).keyName] || '';
 const voiceCredits = createVoiceCredits({ getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) });
-const voice = createVoice({ getEnabled: () => (state.reading.voice === 'on' || state.playback === 'full') && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && (state.backlogVoice || $('vn-history').hidden) && state.playback !== 'skip', getKey: voiceKey, read: readAsset, write: writeAsset,
+// Typecast from the reader's own connection first (see vn-typecast-direct.mjs).
+const typecastTransport = createTypecastTransport({ mode: () => state.reading.typecastTransport });
+const voice = createVoice({ fetchVoice: (...args) => typecastTransport.fetch(...args), getEnabled: () => (state.reading.voice === 'on' || state.playback === 'full') && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && (state.backlogVoice || $('vn-history').hidden) && state.playback !== 'skip', getKey: voiceKey, read: readAsset, write: writeAsset,
   onState: phase => { if (['preparing', 'playing'].includes(phase)) stopReleasedVoice(); if (phase === 'playing') voiceCredits.record(state.activeSlug, voice.speaking, typecastVoices()); updateVoiceControls(); queueMicrotask(schedulePlayback); },
   makeAudio: voicePlayer });
 // "Voice continues on click": the previous line may finish under the next
@@ -1674,6 +1677,7 @@ function openSettings() {
   $('vn-voice-setting').value = state.reading.voice;
   $('vn-voice-provider').value = state.reading.voiceProvider;
   $('vn-voice-continue').value = state.reading.voiceContinue;
+  $('vn-typecast-transport').value = state.reading.typecastTransport;
   $('vn-voice-volume').value = String(Math.round(state.reading.voiceVolume * 100));
   renderVoiceActors(state.reading.voiceProvider, state.reading.narratorVoice);
   $('vn-art-style').value = state.artStyle;
@@ -1775,7 +1779,7 @@ async function saveSettings() {
     const voiceProvider = TTS_PROVIDERS[$('vn-voice-provider').value] ? $('vn-voice-provider').value : 'openai';
     state.reading = { ...state.reading, layout: $('vn-reading-layout').value, pace: $('vn-auto-pace').value, font: $('vn-font-size').value, typeface: TYPEFACES[$('vn-typeface').value] ? $('vn-typeface').value : 'auto', motion: $('vn-motion').value, sound: $('vn-sound').value,
       ambience: $('vn-ambience').value, cg: $('vn-cg-setting').value, cinema: $('vn-cinema-setting').value, shots: $('vn-drawn-shots').value, actorMotion: $('vn-actor-motion').value, faceCompose: $('vn-face-compose').value === 'on' ? 'on' : 'off', music: $('vn-music').value, musicVolume: Number($('vn-music-volume').value) / 100, voice: $('vn-voice-setting').value,
-      voiceProvider, narratorVoice: $('vn-narrator-voice').value, voiceContinue: $('vn-voice-continue').value === 'on' ? 'on' : 'off', voiceVolume: Number($('vn-voice-volume').value) / 100 };
+      voiceProvider, narratorVoice: $('vn-narrator-voice').value, voiceContinue: $('vn-voice-continue').value === 'on' ? 'on' : 'off', typecastTransport: $('vn-typecast-transport').value === 'relay' ? 'relay' : 'auto', voiceVolume: Number($('vn-voice-volume').value) / 100 };
     const voiceChoices = Object.fromEntries([...$('vn-voice-actors').querySelectorAll('select')].map(select => [select.dataset.voiceId, select.value]));
     localStorage.setItem(voiceChoicesKey(voiceProvider), JSON.stringify(voiceChoices));
     const volumes = Object.fromEntries([...$('vn-voice-actors').querySelectorAll('input[data-volume-id]')].map(input => [input.dataset.volumeId, Number(input.value) / 100]));

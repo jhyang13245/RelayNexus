@@ -66,7 +66,7 @@ export function installCostMeter({ context, onChange }) {
           // Discard malformed unbounded SSE lines, never buffer a full transcript.
           if (buffer.length > 1000000) buffer = '';
         }
-      } else receipt = usageReceipt(await response.json());
+      } else if (!(response.headers.get('content-type') || '').startsWith('audio/')) receipt = usageReceipt(await response.json());
     } catch { /* A disconnected response is recorded with unknown usage. */ }
     // Store accounting only. Never persist prompts, prose, images or API keys.
     const usage = receipt?.usage;
@@ -79,13 +79,15 @@ export function installCostMeter({ context, onChange }) {
   globalThis.fetch = async (input, init) => {
     let url;
     try { url = new URL(typeof input === 'string' || input instanceof URL ? String(input) : input.url, location.origin); } catch { return nativeFetch(input, init); }
-    if (url.origin !== location.origin || !['/api/voice', '/api/image', '/api/gemini/image', '/api/gemini/music', '/api/gemini/voice', '/api/typecast/voice', '/api/openai/responses', '/api/go/responses'].includes(url.pathname)) return nativeFetch(input, init);
+    // Typecast may also be called straight from the browser (see vn-typecast-direct.mjs).
+    const typecastDirect = url.origin === 'https://api.typecast.ai' && url.pathname === '/v1/text-to-speech';
+    if (!typecastDirect && (url.origin !== location.origin || !['/api/voice', '/api/image', '/api/gemini/image', '/api/gemini/music', '/api/gemini/voice', '/api/typecast/voice', '/api/openai/responses', '/api/go/responses'].includes(url.pathname))) return nativeFetch(input, init);
     let body = {};
     try { if (typeof init?.body === 'string') body = JSON.parse(init.body); } catch { /* Request validation belongs to the API. */ }
     const image = url.pathname === '/api/image' || url.pathname === '/api/gemini/image';
     if (image || ['/api/voice', '/api/gemini/voice', '/api/typecast/voice', '/api/gemini/music'].includes(url.pathname)) void requestDurableStorage();
     const headers = init?.headers ?? (typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined);
-    const row = { id: crypto.randomUUID(), at: Date.now(), ...context(), provider: url.pathname.startsWith('/api/go/') ? 'go' : url.pathname.startsWith('/api/gemini/') ? 'gemini' : url.pathname.startsWith('/api/typecast/') ? 'typecast' : 'openai', category: resolveCostCategory({ image, purpose: body.purpose, headers }), model: typeof body.model === 'string' ? body.model : '', state: 'pending', usage: null, priceDate: pricingDate };
+    const row = { id: crypto.randomUUID(), at: Date.now(), ...context(), provider: url.pathname.startsWith('/api/go/') ? 'go' : url.pathname.startsWith('/api/gemini/') ? 'gemini' : url.pathname.startsWith('/api/typecast/') || typecastDirect ? 'typecast' : 'openai', category: typecastDirect ? 'voice' : resolveCostCategory({ image, purpose: body.purpose, headers }), model: typeof body.model === 'string' ? body.model : '', state: 'pending', usage: null, priceDate: pricingDate };
     void save(row);
     try {
       const response = await nativeFetch(input, init);

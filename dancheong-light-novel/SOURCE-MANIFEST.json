@@ -1,5 +1,5 @@
 {
-  "release": "v13.16.3",
+  "release": "v13.17.0",
   "description": "Complete application source; shared Neoreum/Jieum services and browser-local data are external.",
   "files": [
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19047,
-      "sha256": "a5c5773d904718bcb2f8c344f7a5ea694625bd945e7a3249d05b0c88f613060a"
+      "bytes": 19569,
+      "sha256": "2909d30eadd847c3b13d3a5787498dd1d5f6fac69ed2657e9c73f38e56843f45"
     },
     {
       "path": "app/api/catalog/route.ts",
@@ -59,13 +59,13 @@
     },
     {
       "path": "app/api/typecast/voice/route.ts",
-      "bytes": 7817,
-      "sha256": "99b490b3bee77f76ba49e10a2b1ab8d682219329aaa1a81034ffe4462addafd3"
+      "bytes": 8254,
+      "sha256": "64e30d32433b8bd5e83ed43c5104dfdcecfc09254b576a1b8b903f0b96842d93"
     },
     {
       "path": "app/api/typecast/voices/route.ts",
-      "bytes": 3031,
-      "sha256": "7800ade569226dd5accaab5056f54cc9865beb707f080ba31ac248003a7272d6"
+      "bytes": 3138,
+      "sha256": "5479ea73205763ef5d07f3f0f19fd109845c2f3c4d3508d56ddf3aeaeb10a21a"
     },
     {
       "path": "app/api/voice/route.ts",
@@ -583,6 +583,11 @@
       "sha256": "48bc7d4bf5fec9a16f22e97ae5e5b95ee52000ded00b8ba9b7560fa45926ec74"
     },
     {
+      "path": "docs/v13.17.0-typecast-direct.md",
+      "bytes": 3996,
+      "sha256": "f0ad6d23344abacc44362ade93d723cf0a23ca4fcefeb1c698be149540d39b69"
+    },
+    {
       "path": "docs/v13.2-expression-redraw.md",
       "bytes": 2041,
       "sha256": "35f497325c3bdc58950ffdf00068a3b37aeb013fcad65d364c766d50697075cc"
@@ -740,7 +745,7 @@
     {
       "path": "public/cortex.html",
       "bytes": 1422036,
-      "sha256": "bd766f12d1c8b764be5c274bc9d107dab85fed8924449592ca57c2968b923c70"
+      "sha256": "0f50d6a3779fc53cf921e4a031e6f43cac988a5ab4247940b3d9a7e843d24fb5"
     },
     {
       "path": "public/favicon.svg",
@@ -844,8 +849,8 @@
     },
     {
       "path": "public/vn-costs.mjs",
-      "bytes": 11850,
-      "sha256": "d0b13ed5584fe7c88cf60b3f7ef62ca8ffbcdd6f517c892f73919abdd3499969"
+      "bytes": 12189,
+      "sha256": "8ab0b1d08885c21ebf2219cffdc23f28deb18f83c58782cf7f2eefa64577d9c1"
     },
     {
       "path": "public/vn-direction.mjs",
@@ -1083,6 +1088,11 @@
       "sha256": "7d59f665cbac461d38fb1e9654ab6d4b87cc7f05ee50635adbd03229940b0fcb"
     },
     {
+      "path": "public/vn-typecast-direct.mjs",
+      "bytes": 7658,
+      "sha256": "b64950c966a963872b03efbfc567c517d95a309fa25651948d754faa46938cdc"
+    },
+    {
       "path": "public/vn-typeset.mjs",
       "bytes": 4206,
       "sha256": "447923c452a5c9557e588f039d6bcc156e00b87257378574c42d6971d0fccb23"
@@ -1149,8 +1159,8 @@
     },
     {
       "path": "public/vn.js",
-      "bytes": 171259,
-      "sha256": "54e21db7c7052560d0264ed5645c86ed05c01983a924a3976d034a2cb72e3522"
+      "bytes": 172308,
+      "sha256": "e63814d54fcd6093b4bdbfbdb9f68b7b7a24e6357ac33cdc56100e25b0bb94d0"
     },
     {
       "path": "public/window.svg",
@@ -1164,8 +1174,8 @@
     },
     {
       "path": "scripts/build-cortex.mjs",
-      "bytes": 10011,
-      "sha256": "16d2f60ab90edf45f22e4dc9a8b60aa4810cb58690e682b79eecf86e5be67672"
+      "bytes": 10037,
+      "sha256": "c336445ecb96fbe5fdb3d8468750f006cf29b41d66a7d0d910dad38620b2efa6"
     },
     {
       "path": "scripts/build-verified.sh",
@@ -1205,7 +1215,7 @@
     {
       "path": "scripts/package-source.mjs",
       "bytes": 2730,
-      "sha256": "32d8cc3b6aa9899284fb1f51a1c33c9591ca72b13392418949fcdc1f1974d2e5"
+      "sha256": "a10777da762bf0b8022dea157d0ad7d27643becf599b175486e148d43ba09682"
     },
     {
       "path": "scripts/pnpm-install.mjs",
@@ -1486,6 +1496,11 @@
       "path": "tests/vn-typecast-connection.test.mjs",
       "bytes": 7927,
       "sha256": "50848e44cb06611859ffbff1fe25b8e0cec395107005f40f27797bc3d6b046dd"
+    },
+    {
+      "path": "tests/vn-typecast-direct.test.mjs",
+      "bytes": 5026,
+      "sha256": "9075bd90c9911130514bb19ae5ffd487f91d1207f93f68dfe02edaa463a5e142"
     },
     {
       "path": "tests/vn-v13-9-review.test.mjs",

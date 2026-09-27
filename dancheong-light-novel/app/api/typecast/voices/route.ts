@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (!/^Bearer \S{1,512}$/u.test(authorization)) return fail('Typecast API 키를 먼저 입력해 주세요.', 401);
   const model = new URL(request.url).searchParams.get('model') === 'ssfm-v21' ? 'ssfm-v21' : 'ssfm-v30';
   try {
-    const upstream = await fetch(`${ENDPOINT}?model=${model}`, { headers: { 'X-API-KEY': authorization.slice(7) }, signal: AbortSignal.any([request.signal, AbortSignal.timeout(30000)]) });
+    const upstream = await fetch(`${ENDPOINT}?model=${model}`, { headers: { 'X-API-KEY': authorization.slice(7), 'User-Agent': 'dancheong-light-novel/13.17 (platform=server; transport=rest; runtime=cloudflare-workers)' }, signal: AbortSignal.any([request.signal, AbortSignal.timeout(30000)]) });
     if (!upstream.ok) {
       await upstream.body?.cancel().catch(() => {});
       return fail(upstream.status === 401 ? 'Typecast API 키 인증에 실패했습니다. API 대시보드에서 발급한 키를 확인해 주세요.'

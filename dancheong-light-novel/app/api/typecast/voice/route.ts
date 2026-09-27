@@ -15,6 +15,8 @@ const VOICE_ID = /^[a-z]{2,4}_[A-Za-z0-9]{6,64}$/u;
 const MAX_REQUEST = 16000;
 const MAX_AUDIO = 8 * 1024 * 1024;
 const headers = { 'Cache-Control': 'no-store' };
+// Identify the integration like the official SDKs do (they always send a User-Agent).
+const USER_AGENT = 'dancheong-light-novel/13.17 (platform=server; transport=rest; runtime=cloudflare-workers)';
 const fail = (message: string, status: number, model = '', code = '') => Response.json({ error: { message, ...(code ? { code } : {}) }, model }, { status, headers });
 
 function statusMessage(status: number) {
@@ -72,14 +74,14 @@ export async function POST(request: Request) {
     const tempo = Math.max(0.5, Math.min(2, Number(acting.tempo) || 1));
     const upstream = await fetch(ENDPOINT, {
       method: 'POST', signal: AbortSignal.any([request.signal, AbortSignal.timeout(90000)]),
-      headers: { 'X-API-KEY': authorization.slice(7), 'Content-Type': 'application/json' },
+      headers: { 'X-API-KEY': authorization.slice(7), 'Content-Type': 'application/json', 'User-Agent': USER_AGENT },
       body: JSON.stringify({ voice_id: body.voice, text, model, language: 'kor', prompt, output: { audio_format: 'mp3', audio_tempo: tempo } }),
     });
     if (!upstream.ok) {
       const detail = upstream.status === 403 ? await permissionDetail(upstream, [authorization.slice(7), text, clip(acting.previous, 2000), clip(acting.next, 2000)]) : null;
       if (!detail) await upstream.body?.cancel().catch(() => {});
       const message = detail?.code === 'UNUSUAL_ACTIVITY_DETECTED'
-        ? 'Typecast가 이상 활동을 감지해 음성 생성을 차단했습니다. Typecast 고객지원에서 API 이용 제한을 확인해 주세요. 자동 음성 요청은 중단됩니다.'
+        ? 'Typecast가 서버 중계 요청을 이상 활동으로 차단했습니다. 무료 플랜은 여러 사용자가 함께 쓰는 클라우드 주소의 요청을 막을 수 있습니다. 브라우저 직접 연결이 허용되지 않은 환경이라 Typecast 고객지원 문의나 유료 API 플랜이 필요합니다. 자동 음성 요청은 중단되며 저장된 음성은 계속 재생됩니다.'
         : statusMessage(upstream.status) + (detail?.suffix || '');
       return fail(message, upstream.status, model, detail?.code);
     }

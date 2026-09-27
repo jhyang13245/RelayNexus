@@ -28,7 +28,7 @@ modules.push('vn-image-storage.mjs');
 modules.push('vn-actor-life.mjs', 'vn-typeset.mjs', 'vn-gallery.mjs', 'vn-face-compose.mjs');
 modules.push('vn-storyboard.mjs');
 modules.push('vn-motion-geometry.mjs', 'vn-motion-landmarks.mjs', 'vn-motion-worker.mjs', 'vn-motion-playback.mjs');
-modules.push('vn-typecast-connection.mjs');
+modules.push('vn-typecast-direct.mjs', 'vn-typecast-connection.mjs');
 modules.push('vn-voice-credits.mjs');
 const storageRecovery = await readFile(new URL('./cortex-storage-recovery.js', import.meta.url), 'utf8');
 shellHash.update(storageRecovery);
