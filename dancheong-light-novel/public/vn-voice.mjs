@@ -31,7 +31,7 @@ const typecastPool = (male, elder) => {
   const gendered = rows.filter(row => row.gender === (male ? 'male' : 'female'));
   const aged = gendered.filter(row => ages.includes(row.age));
   const acting = aged.filter(row => (row.useCases || []).some(use => /anime|game/iu.test(use)));
-  return [acting, aged, gendered, rows].find(list => list.length >= 2 || (list === rows && list.length))?.map(row => row.id) || [];
+  return [acting, aged, gendered, rows].find(list => list.length)?.map(row => row.id) || [];
 };
 
 // Prebuilt Gemini voices with Google's one-word character notes. The narrator
@@ -131,12 +131,13 @@ export function voiceLine(page, view, scope, voice = '', { cue = '', emphasis = 
   const delivery = actingNotes({ text: spoken, emotion, mood, cue: String(cue).slice(0, 240), emphasis });
   const context = JSON.stringify({ speaker: view.speakerName, delivery }).slice(0, 700);
   const text = isGemini(spec.id) ? vocalTags(spoken, String(cue)) : spoken;
-  const key = lineKeys({ scope, speakerId: view.speakerId, voice: selectedVoice, text, provider: spec.id, page });
+  // Vocal tags are delivery metadata too: a late sigh must not buy a new take.
+  const key = lineKeys({ scope, speakerId: view.speakerId, voice: selectedVoice, text: spoken, provider: spec.id, page });
   // Lines voiced before v13.14 stay playable for free under their old keys.
   const fallbackKeys = spec.id === 'openai' ? [
     JSON.stringify(['vn-voice-2', scope, view.speakerId, selectedVoice, spoken, context]),
     JSON.stringify(['vn-voice-1', scope, view.speakerId, selectedVoice, written, JSON.stringify({ speaker: view.speakerName, mood, emotion }).slice(0, 700)]),
-  ] : [];
+  ] : isGemini(spec.id) ? ['<sigh> ', '<chuckle> '].map(tag => lineKeys({ scope, speakerId: view.speakerId, voice: selectedVoice, text: tag + spoken, provider: spec.id, page })) : [];
   const typecast = voiceFamily(spec.id) === 'typecast' ? typecastActing({ emotion, cue: String(cue), emphasis, before, after }) : undefined;
   return { key, fallbackKeys, legacyKey: fallbackKeys[1], playbackKey: JSON.stringify([scope, page.turnId, page.start]), text, context, voice: selectedVoice, speakerId: view.speakerId, provider: spec.id, model: spec.model, ...(typecast ? { typecast } : {}) };
 }
@@ -156,13 +157,14 @@ export function readingVoiceLine(page, view, scope, voice = '', delivery = {}, {
   const context = JSON.stringify({ speaker: '낭독', delivery: '차분하고 자연스러운 한국어 서술 낭독. 인물의 신원을 추측하거나 다른 인물을 흉내 내지 않는다. 본문만 읽고 설명을 덧붙이지 않는다.' });
   const key = lineKeys({ scope, speakerId, voice: selectedVoice, text, provider: spec.id, page });
   const typecast = voiceFamily(spec.id) === 'typecast' ? { mode: 'preset', preset: 'normal', intensity: 1 } : undefined;
-  return { key, fallbackKeys: [], playbackKey: JSON.stringify([scope, page.turnId, page.start]), text, context, voice: selectedVoice, speakerId, provider: spec.id, model: spec.model, narrator: true, ...(typecast ? { typecast } : {}) };
+  const fallbackKeys = spec.id === 'openai' && !narrator ? [JSON.stringify(['vn-voice-2', scope, speakerId, 'marin', text, context])] : [];
+  return { key, fallbackKeys, playbackKey: JSON.stringify([scope, page.turnId, page.start]), text, context, voice: selectedVoice, speakerId, provider: spec.id, model: spec.model, narrator: true, ...(typecast ? { typecast } : {}) };
 }
 const AUDIO_URL = /^data:audio\/(?:mpeg|mp3|wav|x-wav|ogg|opus|webm|aac|mp4);base64,/u;
 export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...args) => fetch(...args), makeAudio = url => new Audio(url), onState = () => {} }) {
-  const cache = new Map(), jobs = new Map(), failed = new Set();
+  const cache = new Map(), jobs = new Map(), failed = new Map(), blockedProviders = new Map();
   const remember = record => { cache.delete(record.key); cache.set(record.key, record); while (cache.size > VOICE_CACHE_LIMIT) cache.delete(cache.keys().next().value); return record; };
-  let current = '', generation = 0, audio = null, phase = 'idle', playing = null;
+  let current = '', generation = 0, requestEpoch = 0, audio = null, phase = 'idle', playing = null, errorMessage = '';
   let lastJob = Promise.resolve();
   // The take key already excludes acting notes: later streamed cues neither
   // interrupt the current delivery nor buy another take. Replay is free.
@@ -171,8 +173,9 @@ export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...
   const halt = () => { if (audio) { audio.pause(); audio.currentTime = 0; audio = null; } playing = null; };
   function stop() { generation++; halt(); set('idle'); }
   async function prepare(line, active, { cachedOnly = false } = {}) {
+    const epoch = requestEpoch;
     if (cache.has(line.key)) return remember(cache.get(line.key));
-    if (jobs.has(line.key)) return jobs.get(line.key);
+    if (jobs.get(line.key)?.epoch === epoch && !cachedOnly) return jobs.get(line.key).task;
     if (failed.has(line.key) && !cachedOnly) return null;
     const key = getKey(line.provider);
     const preceding = lastJob;
@@ -186,31 +189,41 @@ export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...
         if (AUDIO_URL.test(record?.url || '')) return remember(record);
         if (cachedOnly) return null;
         await preceding;
+        if (cache.has(line.key)) return remember(cache.get(line.key));
+        if (blockedProviders.has(line.provider)) return null;
         if (!getEnabled() || !active() || !key) return null;
         const spec = ttsProvider(line.provider);
         const response = await fetchVoice(spec.endpoint, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-Dancheong-Purpose': 'voice' }, signal: AbortSignal.timeout(95000), body: JSON.stringify({ model: line.model || spec.model, text: line.text, voice: line.voice, context: line.context, ...(line.typecast ? { typecast: line.typecast } : {}) }) });
-        const result = await response.json();
-        if (!response.ok || !AUDIO_URL.test(result.audioUrl || '')) throw new Error(result?.error?.message || 'voice');
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !AUDIO_URL.test(result?.audioUrl || '')) {
+          // Only our route's public error message is retained. Never expose a
+          // raw HTTP body, submitted key, or native network exception.
+          const message = typeof result?.error?.message === 'string' ? result.error.message.split(key).join('[보호됨]').slice(0, 240)
+            : `음성 서버 응답 오류 (${response.status}). 잠시 후 다시 시도해 주세요.`;
+          const error = new Error(message); error.publicVoiceError = true;
+          error.blockProvider = line.provider === 'typecast' && response.status === 403 && result?.error?.code === 'UNUSUAL_ACTIVITY_DETECTED';
+          throw error;
+        }
         record = { key: line.key, url: result.audioUrl, savedAt: Date.now(), speakerId: line.speakerId, provider: line.provider };
         remember(record);
         try { await write(record); } catch { /* Replays in this tab remain free. */ }
         return record;
-      } catch { if (cachedOnly) return null; failed.add(line.key); while (failed.size > VOICE_CACHE_LIMIT) failed.delete(failed.values().next().value); return null; }
-      finally { jobs.delete(line.key); }
+      } catch (error) { if (cachedOnly) return null; if (epoch === requestEpoch) { if (error?.blockProvider) blockedProviders.set(line.provider, error.message); failed.set(line.key, error?.publicVoiceError ? error.message : '음성 서버에 연결하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.'); while (failed.size > VOICE_CACHE_LIMIT) failed.delete(failed.keys().next().value); } return null; }
+      finally { if (!cachedOnly && jobs.get(line.key)?.task === job) jobs.delete(line.key); }
     });
     // A cache lookup never becomes the job a paid request would join.
     if (cachedOnly) return job;
-    jobs.set(line.key, job); lastJob = job; return job;
+    jobs.set(line.key, { epoch, task: job }); lastJob = job; return job;
   }
   async function play(line, token, { cachedOnly = false } = {}) {
     const active = () => token === generation && getEnabled() && current === playKey(line);
-    set('preparing');
+    errorMessage = ''; set('preparing');
     const record = await prepare(line, active, { cachedOnly });
     if (!active()) return false;
-    if (!record) { set(cachedOnly ? 'idle' : getKey(line.provider) ? 'error' : 'needs-key'); return false; }
+    if (!record) { errorMessage = failed.get(line.key) || blockedProviders.get(line.provider) || ''; set(cachedOnly ? 'idle' : getKey(line.provider) ? 'error' : 'needs-key'); return false; }
     audio = makeAudio(record.url, { speakerId: line.speakerId }); const instance = audio;
     instance.onended = () => { if (active()) { audio = null; playing = null; set('done'); } };
-    instance.onerror = () => { if (active()) { halt(); set('error'); } };
+    instance.onerror = () => { if (active()) { errorMessage = '생성된 음성을 재생하지 못했습니다. 다시 듣기를 눌러 주세요.'; halt(); set('error'); } };
     try { await instance.play(); if (active() && audio === instance) { playing = line; set('playing'); } else instance.pause(); }
     catch { if (active()) { halt(); set('blocked'); } }
     return true;
@@ -221,7 +234,7 @@ export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...
       if (current === playKey(line)) return;
       stop(); current = playKey(line); void play(line, generation);
     },
-    replay(line) { if (!line || !getEnabled()) return; stop(); current = playKey(line); failed.delete(line.key); void play(line, generation); },
+    replay(line) { if (!line || !getEnabled()) return; stop(); current = playKey(line); failed.delete(line.key); blockedProviders.delete(line.provider); void play(line, generation); },
     // Backlog: play a stored take only; resolves false when none exists.
     async replayStored(lines) {
       for (const line of [lines].flat().filter(Boolean)) {
@@ -236,10 +249,11 @@ export function createVoice({ getEnabled, getKey, read, write, fetchVoice = (...
     release() { if (phase === 'playing' && audio) { const keep = audio; generation++; audio = null; playing = null; current = ''; phase = 'idle'; keep.onended = null; keep.onerror = null; return keep; } return null; },
     stop,
     resume() { makeAudio.resume?.(); },
-    reset() { stop(); current = ''; },
+    reset({ retryFailed = false } = {}) { if (retryFailed) { requestEpoch++; failed.clear(); blockedProviders.clear(); } errorMessage = ''; stop(); current = ''; },
     clearMemory() { stop(); current = ''; cache.clear(); failed.clear(); },
     get busy() { return jobs.size > 0; },
     get phase() { return phase; },
     get speaking() { return playing; },
+    get error() { return errorMessage; },
   };
 }

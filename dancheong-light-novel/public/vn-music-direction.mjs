@@ -10,14 +10,15 @@ const moodName = mood => mood === 'dread' ? 'eerie' : musicCues.slice(2).include
 // The music that the pages before `index` left playing: the latest explicit
 // cue, or a sustained legacy mood. `cueAt(i)` returns { music, mood } or null.
 export function musicSeed(index, cueAt, { limit = 120 } = {}) {
-  let legacy = '', run = 0;
+  let legacy = '', run = 0, legacyEnded = false;
   for (let i = index - 1, seen = 0; i >= 0 && seen < limit; i--, seen++) {
     const row = cueAt(i);
     if (!row) continue;
     if (row.music && musicCues.includes(row.music.cue)) { if (row.music.cue !== 'keep') return row.music.cue; continue; }
     const mood = row.mood ? moodName(row.mood) : '';
     if (!mood) continue;
-    if (mood === legacy) run++; else if (!legacy) { legacy = mood; run = 1; }
+    if (legacyEnded) continue;
+    if (mood === legacy) run++; else if (!legacy) { legacy = mood; run = 1; } else legacyEnded = true;
   }
   return run >= 2 ? legacy : '';
 }

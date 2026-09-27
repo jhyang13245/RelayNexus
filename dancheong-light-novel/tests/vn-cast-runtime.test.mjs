@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { captureScene } from '../public/vn-scene.mjs';
 import { portraitKey } from '../public/vn-scene.mjs';
-import { validateCast, castRequest } from '../public/vn-cast.mjs';
+import { validateCast, castRequest, createCastDirector, castKey } from '../public/vn-cast.mjs';
+import { createStageAssets } from '../public/vn-assets.mjs';
 import { loadWorkPresentation } from '../public/vn-public-cast.mjs';
 await loadWorkPresentation(async () => Response.json(JSON.parse(readFileSync(new URL('../public/work-presentation.json', import.meta.url), 'utf8'))));
 
@@ -24,6 +25,112 @@ const scenario = () => ({
     images: [{ isPrimary: true, assetPath: 'assets/visitor.webp' }] }],
 });
 const commit = (text, extra = {}) => ({ id: 't1', status: 'COMMITTED', text, ...extra });
+
+test('an ordinary registered person with a redundant pre-reveal name can generate first-appearance art without an embedded image', () => {
+  const sc = scenario();
+  sc.characters = [{ id: 'classmate', name: '김서연', publicProfile: '', source: {
+    name: '김서연', preRevealAlias: '김서연', imageOnFirstAppearance: true,
+    publicInfo: '같은 학년의 대학 동기.', appearance: '164cm, 검은 단발과 작은 은색 핀.',
+    hiddenInfo: 'PRIVATE BACKSTORY', images: [],
+  } }];
+  const person = sc.characters[0], before = structuredClone(sc);
+  assert.equal(experience.publicCharacter(person, sc).referenceMode, 'NONE');
+  const text = '김서연은 파일을 내려놓았다. 서연이 말했다. “같이 갈래?”';
+  const capture = () => captureScene({ scope: 'ordinary-cast', scenario: sc, turn: commit(text), experience, timeline: true });
+  const scene = capture(), visual = scene.candidates.find(row => row.id === 'classmate');
+  assert.equal(visual.id, 'classmate');
+  assert.equal(visual.referenceMode, 'PRIMARY');
+  assert.equal(visual.primaryAssetRef, '');
+  assert.ok(visual.aliases.includes('서연'));
+  assert.match(visual.publicAppearance, /164cm.*은색 핀/u);
+  assert.doesNotMatch(JSON.stringify(scene), /PRIVATE/u);
+  assert.deepEqual(scene.characters, [], 'a candidate still needs separate physical-presence proof');
+  const row = validateCast({ ...scene, castPages: [{ start: 0, text }] }, { beats: [{
+    beat: 'P0', speaker: 'C0', speakerLabel: '서연', speakerEvidence: '서연이 말했다.',
+    onStage: [{ candidate: 'C0', evidence: '김서연은 파일을 내려놓았다.', identityEvidence: '김서연은 파일을 내려놓았다.', identityStatus: 'confirmed', presence: 'physical' }],
+  }] })[0];
+  assert.equal(row.speakerId, 'classmate');
+  assert.deepEqual(sc, before, 'the engine disclosure and saved story remain unchanged');
+  sc.runtime.disclosureLedger = { revealedEntityRefs: ['classmate'] };
+  assert.equal(portraitKey(scene.scope, capture().candidates.find(row => row.id === 'classmate')), portraitKey(scene.scope, visual));
+  delete sc.runtime.disclosureLedger;
+  for (const patch of [
+    { imageOnFirstAppearance: false }, { secret: true }, { revealCondition: 'secret-event' },
+    { visibility: 'private' }, { preRevealAlias: '정체불명의 여학생' },
+    { publicInfo: '정체 공개 사건 이후 공개: 대학 동기.' }, { publicInfo: '공개 조건: 특정 사건' },
+  ]) {
+    const original = person.source; person.source = { ...original, ...patch };
+    assert.ok(!capture().candidates.some(row => row.id === 'classmate'), JSON.stringify(patch));
+    person.source = original;
+  }
+});
+
+test('redundant public names keep concealed-form media restrictions and do not match an unrelated professor', () => {
+  const sc = scenario();
+  sc.characters = [{ id: 'teacher', name: '정민석', source: {
+    name: '정민석', preRevealAlias: '정민석', imageOnFirstAppearance: true,
+    publicInfo: '도시공학과 교수.', appearance: 'SECRET UNCOVERED FACE',
+    preRevealProfile: '가면과 회색 외투.', preRevealImage: 'masked.webp', images: [],
+  } }, { id: 'grandmother', name: '한명진', publicProfile: '외할머니' }];
+  const text = '정민석이 자료를 펼쳤다. “이 지도를 보세요.”';
+  const scene = captureScene({ scope: 'ordinary-teacher', scenario: sc, turn: commit(text), experience, timeline: true });
+  const visual = scene.candidates.find(row => row.id === 'teacher');
+  assert.equal(visual.referenceMode, 'PRE_REVEAL_ONLY');
+  assert.deepEqual([...visual.allowedAssetRefs], ['masked.webp']);
+  assert.doesNotMatch(JSON.stringify(visual), /SECRET/u);
+  const unrelated = '교수가 자료를 펼쳤다. “이 지도를 보세요.”';
+  const row = validateCast({ ...scene, publicText: unrelated, castPages: [{ start: 0, text: unrelated }] }, { beats: [{
+    beat: 'P0', speaker: 'C0', speakerLabel: '교수', speakerEvidence: '교수가 자료를 펼쳤다.',
+    onStage: [{ candidate: 'C0', evidence: '교수가 자료를 펼쳤다.', identityEvidence: '교수가 자료를 펼쳤다.', identityStatus: 'confirmed', presence: 'physical' }],
+  }] })[0];
+  assert.equal(row.speakerId, '');
+  assert.deepEqual(row.characters, []);
+});
+
+test('newly eligible authored cast gets first portraits, reuses them, and disappears for off-screen mentions', async () => {
+  const sc = scenario();
+  sc.characters = [
+    { id: 'teacher', name: '정민석', source: { name: '정민석', preRevealAlias: '정민석', imageOnFirstAppearance: true,
+      publicInfo: '도시공학과 교수.', appearance: '176cm, 새치가 섞인 짧은 검은 머리와 사각 안경, 회색 재킷.', images: [] } },
+    { id: 'student', name: '김서연', source: { name: '김서연', preRevealAlias: '김서연', imageOnFirstAppearance: true,
+      publicInfo: '대학 동기.', appearance: '164cm, 검은 단발과 작은 은색 핀, 아이보리 맨투맨.', images: [] } },
+  ];
+  const text = '정민석 교수가 지도를 폈다. 김서연이 파일을 들고 말했다. “같이 보자.”';
+  const scene = captureScene({ scope: 'ordinary-pipeline', scenario: sc, turn: commit(text), experience, timeline: true });
+  scene.castPages = [{ start: 0, text }];
+  assert.notEqual(castKey(scene), castKey({ ...scene, candidates: [] }), 'old empty cast decisions cannot suppress new candidates');
+  const records = new Map(), images = [];
+  let offscreen = false;
+  const director = createCastDirector({ getConnection: () => ({ key: 'fixture', endpoint: '/fixture', model: 'fixture' }),
+    read: async key => records.get(key), write: async row => records.set(row.key, row),
+    fetchDecision: async () => Response.json({ output_text: JSON.stringify({ beats: [{ beat: 'P0',
+      speaker: offscreen ? '' : 'C1', speakerLabel: offscreen ? '' : '서연', speakerEvidence: offscreen ? '' : '김서연이 파일을 들고 말했다.',
+      onStage: offscreen ? [] : [
+        { candidate: 'C0', evidence: '정민석 교수가 지도를 폈다.', identityEvidence: '정민석 교수가 지도를 폈다.', identityStatus: 'confirmed', presence: 'physical' },
+        { candidate: 'C1', evidence: '김서연이 파일을 들고 말했다.', identityEvidence: '김서연이 파일을 들고 말했다.', identityStatus: 'confirmed', presence: 'physical' },
+      ],
+    }] }) }),
+  });
+  const assets = createStageAssets({ castDirector: director, getKey: () => 'fixture', getQuality: () => 'low', getReferences: () => [], onChange() {}, onError(error) { throw new Error(error); },
+    read: async key => records.get(key), write: async row => records.set(row.key, row),
+    fetchImage: async (_url, init) => { images.push(JSON.parse(init.body)); return Response.json({ imageUrl: 'data:image/png;base64,YXJ0' }); },
+  });
+  await assets.prepare(scene, scene.castPages[0]);
+  const requests = images.filter(row => row.purpose === 'portrait');
+  assert.equal(requests.length, 2);
+  assert.ok(requests.every(row => row.referenceImages.length === 0));
+  assert.ok(requests.some(row => row.prompt.includes('사각 안경')));
+  assert.ok(requests.some(row => row.prompt.includes('은색 핀')));
+  assert.deepEqual(assets.view(scene, scene.castPages[0]).portraits.map(row => row.id), ['teacher', 'student']);
+  await assets.prepare(scene, scene.castPages[0]);
+  assert.equal(images.filter(row => row.purpose === 'portrait').length, 2);
+  offscreen = true;
+  const remote = { ...scene, publicText: '김서연에게서 메시지가 왔다. 정민석 교수의 수업을 떠올렸다.',
+    castPages: [{ start: 0, text: '김서연에게서 메시지가 왔다. 정민석 교수의 수업을 떠올렸다.' }] };
+  await assets.prepare(remote, remote.castPages[0]);
+  assert.deepEqual(assets.view(remote, remote.castPages[0]).portraits, []);
+  assert.equal(images.filter(row => row.purpose === 'portrait').length, 2);
+});
 
 test('first-appearance portrait permission works under a public alias without disclosing the real identity', () => {
   const sc = scenario();

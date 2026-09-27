@@ -10,10 +10,12 @@ export function storyComplete(scenario) {
 // Readable prose has a five-second grace period. Automatic navigation has a
 // separate gate: every verified person in THIS beat must actually be visible.
 // Never wait on global asset jobs (they include future beats and optional art).
-export function fullAutoVisuals(view, { displayed = [], eventDecoded = false, canPrepare = true } = {}) {
+export function fullAutoVisuals(view, { displayed = [], eventDecoded = false, canPrepare = true, offCamera = false } = {}) {
   if (view?.castStatus === 'error') return { action: 'stop', reason: '현장 인물 확인에 실패해 완전 자동을 멈췄습니다. 이미지 상태에서 다시 시도해 주세요.' };
   if (view?.castStatus === 'needs-key' || view?.castStatus !== 'ready' && !canPrepare) return { action: 'stop', reason: '인물 확인과 이미지 생성을 위한 API 키·저장 공간 설정을 확인해 주세요.' };
   if (!view || view.castStatus !== 'ready') return { action: 'wait', reason: '현장 인물 확인 중' };
+  // Deliberate scenery/interior-monologue shots have no visible cast to await.
+  if (offCamera) return { action: 'ready' };
   const inEvent = id => eventDecoded && view.eventBackground && view.eventCharacterIds?.includes(id);
   const missing = (view.pending || []).filter(person => !inEvent(person.id));
   if (missing.some(person => person.status === 'error')) return { action: 'stop', reason: '인물 이미지 생성에 실패해 완전 자동을 멈췄습니다. 이미지 상태에서 다시 시도해 주세요.' };

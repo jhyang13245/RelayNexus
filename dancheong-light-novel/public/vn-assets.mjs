@@ -463,7 +463,7 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
           return base ? ensure(row.key, 'portrait', async () => {
             edit = await prepareMaskedEdit(base, row.kind);
             return edit ? { purpose: 'expression', aspect: 'portrait', strictModel: true, referenceImages: [edit.image], maskImage: edit.mask, prompt: motionPrompt(row.kind) + ' Edit only the transparent mask region. Every unmasked pixel must remain unchanged.' } : null;
-          }, { motionPolicy: 'masked-pixels-1' }, url => finishMaskedEdit(edit, url)) : null;
+          }, { motionPolicy: 'measured-eyes-lips-2' }, url => finishMaskedEdit(edit, url)) : null;
         }));
       } finally { preparations--; }
     },
@@ -489,7 +489,7 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
       if (cgEligible && !cg && !getKey('background') && !missingKeys.some(row => row.purpose === 'background')) missingKeys.push({ purpose: 'background', provider: getProvider('background') === 'gemini' ? 'gemini' : 'openai' });
       // Keep cast membership for history and stable slots, but expose exactly
       // the participants drawn in this event (including its held reaction beat).
-      return { background: cg || shotBackground || environment, eventBackground: cg || shotBackground, eventCharacterIds: cg ? beat.characters.map(person => person.id) : shotBackground ? cast.map(person => person.id) : [], cgStatus, shotStatus: shot ? status(shot.key) : 'none', shotKind: shotBackground ? shot.kind : '', missingKeys, direction: scene.direction || null, readyCount, totalCount: requested.length, castStatus: scene.castStatus, speakerId: scene.speakerId || '', speakerName: scene.speakerName || cast.find(person => person.id === scene.speakerId)?.name || '', speakerProfile: cast.find(person => person.id === scene.speakerId)?.publicProfile || '',
+      return { background: cg || shotBackground || environment, environment, eventKey: cg ? cgAt : shotBackground ? shot.key : '', eventStart: cg ? beat.start : shotBackground ? page?.start : null, eventBackground: cg || shotBackground, eventCharacterIds: cg ? beat.characters.map(person => person.id) : shotBackground ? cast.map(person => person.id) : [], cgStatus, shotStatus: shot ? status(shot.key) : 'none', shotKind: shotBackground ? shot.kind : '', missingKeys, direction: scene.direction || null, readyCount, totalCount: requested.length, castStatus: scene.castStatus, speakerId: scene.speakerId || '', speakerName: scene.speakerName || cast.find(person => person.id === scene.speakerId)?.name || '', speakerProfile: cast.find(person => person.id === scene.speakerId)?.publicProfile || '',
         status: keys.some(key => status(key) === 'generating') ? 'generating' : keys.some(key => status(key) === 'error') ? 'error' : readyCount === requested.length ? 'ready' : 'idle',
         portraits: cast.map(person => {
           const expression = emotions[person.id] || 'neutral';

@@ -21,11 +21,15 @@ import { createScore } from './vn-music.mjs';
 import { createMusicDirection, musicSeed } from './vn-music-direction.mjs';
 import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs';
 import { createVoicePlayer } from './vn-voice-post.mjs';
-import { prepareMotion } from './vn-motion.mjs';
+import { fetchTypecastCatalog } from './vn-typecast-connection.mjs';
+import { createVoiceCredits, TYPECAST_CREDIT, TYPECAST_URL } from './vn-voice-credits.mjs';
+import { prepareMotionFrames } from './vn-motion.mjs';
+import { motionFrameFor } from './vn-motion-playback.mjs';
 import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs';
 import { faceComposite } from './vn-face-compose.mjs';
 import { typeset, renderTypeset, TYPEFACES, loadTypeface } from './vn-typeset.mjs';
 import { createCinema } from './vn-cinema.mjs';
+import { compositionFor, createCueWindow, createArtContinuity, createCompositionContinuity } from './vn-storyboard.mjs';
 import { createWorkMusic, createMusicSettings, musicKey, musicMoods, licensedTrack } from './vn-work-music.mjs';
 import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock, QUICK_SLOT } from './vn-saves.mjs';
 import { createGalleryDialog, galleryImages } from './vn-gallery.mjs';
@@ -60,7 +64,7 @@ root.innerHTML = `
       <div class="vn-library-hero"><span class="vn-kicker">DANCHEONG · LIGHT NOVEL</span><h1 id="vn-library-title">작품 선택</h1><p>너름에 출간된 작품을 골라 장면 속에서 이어가세요.</p><span class="vn-library-count" id="vn-library-count">작품을 불러오는 중…</span></div>
       <button id="vn-library-slots" class="vn-slot-open" type="button">저장·불러오기</button>
       <div class="vn-library-grid" id="vn-library-grid"></div>
-      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.15.0 · 실행 안내 포함</span></footer>
+      <footer class="vn-library-footer"><a href="/downloads/dancheong-light-novel-source.zip" download>전체 소스코드 ZIP 다운로드 <span aria-hidden="true">↓</span></a><span>v13.16.3 · 실행 안내 포함</span></footer>
     </section>
     <section id="vn-title" class="vn-title" aria-labelledby="vn-title-name" hidden>
       <div class="vn-title-art" id="vn-title-art"></div><div class="vn-title-shade"></div>
@@ -159,13 +163,14 @@ presentationFields.innerHTML = `<legend>추가 연출 · 베타</legend><div cla
   <div class="vn-settings-row"><label>새 구도로 그린 컷<select id="vn-drawn-shots"><option value="off">끔</option><option value="on">켬 · 상반신 / 전신 / 얼굴 / 손</option></select></label><label>눈 깜빡임·입 움직임<select id="vn-actor-motion"><option value="off">끔</option><option value="masked">실험 · OpenAI 눈·입 마스크 편집</option></select></label></div>
   <label>표정이 바뀔 때<select id="vn-face-compose"><option value="off">그림 전체 교체 · 기본</option><option value="on">얼굴만 합성 · 실험 (몸·옷이 정확히 겹칠 때만)</option></select></label>
   <small>얼굴만 합성은 새 표정 그림이 기본 입상과 몸·옷·윤곽이 거의 같을 때만 얼굴 부분을 기본 입상 위에 부드럽게 합칩니다. 겹치지 않거나 경계가 드러날 것 같으면 새 그림을 그대로 보여 줍니다. 추가 비용은 없습니다.</small>
-  <small>추가 이미지는 기본 꺼짐입니다. 구도는 중요한 순간에 문단당 최대 1장, 움직임은 인물·복장·표정당 2장을 만들고 재사용합니다. 움직임은 OpenAI 인물 모델에서만 실험할 수 있습니다. 눈·입 이외의 픽셀은 원본으로 유지하며 정렬 검사를 통과하지 못하면 정지 입상을 사용합니다. 생성된 이미지 비용은 발생합니다.</small>
+  <small>추가 이미지는 기본 꺼짐입니다. 구도는 중요한 순간에 문단당 최대 1장, 움직임은 인물·복장·표정당 최대 2장을 만들고 재사용합니다. 움직임은 OpenAI 인물 모델에서만 실험할 수 있습니다. 눈·입 위치가 불확실하면 생성하지 않으며, 기존 프레임도 정렬을 다시 검사합니다. 움직임 첫 사용 시 윤곽 검사 파일을 내려받습니다. 생성된 이미지 비용은 발생합니다.</small>
   <div class="vn-settings-row"><label>장면 배경음악·효과음<select id="vn-music"><option value="off">끔</option><option value="tracks">켬 · 작품 음원</option><option value="on">켬 · 기기에서 합성</option></select></label><label>음악 크기<input id="vn-music-volume" type="range" min="0" max="100" step="1"></label></div>
   <div class="vn-settings-row"><label>AI 대사 음성<select id="vn-voice-setting"><option value="off">OFF · 끔</option><option value="on">ON · 음성 생성</option></select></label><label>음성 모델<select id="vn-voice-provider">${Object.entries(TTS_PROVIDERS).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('')}</select></label></div>
   <div class="vn-settings-row"><label>음성 크기<input id="vn-voice-volume" type="range" min="0" max="100" step="1"></label><label>다음 문장으로 넘길 때<select id="vn-voice-continue"><option value="off">음성 멈춤</option><option value="on">끝까지 재생 · 다음 음성이 나오면 교체</option></select></label></div>
   <label>낭독 목소리 · 완전 자동의 서술<select id="vn-narrator-voice"></select></label>
   <label id="vn-typecast-field" hidden>Typecast API 키 <small>Typecast 캐릭터 보이스에 사용 · 이 기기에 암호화해 보관</small><input id="vn-typecast-key" type="password" autocomplete="off" maxlength="512" placeholder="Typecast API 키"><a class="vn-key-link" href="https://typecast.ai/developers/api" target="_blank" rel="noopener noreferrer">Typecast API 키 발급 ↗</a></label>
-  <div class="vn-typecast-tools" id="vn-typecast-tools" hidden><button type="button" id="vn-typecast-load">내 Typecast 캐릭터 목록 불러오기</button><span id="vn-typecast-status" role="status"></span></div>
+  <div class="vn-typecast-tools" id="vn-typecast-tools" hidden><button type="button" id="vn-typecast-load">키 저장·연결 확인</button><span id="vn-typecast-status" role="status"></span><small>키를 이 기기에 보관하고 캐릭터 목록을 불러옵니다. 음성 생성 비용은 들지 않습니다. AI 대사 음성을 ON으로 선택한 뒤 아래 저장을 누르면 적용됩니다.</small></div>
+  <section id="vn-typecast-credit" class="vn-voice-credit" aria-label="Typecast 음성 출처" hidden><strong>Typecast 음성 출처</strong><p>${TYPECAST_CREDIT}</p><p id="vn-typecast-credit-names"></p><a href="${TYPECAST_URL}" target="_blank" rel="noopener noreferrer">typecast.ai ↗</a><small>무료 플랜으로 만든 음성을 녹화·공유할 때는 이 문구와 사용한 Typecast 캐릭터 이름을 함께 남겨 주세요. <a href="https://typecast.ai/kr/guideline/" target="_blank" rel="noopener noreferrer">출처 표기 안내 ↗</a></small></section>
   <small id="vn-voice-help">AI가 생성한 음성입니다. OpenAI는 OpenAI API 키, Gemini 3.8 TTS는 연결 탭의 Gemini API 키, Typecast는 이 탭의 Typecast API 키를 사용하며 대사별 음성 비용(Typecast는 요금제 크레딧)이 추가됩니다. Gemini와 Typecast는 인물마다 서로 다른 목소리를 자동으로 배정합니다. Typecast는 목록을 불러온 뒤 인물별 캐릭터를 고를 수 있고, 표정·속삭임·외침 같은 연출은 감정 프리셋으로, 그 밖의 대사는 앞뒤 문장을 읽는 스마트 감정으로 연기합니다. 같은 대사는 한 번만 생성해 저장하고, 다시 듣기와 되돌아가기는 추가 비용 없이 재생합니다. 모델을 바꾸면 이후 대사부터 새 목소리로 생성합니다. 전문 성우와 같은 연기 품질은 보장하지 않으며 음성 없이도 글은 바로 진행합니다.</small>
   <div id="vn-voice-actors"></div></div>`;
 // 연출 tab: reading and presentation. 음성·음악 tab: voices, sound, music.
@@ -176,6 +181,7 @@ const voiceFields = fieldset('AI 대사 음성'), soundFields = fieldset('효과
 const moveTo = (target, ...nodes) => target.querySelector('.vn-settings-fields').append(...nodes);
 const rowOf = (source, id) => source.querySelector(`#${id}`).closest('.vn-settings-row') || source.querySelector(`#${id}`).closest('label');
 moveTo(voiceFields, rowOf(presentationFields, 'vn-voice-setting'), presentationFields.querySelector('#vn-typecast-field'), presentationFields.querySelector('#vn-typecast-tools'),
+  presentationFields.querySelector('#vn-typecast-credit'),
   rowOf(presentationFields, 'vn-voice-volume'), rowOf(presentationFields, 'vn-narrator-voice'), presentationFields.querySelector('#vn-voice-help'), presentationFields.querySelector('#vn-voice-actors'));
 moveTo(soundFields, rowOf(readingFields, 'vn-sound'), rowOf(presentationFields, 'vn-music'));
 presentationFields.querySelector('legend').textContent = '추가 연출 · 베타';
@@ -289,8 +295,9 @@ const score = createScore(() => state.reading.music === 'on' && state.screen ===
 const voicePlayer = createVoicePlayer({ getRoom: () => ({ bed: state.ambienceTarget?.bed || '', mood: $('vn-stage')?.dataset.mood || '' }),
   getVolume: speakerId => state.reading.voiceVolume * (readVoiceVolumes()[speakerId] ?? 1) });
 const voiceKey = (provider = state.reading.voiceProvider) => state.keys[ttsProvider(provider).keyName] || '';
+const voiceCredits = createVoiceCredits({ getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) });
 const voice = createVoice({ getEnabled: () => (state.reading.voice === 'on' || state.playback === 'full') && !mediaPaused(state.activeSlug, 'voice') && state.screen === 'stage' && !document.hidden && !document.querySelector('dialog[open]') && (state.backlogVoice || $('vn-history').hidden) && state.playback !== 'skip', getKey: voiceKey, read: readAsset, write: writeAsset,
-  onState: phase => { if (['preparing', 'playing'].includes(phase)) stopReleasedVoice(); updateVoiceControls(); queueMicrotask(schedulePlayback); },
+  onState: phase => { if (['preparing', 'playing'].includes(phase)) stopReleasedVoice(); if (phase === 'playing') voiceCredits.record(state.activeSlug, voice.speaking, typecastVoices()); updateVoiceControls(); queueMicrotask(schedulePlayback); },
   makeAudio: voicePlayer });
 // "Voice continues on click": the previous line may finish under the next
 // page until another voice starts.
@@ -367,11 +374,26 @@ const gallery = createGalleryDialog({ root, onOpen: () => { stopPlayback(); voic
   } });
 galleryButton.onclick = () => void gallery.show();
 const dialogueGrace = createDialogueGrace();
+const cueWindow = createCueWindow(), artContinuity = createArtContinuity(), compositionContinuity = createCompositionContinuity();
+const eventDecodes = new Map();
+function eventDecoded(url) {
+  if (!url || state.backgroundDisplayedUrl === url) return true;
+  if (!eventDecodes.has(url)) {
+    eventDecodes.set(url, false);
+    const image = new Image();
+    image.onload = () => { if (eventDecodes.has(url)) eventDecodes.set(url, true); requestRender(); };
+    image.onerror = () => { /* Optional broken artwork cannot interrupt reading. */ };
+    image.src = url;
+    if (eventDecodes.size > 8) eventDecodes.delete(eventDecodes.keys().next().value);
+  }
+  return eventDecodes.get(url) === true;
+}
 let dialogueGraceTimer = 0;
 let toastTimer = 0;
 const voiceControls = document.createElement('div'); voiceControls.className = 'vn-voice-controls';
-voiceControls.innerHTML = '<button type="button" id="vn-voice-toggle">AI 음성 OFF</button><button type="button" id="vn-voice-replay" hidden>다시 듣기</button><span id="vn-voice-status" role="status"></span>';
+voiceControls.innerHTML = '<button type="button" id="vn-voice-toggle">AI 음성 OFF</button><button type="button" id="vn-voice-replay" hidden>다시 듣기</button><span id="vn-voice-status" role="status"></span><button type="button" id="vn-voice-credit-open" hidden>Typecast · 음성 출처</button>';
 $('vn-stage').append(voiceControls);
+$('vn-voice-credit-open').onclick = event => { event.stopPropagation(); settingsTab('audio'); openSettings(); $('vn-typecast-credit').scrollIntoView({ block: 'nearest' }); };
 const familyOf = (provider = state.reading.voiceProvider) => voiceFamily(provider);
 const voiceChoicesKey = (provider = state.reading.voiceProvider) => familyOf(provider) === 'openai' ? `dancheong-vn-voices-v1:${state.activeSlug}` : `dancheong-vn-voices-${familyOf(provider)}-v1:${state.activeSlug}`;
 // The Typecast character list belongs to the visitor's account, not a work.
@@ -405,20 +427,27 @@ function speakerVoice(view) {
   try { localStorage.setItem(key, JSON.stringify(cast)); } catch { /* This tab keeps the choice. */ }
   return cast[id];
 }
+function updateVoiceCredit(provider = state.reading.voiceProvider) {
+  const names = voiceCredits.names(state.activeSlug), selected = familyOf(provider) === 'typecast';
+  $('vn-typecast-credit').hidden = !selected && !names.length;
+  $('vn-typecast-credit-names').textContent = names.length ? `출연진 · ${names.join(', ')}` : '이 작품에서 재생한 Typecast 캐릭터가 아직 없습니다. 재생되면 이름이 여기에 자동으로 기록됩니다.';
+  $('vn-voice-credit-open').hidden = familyOf() !== 'typecast' && !names.length;
+}
 function updateVoiceControls() {
   if (!$('vn-voice-toggle')) return;
+  updateVoiceCredit();
   const on = state.reading.voice === 'on' || state.playback === 'full';
   $('vn-voice-toggle').textContent = `AI 음성 ${on ? 'ON' : 'OFF'}`; $('vn-voice-toggle').setAttribute('aria-pressed', String(on));
   $('vn-voice-replay').hidden = !on || !state.voiceLine;
   $('vn-voice-replay').textContent = voice.phase === 'playing' || voice.phase === 'preparing' ? '음성 중지' : voice.phase === 'error' ? '음성 다시 시도' : '다시 듣기';
   if (on && familyOf() === 'typecast' && !typecastVoices().length) { $('vn-voice-status').textContent = 'Typecast 캐릭터 목록을 설정에서 불러와 주세요'; return; }
-  $('vn-voice-status').textContent = state.playback === 'full' ? (state.fullAutoArt?.action === 'wait' ? `완전 자동 · ${state.fullAutoArt.reason}` : ({ preparing: '완전 자동 · 음성 준비 중', playing: '완전 자동 · 읽는 중', done: '완전 자동 · 다음 문장으로' }[voice.phase] || '완전 자동 · 장면 이어가기')) : on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', error: '음성 생성 실패', 'needs-key': `${ttsProvider(state.reading.voiceProvider).keyLabel} API 키 필요` }[voice.phase] || '') : '';
+  $('vn-voice-status').textContent = on && voice.phase === 'error' ? (voice.error || '음성 생성 실패 · 다시 시도를 눌러 주세요') : state.playback === 'full' ? (state.fullAutoArt?.action === 'wait' ? `완전 자동 · ${state.fullAutoArt.reason}` : ({ preparing: '완전 자동 · 음성 준비 중', playing: '완전 자동 · 읽는 중', done: '완전 자동 · 다음 문장으로' }[voice.phase] || '완전 자동 · 장면 이어가기')) : on ? ({ preparing: '음성 준비 중 · 글은 계속 읽을 수 있습니다', playing: 'AI 음성 재생 중', blocked: '다시 듣기를 눌러 재생', 'needs-key': `${ttsProvider(state.reading.voiceProvider).keyLabel} API 키 필요` }[voice.phase] || '') : '';
 }
 $('vn-voice-toggle').onclick = event => {
   event.stopPropagation();
   if (state.playback === 'full') { stopPlayback(); return; }
   if (state.reading.voice !== 'on') { settingsTab('audio'); openSettings(); $('vn-voice-setting').focus(); return; }
-  state.reading.voice = 'off'; voice.reset();
+  state.reading.voice = 'off'; voice.reset(); stopReleasedVoice();
   localStorage.setItem(readingPrefsKey, JSON.stringify({ ...state.reading, eventScenes: state.reading.cg })); updateVoiceControls();
 };
 $('vn-voice-replay').onclick = event => { event.stopPropagation(); const line = state.voiceLine, wasPlaying = ['playing', 'preparing'].includes(voice.phase); if (state.playback === 'full') stopPlayback(); if (wasPlaying) voice.stop(); else voice.replay(line); };
@@ -568,7 +597,7 @@ async function quickLoad() {
     if (!current) return toast('퀵 세이브가 없습니다. 플레이 중 F5로 먼저 저장해 주세요.');
     stopPlayback(); voice.stop();
     const when = new Date(current.savedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    if (!confirm(`퀵 세이브 「${current.title}」 (${when})를 불러올까요? 현재 진행은 이어하기에 먼저 보관합니다.`)) return;
+    if (!confirm(`퀵 세이브 「${current.title}」 (${when})를 불러올까요? 같은 작품이면 이어하기도 불러온 시점으로 바뀝니다. 현재 분기를 보존하려면 먼저 다른 슬롯에 저장해 주세요.`)) return;
     await loadManualSlot(QUICK_SLOT, current.revision);
     toast('퀵 세이브를 불러왔습니다.');
   } catch (error) { toast(error?.message || '퀵 세이브를 불러오지 못했습니다.'); }
@@ -769,7 +798,7 @@ async function openWork(slug) {
 function showScreen(screen) {
   stopPlayback();
   state.screen = screen;
-  if (screen !== 'stage') { cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.reset(); stopReleasedVoice(); }
+  if (screen !== 'stage') { cueWindow.reset(); artContinuity.reset(); state.presentedView = null; clearTimeout(state.eyecatchTimer); eyecatch.hidden = true; cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.reset(); stopReleasedVoice(); }
   root.classList.toggle('is-playing', screen !== 'library');
   root.classList.toggle('is-title', screen === 'title');
   $('vn-title').hidden = screen !== 'title';
@@ -984,9 +1013,9 @@ function setPortraits(view, speakerId) {
     const motionSources = [url, person.motion?.blink || '', person.motion?.talk || ''];
     if (!slot.vnMotionSources || motionSources.some((src, index) => src !== slot.vnMotionSources[index])) {
       slot.vnMotionSources = motionSources; slot.vnMotion = null;
-      if (person.motion?.blink || person.motion?.talk) void Promise.all([displaySprite(url), ...['blink', 'talk'].map(kind => person.motion?.[kind] ? prepareMotion(url, person.motion[kind]) : '')]).then(([base, blink, talk]) => {
-        if (slot.vnMotionSources === motionSources) slot.vnMotion = { base, blink, talk };
-      });
+      if (person.motion?.blink || person.motion?.talk) void prepareMotionFrames(...motionSources).then(frames => {
+        if (slot.isConnected && slot.vnMotionSources === motionSources) slot.vnMotion = frames;
+      }).catch(() => { /* Original sprite remains visible. */ });
     }
     // Kept as a property: data-URL keys are too large for DOM attributes.
     if (slot.vnDisplayKey === displayKey) continue;
@@ -1002,6 +1031,7 @@ function setPortraits(view, speakerId) {
     void (compose ? faceComposite(person.base, url) : Promise.resolve(url)).then(source => displaySprite(source)).then(src => {
       if (!slot.isConnected || slot.vnDisplayKey !== displayKey) return;
       const incoming = document.createElement('img'); incoming.src = src; incoming.alt = `${person.name} · ${person.expression}`; incoming.className = 'vn-character-image';
+      incoming.vnSource = url; incoming.vnStaticSrc = src;
       const previous = [...slot.children];
       incoming.onload = () => {
         if (!slot.isConnected || slot.vnDisplayKey !== displayKey) return incoming.remove();
@@ -1073,6 +1103,7 @@ function renderActions() {
 }
 
 function resetReader() {
+  cueWindow.reset(); artContinuity.reset(); compositionContinuity.reset(); state.presentedView = null;
   musicDirection.reset();
   voice.reset(); state.voiceLine = null;
   dialogueGrace.clear(); clearTimeout(dialogueGraceTimer); dialogueGraceTimer = 0;
@@ -1218,8 +1249,9 @@ function fullPlaybackStep() {
   // may bypass the save barrier or allocate a second copy of a pending beat.
   if (state.autoRecovery?.waiting || state.judgeRecovery) return { action: 'wait' };
   const last = state.api?._turns().at(-1), scenario = state.api?._scenario();
-  const page = state.pages[state.cursor], scene = pageScene(page), view = assets.view(scene, presentationPage(scene, page));
+  const page = state.pages[state.cursor], scene = pageScene(page), view = state.presentedPageKey === pageKey(page) ? state.presentedView : assets.view(scene, presentationPage(scene, page));
   state.fullAutoArt = fullAutoVisuals(view, {
+    offCamera: ['thought', 'scenery'].includes($('vn-stage').dataset.composition),
     displayed: [...$('vn-characters').children].map(slot => ({ id: slot.dataset.characterId, url: slot.vnReadyUrl, baseKey: slot.vnBaseKey, failedUrl: slot.vnFailedUrl, hidden: slot.hidden || slot.classList.contains('is-leaving') })),
     eventDecoded: Boolean(view?.eventBackground && state.backgroundDisplayedUrl === view.eventBackground), canPrepare: hasImageKey(),
   });
@@ -1228,6 +1260,7 @@ function fullPlaybackStep() {
   const problem = storageProblem(state.api)?.message || (state.api?._pendingRecovery?.() ? '먼저 진행상황에서 복구를 완료해 주세요.' : '')
     || (pendingAdjudication(state.api) && !locked && !state.awaitingTurn && !autoContinuation.running ? '판정 보완이 필요해 완전 자동을 멈췄습니다. 진행상황을 확인해 주세요.' : '')
     || (!textKey() || !voiceKey() ? `본문 생성과 AI 음성(${ttsProvider(state.reading.voiceProvider).keyLabel})을 위한 API 키를 확인해 주세요.` : '')
+    || (familyOf() === 'typecast' && !typecastVoices().length ? '음성·음악 설정에서 Typecast 캐릭터 목록을 먼저 불러와 주세요.' : '')
     || (mediaPaused(state.activeSlug, 'voice') ? '저장 공간 관리에서 음성 생성을 다시 켜 주세요.' : '');
   return fullAutoStep({ problem, visual: state.fullAutoArt, ended, tailStatus: last?.status, hasPage: Boolean(state.pages[state.cursor]), hasNext: state.cursor < state.pages.length - 1,
     blocked: playbackBlocked(true), revealing: Boolean(state.reveal.timer), growing: state.pages[state.cursor]?.isGrowing,
@@ -1283,6 +1316,7 @@ function toggleFullPlayback() {
   if (state.screen !== 'stage' || document.hidden || document.querySelector('dialog[open]')) return;
   if (!$('vn-history').hidden || root.classList.contains('vn-menu-open')) return toast('기록이나 메뉴를 닫고 완전 자동을 켜 주세요.');
   if (!textKey() || !voiceKey()) { openSettings(); toast(`완전 자동에는 본문 생성 키와 AI 음성용 ${ttsProvider(state.reading.voiceProvider).keyLabel} API 키가 필요합니다.`); return; }
+  if (familyOf() === 'typecast' && !typecastVoices().length) { settingsTab('audio'); openSettings(); return toast('Typecast 캐릭터 목록을 먼저 불러와 주세요.'); }
   if (autoContinuation.running || state.awaitingTurn) return toast('현재 요청이 끝난 뒤 완전 자동을 켜 주세요.');
   if ($('vn-input').value.trim() || $('input')?.value.trim()) return toast('입력 중인 내용을 먼저 전송하거나 지워 주세요.');
   const issue = storageProblem(state.api)?.message;
@@ -1339,7 +1373,7 @@ function applyDirection(page, scene, view) {
   stage.dataset.weather = weatherFor(scene?.world);
   if (page.isLive) return;
   const model = view?.direction || null, key = pageKey(page), directionKey = `${key}:${model ? JSON.stringify(model) : ''}`;
-  if (directionKey === state.lastDirectionKey) return;
+  // Effects are checked again after decoding/waiting, without replaying cuts.
   // A model decision can arrive after a narration beat is shown. Then only the
   // framing updates; location cuts belong to the first arrival on the beat.
   const refresh = state.lastDirectionKey.startsWith(`${key}:`);
@@ -1364,7 +1398,7 @@ function applyDirection(page, scene, view) {
     if (!reduced) playTransition(direction.transition === 'none' ? transition === 'location' ? 'fade' : 'wipe' : direction.transition);
   }
   // One-shot effects play once, on the first reading of a beat.
-  if (reduced || state.cursor <= state.readThrough) return;
+  if (reduced || state.cursor <= state.readThrough || !state.cueOpen || view?.eventBackground && state.backgroundDisplayedUrl !== view.eventBackground) return;
   if (transition === 'none' && direction.transition !== 'none' && !state.firedEffects.has(`${key}:t`)) { state.firedEffects.add(`${key}:t`); playTransition(direction.transition); }
   if (direction.fx !== 'none' && !state.firedEffects.has(`${key}:fx`)) { state.firedEffects.add(`${key}:fx`); playEffect(direction.fx); score.effect('impact'); }
   if (state.firedEffects.size > 400) state.firedEffects.clear();
@@ -1385,7 +1419,15 @@ function renderPage() {
   if (!page) return;
   const turns = state.api._turns();
   const scenario = state.api._scenario();
-  const scene = pageScene(page), visualPage = presentationPage(scene, page), view = assets.view(scene, visualPage);
+  const scene = pageScene(page), visualPage = presentationPage(scene, page), rawView = assets.view(scene, visualPage);
+  const proposedComposition = compositionFor(page, rawView?.direction);
+  const revealed = state.reveal.key === pageKey(page) ? state.reveal.length : 0;
+  const initialWait = revealed === 0 && dialogueGrace.remaining(`${sceneScope()}:${page.turnId}`) > 0 && dialogueWait(page, rawView, { enabled: Boolean(imageKey('portrait')), decoded: Boolean(rawView?.portraits?.some(person => person.id === rawView.speakerId && [...$('vn-characters').children].some(slot => slot.dataset.characterId === person.id && slot.vnReadyUrl === person.url))), eventDecoded: Boolean(rawView?.eventBackground && state.backgroundDisplayedUrl === rawView.eventBackground), bypass: state.dialogueBypass.has(pageKey(page)) });
+  state.cueOpen = cueWindow.open(pageKey(page), { waiting: initialWait, revealed });
+  const composition = state.reading.cinema === 'on' ? compositionContinuity.select(pageKey(page), proposedComposition, state.cueOpen || initialWait) : 'stage';
+  const view = artContinuity.select(rawView, { scope: sceneScope(), pageKey: pageKey(page), start: visualPage?.start, cueOpen: state.cueOpen || initialWait, revisiting: state.cursor <= state.readThrough, composition, decoded: eventDecoded(rawView?.eventBackground) });
+  state.presentedView = view; state.presentedPageKey = pageKey(page);
+  $('vn-stage').dataset.composition = composition;
   page = resolvedSpeaker(page, view);
   root.dataset.font = state.reading.font; root.dataset.motion = state.reading.motion;
   $('vn-stage').classList.toggle('is-nvl', state.reading.layout === 'nvl');
@@ -1393,7 +1435,7 @@ function renderPage() {
   applyDirection(page, scene, view);
   let previousEnvironment = '';
   if (!view?.background) {
-    for (let index = page.turnIndex - 1; index >= 0 && !previousEnvironment; index--) previousEnvironment = assets.view(turns[index].vnScene, {})?.background || '';
+    for (let index = page.turnIndex - 1; index >= 0 && !previousEnvironment; index--) previousEnvironment = assets.view(turns[index].vnScene, {})?.environment || '';
     previousEnvironment ||= assets.view(state.openingScene, {})?.background;
   }
   const background = view?.background || previousEnvironment ? { url: view?.background || previousEnvironment, source: 'generated' } : backgroundFor(turns, page.turnIndex, currentCover(), state.openingArt);
@@ -1433,8 +1475,9 @@ function renderPage() {
     else if (state.fullAutoVoice?.key !== key) state.fullAutoVoice = { key, line: readingVoiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view), tts) };
     state.voiceLine = state.fullAutoVoice?.line || null;
   } else state.voiceLine = voiceLine(page, view, sceneScope(), voiceChoice, voiceDelivery(page, view), tts);
-  voice.update(state.voiceLine); updateVoiceControls();
-  cinema.update({ pageKey: pageKey(page), turnId: page.turnId, turnIndex: page.turnIndex, title: scene?.world?.location || scenario?.event?.title, direction: view?.direction || {}, portraits: view?.portraits || [], fresh: state.cursor > state.readThrough && !page.isLive && state.playback !== 'skip', enabled: state.reading.cinema === 'on' && state.screen === 'stage', waiting: state.dialogueWaiting, eventArt: Boolean(view?.eventBackground || view?.shotKind) });
+  if ($('vn-history').hidden) voice.update(state.voiceLine);
+  updateVoiceControls();
+  cinema.update({ pageKey: pageKey(page), sceneKey: JSON.stringify([sceneScope(), scene?.world?.location, lightFor(scene?.world?.time || '')]), cueOpen: state.cueOpen, composition, background: view?.environment || '', turnId: page.turnId, turnIndex: page.turnIndex, title: scene?.world?.location || scenario?.event?.title, direction: view?.direction || {}, portraits: view?.portraits || [], fresh: state.cursor > state.readThrough && !page.isLive && state.playback !== 'skip', enabled: state.reading.cinema === 'on' && state.screen === 'stage', waiting: state.dialogueWaiting, eventArt: Boolean(view?.eventBackground || view?.shotKind) });
   const selectedTurn = turns[page.turnIndex];
   renderRevealedText(page, selectedTurn);
   $('vn-reader-position').textContent = `${state.cursor + 1} / ${state.pages.length}`;
@@ -1651,6 +1694,7 @@ function renderVoiceActors(provider, narrator) {
   list.replaceChildren();
   const typecast = familyOf(provider) === 'typecast';
   $('vn-typecast-field').hidden = !typecast; $('vn-typecast-tools').hidden = !typecast;
+  updateVoiceCredit(provider);
   if (typecast) $('vn-typecast-status').textContent = typecastVoices().length ? `캐릭터 ${typecastVoices().length}명 · 인물마다 다른 캐릭터를 자동 배정합니다` : 'API 키를 입력하고 목록을 불러와 주세요.';
   const narratorSelect = $('vn-narrator-voice'); narratorSelect.replaceChildren(new Option(defaultNarrator(provider) ? `자동 · ${voiceLabel(defaultNarrator(provider), provider)}` : '자동 · 목록을 불러온 뒤 선택', ''));
   for (const name of narratorOptions(provider)) narratorSelect.add(new Option(voiceLabel(name, provider), name));
@@ -1707,6 +1751,10 @@ async function saveSettings() {
   const go = $('vn-go-key').value.trim();
   const gemini = $('vn-gemini-key').value.trim();
   const typecast = $('vn-typecast-key').value.trim();
+  const typecastChanged = typecast !== (state.keys.typecast || '');
+  const typecastSelected = $('vn-voice-provider').value === 'typecast';
+  if (typecastSelected && $('vn-voice-setting').value === 'on' && !typecast) { settingsTab('audio'); $('vn-typecast-key').focus(); return toast('Typecast API 키를 입력해 주세요.'); }
+  if (typecastLoading) return toast('Typecast 연결 확인이 끝난 뒤 저장해 주세요.');
   const imageRouting = { background: $('vn-background-provider').value === 'gemini' ? 'gemini' : 'openai', character: $('vn-character-provider').value === 'gemini' ? 'gemini' : 'openai' };
   if ([openai, go, gemini, typecast].some(key => key && !/^\S{1,512}$/u.test(key))) return toast('API 키에 공백이 있거나 길이가 너무 깁니다.');
   $('vn-settings-save').disabled = true;
@@ -1714,6 +1762,10 @@ async function saveSettings() {
     await storeDeviceKeys({ openai, go, gemini, typecast });
     if (JSON.stringify(state.imageRouting) !== JSON.stringify(imageRouting) || state.keys.openai !== openai || state.keys.gemini !== gemini) assets.resetFailures();
     state.keys = { openai, go, gemini, typecast };
+    if (typecastChanged) { setTypecastVoices([]); localStorage.removeItem(typecastCatalogKey); voice.reset({ retryFailed: true }); }
+    if (typecastSelected && typecast && (typecastChanged || !typecastVoices().length)) {
+      if (!await connectTypecast()) { settingsTab('audio'); return; }
+    }
     state.imageRouting = imageRouting;
     localStorage.setItem(imageRoutingKey, JSON.stringify(state.imageRouting));
     state.provider = provider in providerModels ? provider : 'openai';
@@ -1728,7 +1780,7 @@ async function saveSettings() {
     localStorage.setItem(voiceChoicesKey(voiceProvider), JSON.stringify(voiceChoices));
     const volumes = Object.fromEntries([...$('vn-voice-actors').querySelectorAll('input[data-volume-id]')].map(input => [input.dataset.volumeId, Number(input.value) / 100]));
     if (state.activeSlug) localStorage.setItem(`dancheong-vn-voice-volume-v1:${state.activeSlug}`, JSON.stringify(volumes));
-    voice.reset();
+    voice.reset({ retryFailed: true }); stopReleasedVoice();
     if (state.activeSlug) {
       writeWorkArt(localStorage, sceneScope(), { ...readWorkArt(localStorage, sceneScope()), guideKey: guideSelect.value });
       state.artStyle = $('vn-art-style').value.trim().slice(0, 600);
@@ -1805,21 +1857,33 @@ $('vn-settings-cancel').addEventListener('click', () => $('vn-settings-dialog').
 $('vn-settings-save').addEventListener('click', () => void saveSettings());
 imageProviderFields.addEventListener('change', updateImageProviderFields);
 $('vn-voice-provider').addEventListener('change', () => renderVoiceActors($('vn-voice-provider').value, ''));
-$('vn-typecast-load').addEventListener('click', async () => {
-  const key = $('vn-typecast-key').value.trim() || state.keys.typecast || '', status = $('vn-typecast-status');
-  if (!key) { status.textContent = 'Typecast API 키를 먼저 입력해 주세요.'; $('vn-typecast-key').focus(); return; }
+let typecastLoading = false;
+async function connectTypecast({ rememberKey = false } = {}) {
+  const key = $('vn-typecast-key').value.trim(), status = $('vn-typecast-status');
+  if (typecastLoading) return false;
+  if (!key) { status.textContent = 'Typecast API 키를 먼저 입력해 주세요.'; $('vn-typecast-key').focus(); return false; }
+  if (!/^\S{1,512}$/u.test(key)) { status.textContent = 'Typecast API 키의 공백과 길이를 확인해 주세요.'; return false; }
+  typecastLoading = true;
   $('vn-typecast-load').disabled = true; status.textContent = '불러오는 중…';
+  let keySaved = false;
   try {
-    const response = await fetch('/api/typecast/voices?model=ssfm-v30', { headers: { Authorization: `Bearer ${key}` }, cache: 'no-store' });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !Array.isArray(result.voices)) throw new Error(result?.error?.message || '캐릭터 목록을 불러오지 못했습니다.');
-    setTypecastVoices(result.voices);
-    try { localStorage.setItem(typecastCatalogKey, JSON.stringify({ at: Date.now(), voices: result.voices })); } catch { /* Kept for this tab. */ }
+    if (rememberKey) {
+      await storeDeviceKeys({ typecast: key }); keySaved = true;
+      if (state.keys.typecast !== key) { setTypecastVoices([]); localStorage.removeItem(typecastCatalogKey); }
+      state.keys.typecast = key;
+    }
+    const voices = await fetchTypecastCatalog(key);
+    if ($('vn-typecast-key').value.trim() !== key) { status.textContent = '입력한 키가 바뀌었습니다. 연결 확인을 다시 눌러 주세요.'; return false; }
+    setTypecastVoices(voices); voice.reset({ retryFailed: true });
+    try { localStorage.setItem(typecastCatalogKey, JSON.stringify({ at: Date.now(), voices })); } catch { /* Kept for this tab. */ }
     renderVoiceActors($('vn-voice-provider').value, $('vn-narrator-voice').value);
-    status.textContent = `캐릭터 ${result.voices.length}명을 불러왔습니다. 저장하면 적용됩니다.`;
-  } catch (error) { status.textContent = error?.message || '캐릭터 목록을 불러오지 못했습니다.'; }
-  finally { $('vn-typecast-load').disabled = false; }
-});
+    status.textContent = `연결 확인 완료 · 캐릭터 ${voices.length}명${keySaved ? ' · 키 저장됨' : ''}. 아래 저장을 누르면 음성 설정이 적용됩니다.`;
+    return true;
+  } catch (error) { status.textContent = `${keySaved || state.keys.typecast === key ? '키는 이 기기에 보관했습니다. ' : ''}${error?.message || '캐릭터 목록을 불러오지 못했습니다.'}`; return false; }
+  finally { typecastLoading = false; $('vn-typecast-load').disabled = false; }
+}
+$('vn-typecast-load').addEventListener('click', () => void connectTypecast({ rememberKey: true }));
+$('vn-settings-dialog').addEventListener('close', () => { state.previewAudio?.pause(); state.previewAudio = null; });
 $('vn-settings-dialog').querySelector('form').addEventListener('submit', event => { event.preventDefault(); void saveSettings(); });
 $('vn-history-toggle').addEventListener('click', openHistory);
 $('vn-dialogue-bypass').addEventListener('click', () => { state.dialogueBypass.add(pageKey(state.pages[state.cursor])); state.dialogueWaiting = false; renderPage(); });
@@ -1862,13 +1926,16 @@ setInterval(() => {
   const time = performance.now(), voiced = voicePlayer.speaker(), level = voiced ? voicePlayer.level() : 0;
   for (const slot of $('vn-characters').children) {
     const frames = slot.vnMotion, img = [...slot.querySelectorAll('.vn-character-image.is-visible')].at(-1);
-    if (!frames || !img || slot.hidden) continue;
+    if (!img || slot.hidden) continue;
+    if (!frames) { if (img.vnStaticSrc && img.src !== img.vnStaticSrc) img.src = img.vnStaticSrc; continue; }
     const id = slot.dataset.characterId || '';
     slot.vnBlink ||= createBlinker(id, { now: time }); slot.vnMouth ||= createMouth();
-    const byVoice = voiced === id, typing = !voiced && slot.classList.contains('is-speaking') && $('vn-stage').classList.contains('is-revealing');
+    const page = state.pages[state.cursor], dialogue = page?.quoted || page?.kind === 'dialogue';
+    const byVoice = voiced === id, typing = !voiced && dialogue && slot.classList.contains('is-speaking') && $('vn-stage').classList.contains('is-revealing');
     const mouth = slot.vnMouth.update(time, { speaking: byVoice || typing, level: byVoice ? level : null });
-    const src = enabled && frames.blink && slot.vnBlink.closed(time) ? frames.blink : enabled && frames.talk && mouth ? frames.talk : frames.base;
-    if (img.src !== src) img.src = src;
+    const src = motionFrameFor({ source: slot.vnMotionSources?.[0], readySource: img.vnSource === slot.vnReadyUrl ? img.vnSource : '', frames,
+      enabled, blink: slot.vnBlink.closed(time), mouth }) || img.vnStaticSrc;
+    if (src && img.src !== src) img.src = src;
   }
 }, 50);
 let resizeTimer;

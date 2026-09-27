@@ -1,4 +1,6 @@
-import { displaySprite, alphaBounds, faceLandmarks } from './vn-sprite.mjs';
+import { displaySprite } from './vn-sprite.mjs';
+import { detectMotionGeometry } from './vn-motion-landmarks.mjs';
+import { preciseMotionPixels, regionWeight, supportedFeatures, transformGeometry } from './vn-motion-geometry.mjs';
 export const motionKey = (portraitKey, kind) => JSON.stringify(['vn-motion-mask-1', portraitKey, kind]);
 export const motionPrompt = kind => `Produce ONE animation frame for this exact reference sprite. Preserve its canvas, pixel alignment, camera, pose, proportions, head angle, hairstyle, clothing, lighting and transparent background. ${kind === 'blink' ? 'The same character briefly closes their eyelids for a natural blink; mouth and current emotion stay unchanged.' : 'The same character opens their mouth slightly for one natural speaking frame; eyes and current emotion stay unchanged.'} No gesture, redraw of the body, facial embellishment, change of expression, new scene, text or extra panels. Return the complete aligned transparent character sprite.`;
 
@@ -17,20 +19,43 @@ export function stableMotionPixels(base, variant, width, height) {
   return total > width * height * .05 && error / total < 8 && changed / total < .07;
 }
 const checked = new Map();
-export function prepareMotion(base, variant) {
-  const key = `${base}:${variant}`;
+// Includes existing cached edits. A previously accepted hair band is never trusted.
+export function prepareMotionFrames(source, blink = '', talk = '') {
+  const key = JSON.stringify([source, blink, talk]);
   if (checked.has(key)) return checked.get(key);
   const task = (async () => {
+    const base = await displaySprite(source), frames = { source, base, blink: '', talk: '', both: '' };
     try {
-      const urls = await Promise.all([displaySprite(base), displaySprite(variant, base)]);
-      const images = await Promise.all(urls.map(src => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = src; })));
-      if (Math.abs(images[0].width / images[0].height - images[1].width / images[1].height) > .015) return '';
-      const canvas = document.createElement('canvas'); canvas.width = 192; canvas.height = 256;
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      const pixels = images.map(img => { context.clearRect(0, 0, 192, 256); context.drawImage(img, 0, 0, 192, 256); return context.getImageData(0, 0, 192, 256).data; });
-      return stableMotionPixels(pixels[0], pixels[1], 192, 256) ? urls[1] : '';
-    } catch { return ''; }
-  })(); checked.set(key, task); if (checked.size > 50) checked.delete(checked.keys().next().value); return task;
+      const geometry = await detectMotionGeometry(source);
+      if (!geometry) return frames;
+      const original = await canvasImage(source), w = original.canvas.width, h = original.canvas.height, merged = {};
+      for (const [kind, url] of [['blink', blink], ['talk', talk]]) {
+        if (!url) continue;
+        const variant = await canvasImage(url);
+        if (variant.canvas.width !== w || variant.canvas.height !== h) continue;
+        const pixels = preciseMotionPixels(original.pixels.data, variant.pixels.data, w, h, geometry, kind);
+        if (!pixels) continue;
+        merged[kind] = pixels;
+        variant.ctx.putImageData(new ImageData(pixels, w, h), 0, 0);
+        frames[kind] = await displaySprite(variant.canvas.toDataURL('image/png'), source);
+      }
+      if (merged.blink && merged.talk) {
+        const pixels = merged.blink.slice();
+        // Accepted patches have original pixels everywhere else. This preserves
+        // the mouth during a blink without another paid frame or another redraw.
+        for (let i = 0; i < pixels.length; i += 4) if (merged.talk[i] !== original.pixels.data[i] || merged.talk[i+1] !== original.pixels.data[i+1] || merged.talk[i+2] !== original.pixels.data[i+2]) {
+          pixels[i] = merged.talk[i]; pixels[i+1] = merged.talk[i+1]; pixels[i+2] = merged.talk[i+2];
+        }
+        original.ctx.putImageData(new ImageData(pixels, w, h), 0, 0);
+        frames.both = await displaySprite(original.canvas.toDataURL('image/png'), source);
+      }
+      // Decode before the animation timer swaps src, avoiding blank first frames.
+      await Promise.all([...new Set(Object.values(frames).filter((url, i) => i > 0 && url))].map(async url => { const img = new Image(); img.src = url; await img.decode(); }));
+    } catch { frames.blink = frames.talk = frames.both = ''; }
+    return frames;
+  })();
+  checked.set(key, task); if (checked.size > 4) checked.delete(checked.keys().next().value);
+  return task;
 }
 
 export function motionRegion(face, width, height, kind) {
@@ -70,22 +95,37 @@ async function canvasImage(url, width, height) {
 }
 export async function prepareMotionEdit(url, kind) {
   try {
-    const source = await canvasImage(url), base = await canvasImage(url, 768, 1024);
-    const bounds = alphaBounds(base.pixels.data, 768, 1024);
-    const box = bounds && motionRegion(faceLandmarks(base.pixels.data, 768, bounds), 768, 1024, kind);
-    if (!box) return null;
+    const geometry = await detectMotionGeometry(url);
+    if (!geometry) return null;
+    const source = await canvasImage(url), w = source.canvas.width, h = source.canvas.height;
+    if (!supportedFeatures(source.pixels.data, w, h, geometry, kind)) return null;
+    const scale = Math.min(768 / w, 1024 / h), x = (768 - w * scale) / 2, y = (1024 - h * scale) / 2;
+    const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 1024;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(source.canvas, x, y, w * scale, h * scale);
+    const base = { canvas, ctx, pixels: ctx.getImageData(0, 0, 768, 1024) }, editGeometry = transformGeometry(geometry, scale, x, y);
     const mask = document.createElement('canvas'); mask.width = 768; mask.height = 1024;
-    const ctx = mask.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 768, 1024); ctx.clearRect(box.x, box.y, box.width, box.height);
-    return { source, base, box, image: base.canvas.toDataURL('image/png'), mask: mask.toDataURL('image/png') };
+    const mc = mask.getContext('2d'); mc.fillStyle = '#fff'; mc.fillRect(0, 0, 768, 1024);
+    mc.globalCompositeOperation = 'destination-out';
+    for (const r of editGeometry.regions[kind]) { mc.beginPath(); mc.ellipse(r.cx, r.cy, r.rx, r.ry, r.angle, 0, Math.PI * 2); mc.fill(); }
+    return { source, base, geometry, editGeometry, scale, x, y, kind, image: canvas.toDataURL('image/png'), mask: mask.toDataURL('image/png') };
   } catch { return null; }
 }
 export async function finishMotionEdit(edit, result) {
   const output = await canvasImage(result);
-  if (output.naturalWidth !== 768 || output.naturalHeight !== 1024 || !compositeMotionPixels(edit.base.pixels.data, output.pixels.data, 768, 1024, edit.box)) throw new Error('눈·입 편집의 정렬이 맞지 않아 정지 입상을 유지합니다. 자동 재생성하지 않습니다.');
+  if (output.naturalWidth !== 768 || output.naturalHeight !== 1024 || !preciseMotionPixels(edit.base.pixels.data, output.pixels.data, 768, 1024, edit.editGeometry, edit.kind)) throw new Error('눈·입 편집의 정렬이 맞지 않아 정지 입상을 유지합니다. 자동 재생성하지 않습니다.');
   const source = edit.source, w = source.canvas.width, h = source.canvas.height;
-  const scaled = await canvasImage(result, w, h), sx = w / 768, sy = h / 1024;
-  const box = { x: Math.round(edit.box.x * sx), y: Math.round(edit.box.y * sy), width: Math.max(1, Math.round(edit.box.width * sx)), height: Math.max(1, Math.round(edit.box.height * sy)) };
-  const merged = compositeMotionPixels(source.pixels.data, scaled.pixels.data, w, h, box);
+  const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(output.canvas, edit.x, edit.y, w * edit.scale, h * edit.scale, 0, 0, w, h);
+  // Resampling can change untouched high-frequency linework. Only resample the
+  // measured feature patches; the full model-space image was checked above.
+  const candidate = source.pixels.data.slice(), scaled = ctx.getImageData(0, 0, w, h).data;
+  for (const r of edit.geometry.regions[edit.kind]) for (let py = Math.max(0, Math.floor(r.cy-r.rx)); py <= Math.min(h-1,r.cy+r.rx); py++)
+    for (let px = Math.max(0, Math.floor(r.cx-r.rx)); px <= Math.min(w-1,r.cx+r.rx); px++) {
+      if (!regionWeight(r, px, py)) continue;
+      const i = (py*w+px)*4; for (let c=0;c<3;c++) candidate[i+c] = scaled[i+c];
+    }
+  const merged = preciseMotionPixels(source.pixels.data, candidate, w, h, edit.geometry, edit.kind);
   if (!merged) throw new Error('눈·입 편집의 원본 정렬을 확인하지 못했습니다.');
   source.ctx.putImageData(new ImageData(merged, w, h), 0, 0);
   return source.canvas.toDataURL('image/png');

@@ -12,7 +12,12 @@ export async function GET(request: Request) {
   const model = new URL(request.url).searchParams.get('model') === 'ssfm-v21' ? 'ssfm-v21' : 'ssfm-v30';
   try {
     const upstream = await fetch(`${ENDPOINT}?model=${model}`, { headers: { 'X-API-KEY': authorization.slice(7) }, signal: AbortSignal.any([request.signal, AbortSignal.timeout(30000)]) });
-    if (!upstream.ok) return fail(upstream.status === 401 || upstream.status === 403 ? 'Typecast API 키가 올바르지 않습니다.' : `Typecast 캐릭터 목록 오류 (${upstream.status}).`, upstream.status);
+    if (!upstream.ok) {
+      await upstream.body?.cancel().catch(() => {});
+      return fail(upstream.status === 401 ? 'Typecast API 키 인증에 실패했습니다. API 대시보드에서 발급한 키를 확인해 주세요.'
+        : upstream.status === 403 ? 'Typecast API 사용 권한이 없습니다. API 대시보드에서 계정·이용 권한을 확인해 주세요.'
+        : `Typecast 캐릭터 목록 오류 (${upstream.status}).`, upstream.status);
+    }
     const payload = (await upstream.json().catch(() => null)) as { voices?: Voice[] } | Voice[] | null;
     const rows: Voice[] = Array.isArray(payload) ? payload : Array.isArray(payload?.voices) ? payload.voices : [];
     const voices = rows.flatMap(row => {

@@ -1,5 +1,5 @@
 {
-  "release": "v13.15.0",
+  "release": "v13.16.3",
   "description": "Complete application source; shared Neoreum/Jieum services and browser-local data are external.",
   "files": [
     {
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 17535,
-      "sha256": "c376e261e6fccf42c81a7388b8da0203b4aa8ab74f444574ec2b4f395ef5c51e"
+      "bytes": 19047,
+      "sha256": "a5c5773d904718bcb2f8c344f7a5ea694625bd945e7a3249d05b0c88f613060a"
     },
     {
       "path": "app/api/catalog/route.ts",
@@ -39,8 +39,8 @@
     },
     {
       "path": "app/api/gemini/voice/route.ts",
-      "bytes": 9834,
-      "sha256": "643241ed4853912a4ccb84bf36bf3c001113ca27dcb6bb8fd05224b4d97e8f3e"
+      "bytes": 9869,
+      "sha256": "bd76890763521feffd78231d81e5d5c12e396fb9114b957c69dbc2103be41745"
     },
     {
       "path": "app/api/go/responses/route.ts",
@@ -59,13 +59,13 @@
     },
     {
       "path": "app/api/typecast/voice/route.ts",
-      "bytes": 5825,
-      "sha256": "f9c37eb0b43c64375281dd9e527d8df4a7793d96b970e57a6a624772fd834d56"
+      "bytes": 7817,
+      "sha256": "99b490b3bee77f76ba49e10a2b1ab8d682219329aaa1a81034ffe4462addafd3"
     },
     {
       "path": "app/api/typecast/voices/route.ts",
-      "bytes": 2771,
-      "sha256": "d47c0af40452fa562040c15ed5d2daac24affb3ca0684d7b5da4891c1d9c0d5c"
+      "bytes": 3031,
+      "sha256": "7800ade569226dd5accaab5056f54cc9865beb707f080ba31ac248003a7272d6"
     },
     {
       "path": "app/api/voice/route.ts",
@@ -563,6 +563,26 @@
       "sha256": "35991005b7360b827dc1cac1cbe2039e5ea1198c9c43de0146905c8d705b0fb7"
     },
     {
+      "path": "docs/v13.16.0-review-storyboard.md",
+      "bytes": 5830,
+      "sha256": "33993c9ef2ab17e666adb8c22f397ad7e620cbbaa71b503c712b9dcb0c9b1678"
+    },
+    {
+      "path": "docs/v13.16.1-public-portraits.md",
+      "bytes": 2282,
+      "sha256": "de22c42d21431cab8ac1c1b64118271efbedb7c248f632220227b134b81329fb"
+    },
+    {
+      "path": "docs/v13.16.2-precise-motion.md",
+      "bytes": 3706,
+      "sha256": "1202e9712d3eaddc482458c0a9798c98992316890136933d6ece2e6537cd7609"
+    },
+    {
+      "path": "docs/v13.16.3-typecast-connection.md",
+      "bytes": 3076,
+      "sha256": "48bc7d4bf5fec9a16f22e97ae5e5b95ee52000ded00b8ba9b7560fa45926ec74"
+    },
+    {
       "path": "docs/v13.2-expression-redraw.md",
       "bytes": 2041,
       "sha256": "35f497325c3bdc58950ffdf00068a3b37aeb013fcad65d364c766d50697075cc"
@@ -720,7 +740,7 @@
     {
       "path": "public/cortex.html",
       "bytes": 1422036,
-      "sha256": "381bfc01e211627f73cae75f81d1d8175aa83c51f6f6a7d94430112c23c2f203"
+      "sha256": "bd766f12d1c8b764be5c274bc9d107dab85fed8924449592ca57c2968b923c70"
     },
     {
       "path": "public/favicon.svg",
@@ -749,8 +769,8 @@
     },
     {
       "path": "public/vn-assets.mjs",
-      "bytes": 44340,
-      "sha256": "1adc4d811a2eb9e8ba2713492c8382fcde92d024566142ed0ead7b231b1e6c4b"
+      "bytes": 44479,
+      "sha256": "1800765f22fd8dc6f0719b5c54e3dd996fa16509fdea3bccd313c027e684618e"
     },
     {
       "path": "public/vn-audio-analysis.mjs",
@@ -774,13 +794,13 @@
     },
     {
       "path": "public/vn-autoplay.mjs",
-      "bytes": 4446,
-      "sha256": "e34e8d3cc954077a54f79661325d2e044debedf0b300c2725ea7b45d957f4c04"
+      "bytes": 4590,
+      "sha256": "22a7b2e209364af7436e2306a45cce259afd6d9e74afe2e78c3d9af629735d07"
     },
     {
       "path": "public/vn-backup.mjs",
-      "bytes": 6924,
-      "sha256": "1227543db400a6483534f364c853bd602966e0ba61547fb3627877ae0b99ab26"
+      "bytes": 6975,
+      "sha256": "7da7dbc9f343853a558284e0bdb41baa78ddd3e8ef426a66a497438ec9483da4"
     },
     {
       "path": "public/vn-boot.html",
@@ -789,8 +809,8 @@
     },
     {
       "path": "public/vn-cast.mjs",
-      "bytes": 41088,
-      "sha256": "4bd6c66b45fae350ed80db3e8ce7d60fa1afd23c821eb0922cd28d990feb1d9c"
+      "bytes": 42583,
+      "sha256": "84fc5b0a43c35244023e7ebaf132d56804127c57ffbaf25d51ca45ae116f93fd"
     },
     {
       "path": "public/vn-character-art.mjs",
@@ -804,13 +824,13 @@
     },
     {
       "path": "public/vn-cinema.css",
-      "bytes": 7212,
-      "sha256": "8d64f04f16404b0e3e4312f656907f14ee26bb6cd80a8b04df3a07808cedb3ee"
+      "bytes": 9201,
+      "sha256": "2b0823d43033bf5c69d62bbae4e439a30d3f5e601b5edbe2586e1d22556c0e2b"
     },
     {
       "path": "public/vn-cinema.mjs",
-      "bytes": 9306,
-      "sha256": "3f3f5eefc206e3d6faf75c468e1d650cdbc43bfb9bfa76aaa4d8df674fa32c64"
+      "bytes": 9989,
+      "sha256": "987b0fa9c0c8c6d3f8bd08c5980e3c20d3680b1e4a4b53c281666dbfb8d510d0"
     },
     {
       "path": "public/vn-core.mjs",
@@ -824,8 +844,8 @@
     },
     {
       "path": "public/vn-costs.mjs",
-      "bytes": 11790,
-      "sha256": "0a7603574bea4d2052f0a4b216406c60468859ff26a63b101f175e7bd9f8ded6"
+      "bytes": 11850,
+      "sha256": "d0b13ed5584fe7c88cf60b3f7ef62ca8ffbcdd6f517c892f73919abdd3499969"
     },
     {
       "path": "public/vn-direction.mjs",
@@ -864,13 +884,13 @@
     },
     {
       "path": "public/vn-face-compose.mjs",
-      "bytes": 5035,
-      "sha256": "c7bb7ea5a3177cf5332d8d695a228584c07a7e1cbebbc9dfeb06c63d7c01a822"
+      "bytes": 5063,
+      "sha256": "7b745086439a4c8576634dac14aaeb47a2f725567561a34f880d423b540fa40d"
     },
     {
       "path": "public/vn-gallery.mjs",
-      "bytes": 6581,
-      "sha256": "f41694ee495f4ab704cc647ab120eddb41452868a71d593f83325acd3260a003"
+      "bytes": 6995,
+      "sha256": "7166ed610b801163ace85954e84825f604a8730aafb7639b73381eab84d3251b"
     },
     {
       "path": "public/vn-identity.mjs",
@@ -913,9 +933,29 @@
       "sha256": "a12348e77bc6ccd0f44ab374a149a1b74206ffee82eddd7c1bb597e7cc022cc0"
     },
     {
+      "path": "public/vn-motion-geometry.mjs",
+      "bytes": 6548,
+      "sha256": "a0f7cd7e35cbdb78a0859829996abddb4fd8730a0c6ad9641efdb4f4a646ccb8"
+    },
+    {
+      "path": "public/vn-motion-landmarks.mjs",
+      "bytes": 1745,
+      "sha256": "53efd4b13ef12d1a12193a3d55a7288c4e9b10a4710d77b688660ae54776b6a9"
+    },
+    {
+      "path": "public/vn-motion-playback.mjs",
+      "bytes": 1834,
+      "sha256": "106d696276854e9b1d4056879bbe813c1f7e770abbbb55bcb3f0af8bc97547a5"
+    },
+    {
+      "path": "public/vn-motion-worker.mjs",
+      "bytes": 2033,
+      "sha256": "048740b407705423d9b52b96b3f7a26a95cc02eb1c9ca065fbd0091256c21959"
+    },
+    {
       "path": "public/vn-motion.mjs",
-      "bytes": 7041,
-      "sha256": "53c82477f1018fa6d614190c36b06ed9f28842d360bda71fc45673c3b7d8db68"
+      "bytes": 9675,
+      "sha256": "4f2ec1739bf72eb5e5407d62d9408631000e0a4c85019192a67ba16e7c2c2562"
     },
     {
       "path": "public/vn-music-ai.mjs",
@@ -924,8 +964,8 @@
     },
     {
       "path": "public/vn-music-direction.mjs",
-      "bytes": 4344,
-      "sha256": "f17ce0d33c42e9dd5865d48250579d98e21e79bb5892bc79be976f9f0c657e5e"
+      "bytes": 4421,
+      "sha256": "1aed3a45f53c2550990fd422118ab7d1e6031c75b6259619255e962f81dc4fe2"
     },
     {
       "path": "public/vn-music.mjs",
@@ -944,8 +984,8 @@
     },
     {
       "path": "public/vn-public-cast.mjs",
-      "bytes": 10739,
-      "sha256": "5dc00f4aa97141333561c1dd3c6e799794bec83794e2391d1889f2a7a19bd5a2"
+      "bytes": 11604,
+      "sha256": "78bff48d00681fb9dcdc08d72580509a0edc777a39cc8058bda3088eda8dbe44"
     },
     {
       "path": "public/vn-raster-worker.mjs",
@@ -959,8 +999,8 @@
     },
     {
       "path": "public/vn-reader.css",
-      "bytes": 37350,
-      "sha256": "3bea4edf3fb6a2a1b562b8ea5a180eafacbb5e611ae908722c26bd6a08cb8609"
+      "bytes": 37805,
+      "sha256": "e774163d434e5a652ce9ff2babdf68b8a1a3cabddccd816e3cb057316a50857b"
     },
     {
       "path": "public/vn-reader.mjs",
@@ -1033,9 +1073,54 @@
       "sha256": "df7d95980e000ba5548cdcee225a5fe1ed6ce3fd686da5a4303b6f0e8d7192c7"
     },
     {
+      "path": "public/vn-storyboard.mjs",
+      "bytes": 3227,
+      "sha256": "89a800bfd265eb11cd25a47c867ad6a9d5f3d9309e058ebc02b2fb03819bc1e4"
+    },
+    {
+      "path": "public/vn-typecast-connection.mjs",
+      "bytes": 1369,
+      "sha256": "7d59f665cbac461d38fb1e9654ab6d4b87cc7f05ee50635adbd03229940b0fcb"
+    },
+    {
       "path": "public/vn-typeset.mjs",
       "bytes": 4206,
       "sha256": "447923c452a5c9557e588f039d6bcc156e00b87257378574c42d6971d0fccb23"
+    },
+    {
+      "path": "public/vn-vision/1.0.1/LICENSE",
+      "bytes": 12331,
+      "sha256": "8707eef0533987efc5b155d64761eeb6e20793f50b9bd1a68dad1cf4719d0ed8"
+    },
+    {
+      "path": "public/vn-vision/1.0.1/NOTICE.md",
+      "bytes": 1101,
+      "sha256": "84fd636873d8fabe3677a046e2e14b762fc1849b04ba129c656be4946959bd7d"
+    },
+    {
+      "path": "public/vn-vision/1.0.1/face_landmarker.task",
+      "bytes": 3758596,
+      "sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
+    },
+    {
+      "path": "public/vn-vision/1.0.1/vision_bundle.mjs",
+      "bytes": 155439,
+      "sha256": "d885630c297c0b20b1fe86096cb06291c4c8080876f27852e724f24ac603713f"
+    },
+    {
+      "path": "public/vn-vision/1.0.1/wasm/vision_wasm_module_internal.js",
+      "bytes": 323415,
+      "sha256": "da8934057f147b622e82cfb4c0dbd85461c598e268588b5a8ba9ca963a8ff82d"
+    },
+    {
+      "path": "public/vn-vision/1.0.1/wasm/vision_wasm_module_internal.wasm",
+      "bytes": 11756972,
+      "sha256": "2dabd8e23c60984628beb7bb338764c81a08e6837145273f59578684b5d53c1b"
+    },
+    {
+      "path": "public/vn-voice-credits.mjs",
+      "bytes": 1561,
+      "sha256": "8f6b48b746d9112c1608a8f9bdbbb44781d034172b2e6b87d6e45423a649d7fa"
     },
     {
       "path": "public/vn-voice-post.mjs",
@@ -1044,8 +1129,8 @@
     },
     {
       "path": "public/vn-voice.mjs",
-      "bytes": 18425,
-      "sha256": "f8ba242dc6bdc9891539b8392ac824086450da60ce8e902e2690bf98b7a5aa95"
+      "bytes": 20410,
+      "sha256": "1a1f077074ae709101c7f4f3fefd125bbeedce3c00d270e00b4369ffde983e64"
     },
     {
       "path": "public/vn-wardrobe.mjs",
@@ -1064,8 +1149,8 @@
     },
     {
       "path": "public/vn.js",
-      "bytes": 163784,
-      "sha256": "3ae535828b0d5240020e042a5f633854f5f7ddf892a2524dad173f9f3504bbd4"
+      "bytes": 171259,
+      "sha256": "54e21db7c7052560d0264ed5645c86ed05c01983a924a3976d034a2cb72e3522"
     },
     {
       "path": "public/window.svg",
@@ -1079,8 +1164,8 @@
     },
     {
       "path": "scripts/build-cortex.mjs",
-      "bytes": 9777,
-      "sha256": "ed349cb3b0eb7e169a2f588c13795e24a8fd0edd11c151eba7ae4379d79d134d"
+      "bytes": 10011,
+      "sha256": "16d2f60ab90edf45f22e4dc9a8b60aa4810cb58690e682b79eecf86e5be67672"
     },
     {
       "path": "scripts/build-verified.sh",
@@ -1120,7 +1205,7 @@
     {
       "path": "scripts/package-source.mjs",
       "bytes": 2730,
-      "sha256": "d2b90d943af90108e3e1775aad3d91df322130695cb2820b83534796281f696f"
+      "sha256": "32d8cc3b6aa9899284fb1f51a1c33c9591ca72b13392418949fcdc1f1974d2e5"
     },
     {
       "path": "scripts/pnpm-install.mjs",
@@ -1169,8 +1254,8 @@
     },
     {
       "path": "tests/vn-autoplay.test.mjs",
-      "bytes": 15503,
-      "sha256": "b901ea70957f16e3e7a98527a3c164d49eb89b632660b9c700567ae75891ac82"
+      "bytes": 15644,
+      "sha256": "46752b1f4cc2a6dfc2f8fbae0d8d0fb48e331abab31706d6354abf47a6fca8ce"
     },
     {
       "path": "tests/vn-boot.test.mjs",
@@ -1189,8 +1274,8 @@
     },
     {
       "path": "tests/vn-cast-runtime.test.mjs",
-      "bytes": 11588,
-      "sha256": "abbb9b4b17280e4b4b067c6b96ea93def5c54537504648b86e2e730f276dda88"
+      "bytes": 19588,
+      "sha256": "f7511c22fa5cfac14b5cd597dfb496aae721c35ec6945c4338c0243a78bfdec7"
     },
     {
       "path": "tests/vn-character-art.test.mjs",
@@ -1293,6 +1378,16 @@
       "sha256": "6387a126473e0968b83e8049db6d3ccdec52e78d1000b2029e778eed682ec754"
     },
     {
+      "path": "tests/vn-motion-geometry.test.mjs",
+      "bytes": 4175,
+      "sha256": "30cf78a68e5d0ce695ef7e02dd7c6b734d73ddc47d2f085c7e6de746500851b7"
+    },
+    {
+      "path": "tests/vn-motion-playback.test.mjs",
+      "bytes": 7972,
+      "sha256": "54123d4f0f362f45cc1042d00fc7ce9f0eac057af445060cec2e4611cbd6dac1"
+    },
+    {
       "path": "tests/vn-music-direction.test.mjs",
       "bytes": 5686,
       "sha256": "4464ab94b0f7e784c44774ff97501ba4d898706d1545f75161fb72eafdd9a14c"
@@ -1379,13 +1474,18 @@
     },
     {
       "path": "tests/vn-storage.test.mjs",
-      "bytes": 8180,
-      "sha256": "5f8262835ee555f65f763c2d2240b85d8e8943eebf44d6a2c8012aacfc67db5f"
+      "bytes": 8798,
+      "sha256": "16aad4e0d33c98477b12323a2fa7f31ebd999ad38a22c0b6776cc2df7484850f"
     },
     {
       "path": "tests/vn-streaming.test.mjs",
       "bytes": 8345,
       "sha256": "7f5d5f3d2e0c9b496595396c5b9091fe7f6f5f2cfc4d06c6da53b5ad9fb88b1f"
+    },
+    {
+      "path": "tests/vn-typecast-connection.test.mjs",
+      "bytes": 7927,
+      "sha256": "50848e44cb06611859ffbff1fe25b8e0cec395107005f40f27797bc3d6b046dd"
     },
     {
       "path": "tests/vn-v13-9-review.test.mjs",
@@ -1404,13 +1504,23 @@
     },
     {
       "path": "tests/vn-v1314-voice.test.mjs",
-      "bytes": 11281,
-      "sha256": "c2a82d882a239d849a33f1511747bf3c18eb70fc7e1053a8898a16164ccbdc9f"
+      "bytes": 11664,
+      "sha256": "c110a7191ae7fc7f712ffaf415072673fbea6943641779d163bb51d7c25c0ce0"
     },
     {
       "path": "tests/vn-v1315-typecast.test.mjs",
       "bytes": 8402,
       "sha256": "7e8337c015a171a66f0e0fdc9cea2c568272b936d0907ce3b82bc044d3d400c5"
+    },
+    {
+      "path": "tests/vn-v1316-storyboard.test.mjs",
+      "bytes": 6584,
+      "sha256": "17735d7b1d631f2ad3a3f6dffe02988cb41d02e40e16f443149e9eea2a20636b"
+    },
+    {
+      "path": "tests/vn-voice-credits.test.mjs",
+      "bytes": 1679,
+      "sha256": "ae32f519481f8cd9e9252e7075a5e84795ff2b87da371a154531b660818cb144"
     },
     {
       "path": "tests/vn-voice-regressions.test.mjs",

@@ -54,7 +54,8 @@ test('Gemini casting gives distinct voices, keeps assignments, and OpenAI keeps 
   assert.equal(defaultVoice('x', '청년 소년', 'openai'), defaultVoice('x', '', 'openai'), 'OpenAI defaults are unchanged so old takes stay reachable');
   assert.ok(['Puck', 'Fenrir', 'Achird', 'Iapetus', 'Umbriel', 'Algieba', 'Orus', 'Enceladus', 'Zubenelgenubi', 'Sadachbia', 'Alnilam'].includes(defaultVoice('x', '남학생', 'gemini-3.8-flash-tts')));
   const line = voiceLine(page, view, 'w', '', { cue: '히나가 한숨을 쉬었다.' }, { provider: 'gemini-3.8-flash-tts' });
-  assert.equal(line.text, '<sigh> 같이 가자.'); assert.equal(line.provider, 'gemini-3.8-flash-tts'); assert.deepEqual(line.fallbackKeys, []);
+  assert.equal(line.text, '<sigh> 같이 가자.'); assert.equal(line.provider, 'gemini-3.8-flash-tts'); assert.equal(line.fallbackKeys.length, 2);
+  assert.equal(line.key, voiceLine(page, view, 'w', '', {}, { provider: 'gemini-3.8-flash-tts' }).key, 'a late vocal tag cannot buy another take');
   assert.notEqual(line.key, voiceLine(page, view, 'w', '', {}, { provider: 'openai' }).key, 'providers never share takes');
   assert.equal(vocalTags('응.', '킥킥 웃었다'), '<chuckle> 응.');
 });
@@ -71,6 +72,7 @@ test('music: a loaded save resumes the music its earlier pages chose; a fresh st
   assert.equal(loaded.update({ scope: 's', scene: 'A', pageKey: 'p3', index: 3, music: keep, seed: () => musicSeed(3, i => rows[i]) }), 'tense');
   assert.equal(musicSeed(3, i => [{ mood: 'sad' }, { mood: 'sad' }, { mood: 'normal' }][i]), '', 'a single legacy mood is not enough evidence');
   assert.equal(musicSeed(3, i => [{ mood: 'sad' }, { mood: 'sad' }, { mood: 'sad' }][i]), 'sad');
+  assert.equal(musicSeed(3, i => [{ mood: 'sad' }, { mood: 'normal' }, { mood: 'sad' }][i]), '', 'separated moods are not a sustained passage');
 });
 
 test('works without a published revision still open unversioned', () => {
@@ -101,9 +103,10 @@ test('Gemini voice validates before spending and sends text verbatim with style 
   assert.equal(sent.url, 'https://generativelanguage.googleapis.com/v1beta/interactions');
   assert.equal(sent.init.headers['x-goog-api-key'], 'gemini-fixture');
   assert.equal(sent.body.model, 'gemini-3.8-flash-tts'); assert.equal(sent.body.store, false);
-  assert.equal(sent.body.input[0].text, '같이 가자.', 'the transcript is spoken verbatim');
-  assert.equal(sent.body.input[0].annotations[0].type, 'speech_metadata');
-  assert.match(sent.body.input[0].annotations[0].style, /warm, smiling tone/);
+  assert.equal(sent.body.input[0].type, 'user_input');
+  assert.equal(sent.body.input[0].content[0].text, '같이 가자.', 'the transcript is spoken verbatim');
+  assert.equal(sent.body.input[0].content[0].annotations[0].type, 'speech_metadata');
+  assert.match(sent.body.input[0].content[0].annotations[0].style, /warm, smiling tone/);
   assert.deepEqual(sent.body.generation_config.speech_config[0].voice, 'Leda');
   assert.equal(sent.body.response_format.type, 'audio');
   assert.ok(Math.abs(estimateCost({ provider: 'gemini', model: result.model, usage: result.usage, at: Date.UTC(2026, 8, 26) }).usd - (120 * 0.5 + 64 * 9) / 1e6) < 1e-12);

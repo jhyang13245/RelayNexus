@@ -12,6 +12,7 @@ export function loadWorkPresentation(fetchAsset = fetch) {
 const list = value => Array.isArray(value) ? value : [];
 const visualProjection = Symbol('public visual projection');
 const firstAppearance = /^\s*첫\s*(?:물리(?:적)?\s*)?등장\s*(?:뒤|후|이후)\s*공개\s*[:：]/u;
+const conditionalDisclosure = /(?:첫\s*(?:물리(?:적)?\s*)?등장|정체\s*공개|해금|이벤트|사건).{0,30}(?:뒤|후|시점|이후).{0,12}공개|공개\s*(?:조건|시점)\s*[:：]/u;
 const privateIdentity = person => {
   const source = person.source || {};
   return person.secret || source.secret
@@ -26,11 +27,19 @@ function firstAppearanceVisual(person, scenario, names, aliases, experience) {
   const source = person.source || {};
   const alias = String(person.preRevealAlias || source.preRevealAlias || person.reveal?.preRevealAlias || source.revealPolicy?.preRevealAlias || '').trim();
   const info = String(person.publicInfo || source.publicInfo || person.publicProfile || source.publicProfile || '');
-  if (!alias || privateIdentity(person) || !firstAppearance.test(info)
+  // Some authored packages repeat the already-public registered name as the
+  // pre-reveal label. Cortex treats ANY such label as guarded. With explicit
+  // first-appearance art permission and no disclosure gate, that redundant
+  // label must not suppress an ordinary registered person's visual candidate.
+  // This does not infer identity from an occupation, appearance or prose guess.
+  const samePublicName = Boolean(info.trim() && !conditionalDisclosure.test(info)
+    && [person.name, source.name].some(name => identityLabel(name) === identityLabel(alias)));
+  if (!alias || privateIdentity(person) || !(firstAppearance.test(info) || samePublicName)
     || (person.imageOnFirstAppearance ?? source.imageOnFirstAppearance) !== true) return null;
   const visible = experience.publicCharacter(person, scenario);
   if (!visible) return null;
-  const authored = [...new Set([alias, ...names].map(identityLabel).filter(name => name.length >= 2 && name.length <= 60))];
+  const authored = [...new Set([alias, ...names, ...(samePublicName ? experience.surfaceNames?.(person, scenario) || [] : [])]
+    .map(identityLabel).filter(name => name.length >= 2 && name.length <= 60))];
   const others = [scenario.protagonist, ...list(scenario.characters)].filter(row => row && row.id !== person.id);
   const unambiguous = authored.filter(name => !others.some(other => {
     const otherSource = other.source || {};

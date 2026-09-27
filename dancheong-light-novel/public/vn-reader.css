@@ -240,6 +240,11 @@
 .vn-voice-controls { position:absolute; right:24px; bottom:58px; z-index:25; display:flex; align-items:center; gap:10px; max-width:calc(100% - 48px); color:#bcc9dc; font:12px/1.5 system-ui,sans-serif; background:#09111bbf; padding:5px 10px; border:1px solid #9caec52b; border-radius:4px; }
 .vn-voice-controls button { color:inherit; border:0; background:transparent; padding:4px 0; cursor:pointer; white-space:nowrap; }
 .vn-voice-controls button[aria-pressed="true"] { color:#e3c48c; }
+#vn-voice-credit-open { font-size:12px; color:#adc8e3; text-decoration:underline; text-underline-offset:3px; }
+.vn-voice-credit { padding:14px 16px; border:1px solid #91abc944; border-radius:6px; background:#0c1828; color:#cfdae8; font:14px/1.65 system-ui,sans-serif; overflow-wrap:anywhere; }
+.vn-voice-credit p { margin:8px 0; }
+.vn-voice-credit a { color:#add5ff; text-underline-offset:3px; }
+.vn-voice-credit small { display:block; margin-top:10px; }
 .vn-stage.is-text-hidden .vn-voice-controls { display:none; }
 .vn-stage[data-drawn-shot]:not([data-drawn-shot=""]) .vn-backdrop { transform:none; }
 #vn-voice-actors { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }

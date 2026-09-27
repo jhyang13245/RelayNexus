@@ -29,13 +29,14 @@ export function createGalleryDialog({ root, listImages, listMusic, onOpen = () =
   root.append(dialog);
   const grid = dialog.querySelector('.vn-gallery-grid'), music = dialog.querySelector('.vn-gallery-music'), status = dialog.querySelector('.vn-gallery-status');
   const viewer = dialog.querySelector('.vn-gallery-view'), player = new Audio();
-  let images = [], index = -1, urls = [], tab = 'cg';
+  let images = [], index = -1, urls = [], tab = 'cg', generation = 0;
   const show = next => {
     index = (next + images.length) % images.length; const item = images[index];
     viewer.hidden = false; viewer.querySelector('img').src = item.url;
     viewer.querySelector('figcaption').textContent = `${item.kind} ${index + 1} / ${images.length}`;
   };
   const select = name => {
+    if (name !== 'music') player.pause();
     tab = name;
     for (const button of dialog.querySelectorAll('[role="tab"]')) button.setAttribute('aria-selected', String(button.dataset.tab === name));
     grid.hidden = name !== 'cg'; music.hidden = name !== 'music'; viewer.hidden = true;
@@ -43,8 +44,12 @@ export function createGalleryDialog({ root, listImages, listMusic, onOpen = () =
   };
   function release() { player.pause(); player.removeAttribute('src'); for (const url of urls) URL.revokeObjectURL(url); urls = []; }
   async function render() {
+    const ticket = ++generation;
     release(); grid.replaceChildren(); music.replaceChildren(); status.textContent = '불러오는 중…';
-    try { images = await listImages(); } catch { images = []; }
+    let loaded = [];
+    try { loaded = await listImages(); } catch { /* Empty gallery. */ }
+    if (ticket !== generation || !dialog.open) return;
+    images = loaded;
     for (const [at, item] of images.entries()) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'vn-gallery-thumb';
       const image = document.createElement('img'); image.src = item.url; image.alt = `${item.kind} ${at + 1}`; image.loading = 'lazy';
@@ -52,6 +57,7 @@ export function createGalleryDialog({ root, listImages, listMusic, onOpen = () =
     }
     let tracks = [];
     try { tracks = await listMusic(); } catch { tracks = []; }
+    if (ticket !== generation || !dialog.open) return;
     if (!tracks.length) { const empty = document.createElement('p'); empty.textContent = '이 작품에 등록되거나 생성된 배경음악이 없습니다. 설정의 작품 음원에서 추가할 수 있습니다.'; music.append(empty); }
     for (const track of tracks) {
       const row = document.createElement('div'); row.className = 'vn-gallery-track';
@@ -70,7 +76,7 @@ export function createGalleryDialog({ root, listImages, listMusic, onOpen = () =
     select(tab);
   }
   dialog.querySelector('.vn-gallery-close').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', release);
+  dialog.addEventListener('close', () => { generation++; release(); images = []; grid.replaceChildren(); music.replaceChildren(); viewer.hidden = true; viewer.querySelector('img').removeAttribute('src'); });
   for (const button of dialog.querySelectorAll('[role="tab"]')) button.addEventListener('click', () => select(button.dataset.tab));
   viewer.querySelector('[data-prev]').addEventListener('click', event => { event.stopPropagation(); show(index - 1); });
   viewer.querySelector('[data-next]').addEventListener('click', event => { event.stopPropagation(); show(index + 1); });

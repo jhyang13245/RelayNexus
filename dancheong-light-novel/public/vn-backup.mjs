@@ -12,7 +12,7 @@ const digest = async text => Array.from(new Uint8Array(await crypto.subtle.diges
 const copySlot = (record, extra = {}) => makeSlot({ ...record, now: record.savedAt, ...extra });
 function safeCost(row, slug) {
   if (!row || row.slug !== slug || typeof row.id !== 'string' || !row.id || !Number.isFinite(row.at)) throw new Error('비용 기록의 작품 정보가 손상되었습니다.');
-  if (row.cost && (typeof row.cost !== 'object' || !['unknown', 'subscription', 'estimate', 'upper-bound', 'exact'].includes(row.cost.kind) || (row.cost.usd !== null && (!Number.isFinite(row.cost.usd) || row.cost.usd < 0)))) throw new Error('백업의 비용 기록이 손상되었습니다.');
+  if (row.cost && (typeof row.cost !== 'object' || !['unknown', 'subscription', 'credits', 'estimate', 'upper-bound', 'exact'].includes(row.cost.kind) || (row.cost.usd !== null && (!Number.isFinite(row.cost.usd) || row.cost.usd < 0)))) throw new Error('백업의 비용 기록이 손상되었습니다.');
   const allowed = ['id', 'at', 'slug', 'title', 'provider', 'category', 'model', 'state', 'usage', 'cost', 'priceDate', 'serviceTier'];
   return Object.fromEntries(allowed.filter(key => row[key] !== undefined).map(key => [key, row[key]]));
 }
@@ -27,7 +27,7 @@ export function validateBackup(payload) {
   for (const row of payload.assets) {
     if (assetScope(row?.key) !== scope || keys.has(row.key)) throw new Error('백업 이미지·음성의 작품 정보가 손상되었습니다.');
     keys.add(row.key);
-    for (const key of ['url', 'rejectedImageUrl']) if (row[key] && !/^data:(?:image\/(?:png|jpeg|webp)|audio\/mpeg);base64,[A-Za-z0-9+/=\r\n]+$/u.test(row[key])) throw new Error('백업에 지원하지 않는 미디어가 있습니다.');
+    for (const key of ['url', 'rejectedImageUrl']) if (row[key] && !/^data:(?:image\/(?:png|jpeg|webp)|audio\/(?:mpeg|mp3|wav|x-wav|ogg|opus|webm|aac|mp4));base64,[A-Za-z0-9+/=\r\n]+$/u.test(row[key])) throw new Error('백업에 지원하지 않는 미디어가 있습니다.');
   }
   return { record, assets: payload.assets, costs: payload.costs.map(row => safeCost(row, record.slug)) };
 }

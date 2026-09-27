@@ -15,11 +15,12 @@ const VOICE_ID = /^[a-z]{2,4}_[A-Za-z0-9]{6,64}$/u;
 const MAX_REQUEST = 16000;
 const MAX_AUDIO = 8 * 1024 * 1024;
 const headers = { 'Cache-Control': 'no-store' };
-const fail = (message: string, status: number, model = '') => Response.json({ error: { message }, model }, { status, headers });
+const fail = (message: string, status: number, model = '', code = '') => Response.json({ error: { message, ...(code ? { code } : {}) }, model }, { status, headers });
 
 function statusMessage(status: number) {
   // Typecast's error text is not echoed: it can repeat the submitted line.
-  if (status === 401 || status === 403) return 'Typecast API 키가 올바르지 않습니다. 음성·음악 설정에서 키를 다시 입력해 주세요.';
+  if (status === 401) return 'Typecast API 키 인증에 실패했습니다. 음성·음악 설정에서 API용 키를 확인해 주세요.';
+  if (status === 403) return 'Typecast API 사용 권한이 없습니다. Typecast API 대시보드의 계정·이용 권한을 확인해 주세요.';
   if (status === 402) return 'Typecast 크레딧이 부족합니다. Typecast 요금제와 남은 크레딧을 확인해 주세요.';
   if (status === 404) return '선택한 Typecast 캐릭터를 찾지 못했습니다. 캐릭터 목록을 다시 불러와 주세요.';
   if (status === 422 || status === 400) return 'Typecast가 이 대사나 캐릭터 설정을 거부했습니다. 다른 캐릭터나 감정으로 다시 시도해 주세요.';
@@ -27,6 +28,22 @@ function statusMessage(status: number) {
   return `Typecast 음성 오류 (${status}). 본문은 계속 읽을 수 있습니다.`;
 }
 const clip = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : '';
+async function permissionDetail(response: Response, privateValues: string[]) {
+  // A 403 may be a model/account restriction or a gateway block. Preserve a
+  // short structured explanation, never the raw response body or request data.
+  if (!(response.headers.get('content-type') || '').includes('application/json')) {
+    await response.body?.cancel().catch(() => {});
+    return { suffix: ' (403 · 서버 접근 차단 또는 API 권한 제한)', code: '' };
+  }
+  try {
+    const data = await response.json() as { message?: unknown; error?: { message?: unknown }; detail?: unknown; error_code?: unknown } | null;
+    let message = [data?.message, data?.error?.message, data?.detail].find(value => typeof value === 'string') || '';
+    for (const value of privateValues.filter(Boolean)) message = message.split(value).join('[보호됨]');
+    message = message.replace(/Bearer\s+\S+|(?:__plt|sk-)[A-Za-z0-9_-]+/giu, '[보호됨]').replace(/[\x00-\x1f\x7f]/gu, ' ').trim().slice(0, 180);
+    const code = typeof data?.error_code === 'string' && /^[A-Z0-9_-]{1,64}$/iu.test(data.error_code) ? data.error_code : '';
+    return { suffix: message || code ? ` (Typecast: ${[code, message].filter(Boolean).join(' · ')})` : ' (403)', code };
+  } catch { return { suffix: ' (403)', code: '' }; }
+}
 function base64Of(bytes: Uint8Array) { let binary = ''; for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192)); return btoa(binary); }
 
 export async function POST(request: Request) {
@@ -58,7 +75,14 @@ export async function POST(request: Request) {
       headers: { 'X-API-KEY': authorization.slice(7), 'Content-Type': 'application/json' },
       body: JSON.stringify({ voice_id: body.voice, text, model, language: 'kor', prompt, output: { audio_format: 'mp3', audio_tempo: tempo } }),
     });
-    if (!upstream.ok) { await upstream.body?.cancel().catch(() => {}); return fail(statusMessage(upstream.status), upstream.status, model); }
+    if (!upstream.ok) {
+      const detail = upstream.status === 403 ? await permissionDetail(upstream, [authorization.slice(7), text, clip(acting.previous, 2000), clip(acting.next, 2000)]) : null;
+      if (!detail) await upstream.body?.cancel().catch(() => {});
+      const message = detail?.code === 'UNUSUAL_ACTIVITY_DETECTED'
+        ? 'Typecast가 이상 활동을 감지해 음성 생성을 차단했습니다. Typecast 고객지원에서 API 이용 제한을 확인해 주세요. 자동 음성 요청은 중단됩니다.'
+        : statusMessage(upstream.status) + (detail?.suffix || '');
+      return fail(message, upstream.status, model, detail?.code);
+    }
     const type = (upstream.headers.get('content-type') || '').toLowerCase();
     if (!type.startsWith('audio/')) { await upstream.body?.cancel().catch(() => {}); return fail('Typecast 응답 형식을 확인하지 못했습니다.', 502, model); }
     const audio = new Uint8Array(await upstream.arrayBuffer());

@@ -104,7 +104,7 @@ function shell() {
   const submission = source.slice(source.indexOf('async function submit('), source.indexOf('async function retryPendingAdjudication('));
   const elements = new Map(), timers = new Map(), notes = [], delays = []; let serial = 0, turnStatus = 'COMMITTED', engineCalls = 0, release;
   let view = { castStatus: 'ready', portraits: [], pending: [] };
-  const $ = id => { if (!elements.has(id)) elements.set(id, { value: '', hidden: true, disabled: false, children: [], textContent: '', setAttribute() {}, classList: { remove() {} } }); return elements.get(id); };
+  const $ = id => { if (!elements.has(id)) elements.set(id, { value: '', hidden: true, disabled: false, children: [], dataset: {}, textContent: '', setAttribute() {}, classList: { remove() {} } }); return elements.get(id); };
   const api = { _turns: () => [{ id: `t${engineCalls}`, status: turnStatus }], _scenario: () => ({ runtime: {}, event: { id: 'active' } }),
     _storageStatus: () => ({}), _pendingRecovery: () => null, _setInput: () => assert.fail('must use _continue, not user input'),
     _continue: async () => { engineCalls++; turnStatus = 'STREAMING'; await new Promise(r => { release = r; }); turnStatus = 'COMMITTED'; } };
@@ -115,7 +115,7 @@ function shell() {
   const deps = { state, $, voice, document: { hidden: false, querySelector: () => null }, root: { classList: { contains: () => false } }, cinema: { blocked: false },
     autoContinuation: gate, fullAutoStep, fullAutoVisuals, storyComplete, pageKey, nextPlaybackStep, readDelay, submitEngineTurn,
     pageScene: () => ({}), presentationPage: (_s, p) => p, assets: { view: () => view }, hasImageKey: () => true,
-    voiceKey: () => state.keys.openai, ttsProvider: () => ({ keyLabel: 'OpenAI' }), sceneScope: () => 'work:save', storageProblem: () => null, pendingAdjudication: () => null, textKey: () => 'fixture', mediaPaused: () => false,
+    voiceKey: () => state.keys.openai, familyOf: () => state.reading.voiceProvider === 'typecast' ? 'typecast' : 'openai', typecastVoices: () => [], settingsTab() {}, ttsProvider: () => ({ keyLabel: 'OpenAI' }), sceneScope: () => 'work:save', storageProblem: () => null, pendingAdjudication: () => null, textKey: () => 'fixture', mediaPaused: () => false,
     busy: () => turnStatus === 'STREAMING', syncRecovery: () => null, engineNotice: null,
     updateVoiceControls() {}, toast: m => notes.push(m), renderPage() {}, sync() {}, openSettings() {},
     nextPage: () => { state.cursor++; }, setTimeout: (fn, ms) => { delays.push(ms); const id = ++serial; timers.set(id, fn); return id; }, clearTimeout: id => timers.delete(id) };

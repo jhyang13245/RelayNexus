@@ -73,3 +73,27 @@
 }
 #vn-root[data-motion="reduced"] #vn-stage .vn-letterbox::before,#vn-root[data-motion="reduced"] #vn-stage .vn-letterbox::after{transition:none!important;}
 #vn-root[data-motion="reduced"] #vn-stage[data-cinema-motion="on"] .vn-character.is-present img.is-visible,#vn-root[data-motion="reduced"] #vn-stage .vn-emphasis.is-trembling .vn-emphasis-text{animation:none!important;}
+
+/* Storyboard: quiet inner space, and an intentional environment/face pairing.
+   These layers reuse local art. They never create another paid image. */
+#vn-stage::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;background:radial-gradient(ellipse at 64% 40%,#353943,#171b22 72%);opacity:0;transition:opacity .35s ease;}
+#vn-stage[data-composition="thought"]::after{opacity:1;}
+#vn-stage[data-composition="thought"] .vn-characters,
+#vn-stage[data-composition="scenery"] .vn-characters,
+#vn-stage.has-cutin .vn-characters{opacity:0;pointer-events:none;}
+#vn-stage[data-composition="thought"] .vn-read-line{opacity:.4;}
+#vn-stage[data-composition="thought"] .vn-current-line{color:#f4f3ef;text-shadow:none;}
+#vn-stage .vn-cutin{top:43%;right:3%;width:52%;height:46%;max-height:none;min-height:0;border:0;clip-path:none;background:transparent;overflow:visible;}
+#vn-stage .vn-cutin-context{position:absolute;inset:0 0 35% 8%;background-color:#13171d;background-size:cover;background-position:50% 68%;clip-path:polygon(8% 0,100% 0,92% 100%,0 100%);filter:brightness(.68);}
+#vn-stage .vn-cutin img{inset:auto 5% 0 auto;width:96%;height:67%;object-fit:contain;object-position:center;background:#11151bea;clip-path:polygon(0 0,91% 0,100% 100%,9% 100%);}
+#vn-stage .vn-cutin[data-kind="eyes"] img{height:40%;object-fit:cover;object-position:center;}
+#vn-stage.has-cutin .vn-cutin{animation:vn-cut-arrive .32s cubic-bezier(.2,.7,.3,1) both;}
+@keyframes vn-cut-arrive{from{opacity:0;translate:3% 0}to{opacity:1;translate:0 0}}
+@media(max-width:760px) and (orientation:portrait){
+  #vn-stage .vn-cutin{top:61%;right:4%;width:92%;height:27%;max-height:none;}
+}
+@media(max-height:600px) and (orientation:landscape){
+  #vn-stage .vn-cutin{top:48%;right:3%;width:40%;height:49%;min-height:0;}
+}
+@media(prefers-reduced-motion:reduce){#vn-stage::after{transition:none}#vn-stage.has-cutin .vn-cutin{animation:none}}
+#vn-root[data-motion="reduced"] #vn-stage::after{transition:none}

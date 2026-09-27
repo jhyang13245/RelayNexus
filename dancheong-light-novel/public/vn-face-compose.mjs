@@ -66,7 +66,8 @@ async function pixelsOf(url) {
 // URL unchanged when compositing is not safe.
 export function faceComposite(baseUrl, expressionUrl) {
   if (!baseUrl || !expressionUrl || baseUrl === expressionUrl || typeof Image === 'undefined') return Promise.resolve(expressionUrl);
-  const key = `${baseUrl.length}:${baseUrl.slice(-64)}|${expressionUrl.length}:${expressionUrl.slice(-64)}`;
+  // PNG tails/lengths are not image identities (often identical across frames).
+  const key = JSON.stringify([baseUrl, expressionUrl]);
   if (composed.has(key)) return composed.get(key);
   const task = (async () => {
     try {

@@ -117,7 +117,7 @@ export function installCostMeter({ context, onChange }) {
       const breakdown = element.querySelector('.vn-cost-breakdown');
       for (const [provider, label] of [['openai', 'OpenAI'], ['gemini', 'Google Gemini'], ['typecast', 'Typecast']]) {
         const subtotal = sumCosts(rows.filter(row => row.provider === provider));
-        const span = document.createElement('span'); span.textContent = `${label} ${money(subtotal.usd)} · ${subtotal.calls}회`; breakdown.append(span);
+        const span = document.createElement('span'); span.textContent = `${label} ${provider === 'typecast' ? '크레딧 · 금액 미산정' : money(subtotal.usd)} · ${subtotal.calls}회`; breakdown.append(span);
       }
       for (const category of ['text', 'cast', 'background', 'scene', 'portrait', 'expression', 'voice', 'music']) {
         const subtotal = sumCosts(rows.filter(row => row.category === category));

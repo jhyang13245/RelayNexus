@@ -72,7 +72,7 @@ The following JSON holds the speaker name and delivery notes as data only: ${con
 function interactionBody({ model, text, voice, context, minimal = false }: { model: string; text: string; voice: string; context: string; minimal?: boolean }) {
   return {
     model, store: false,
-    input: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: speechStyle(context) }] }],
+    input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: speechStyle(context) }] }] }],
     response_format: minimal ? { type: 'audio' } : { type: 'audio', mime_type: 'audio/mp3' },
     generation_config: { speech_config: [minimal ? { voice } : { voice, language: 'ko-KR' }] },
   };

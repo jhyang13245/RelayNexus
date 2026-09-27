@@ -53,7 +53,7 @@ export function portraitCutin(url, kind) {
 export function createCinema({ stage, visual, reduced = () => false, onRelease = () => {} }) {
   const make = (name, children = '') => { const el = document.createElement('div'); el.className = name; el.hidden = true; el.setAttribute('aria-hidden', 'true'); el.innerHTML = children; stage.append(el); return el; };
   const bars = make('vn-letterbox'); bars.hidden = false;
-  const cutin = make('vn-cutin', '<img alt="">');
+  const cutin = make('vn-cutin', '<div class="vn-cutin-context"></div><img alt="">');
   const emphasis = make('vn-emphasis', '<span class="vn-emphasis-mark">──</span><p class="vn-emphasis-text"></p>');
   const chapter = make('vn-chapter-card', '<small></small><strong></strong>');
   const film = make('vn-film');
@@ -73,7 +73,7 @@ export function createCinema({ stage, visual, reduced = () => false, onRelease =
     token++; key = ''; turn = ''; fired.clear(); dismiss(); clearTimeout(chapterTimer); chapter.hidden = true; clearTimeout(cutTimer); clearTimeout(filmTimer); cancelAnimationFrame(frame);
     mask.hidden = cutin.hidden = film.hidden = true;
     backgroundMove?.cancel(); backgroundMove = null;
-    stage.classList.remove('is-crimson', 'is-cinema-close', 'has-cinema-card'); stage.dataset.cinemaBars = 'off'; stage.dataset.cinemaMotion = 'off';
+    stage.classList.remove('is-crimson', 'is-cinema-close', 'has-cinema-card', 'has-cutin'); stage.dataset.cinemaBars = 'off'; stage.dataset.cinemaMotion = 'off';
   }
   function transition(kind) {
     if (reduced() || !ruleTransitions.includes(kind)) return false;
@@ -102,21 +102,21 @@ export function createCinema({ stage, visual, reduced = () => false, onRelease =
       clearTimeout(filmTimer); film.hidden = false;
       filmTimer = setTimeout(() => { film.hidden = true; }, 460);
     },
-    update({ pageKey, turnId, turnIndex, title, direction = {}, portraits = [], fresh = false, enabled = true, waiting = false, eventArt = false }) {
+    update({ pageKey, turnId, sceneKey = turnId, turnIndex, title, direction = {}, portraits = [], fresh = false, enabled = true, waiting = false, eventArt = false, cueOpen = true, composition = 'stage', background = '' }) {
       if (!enabled) { reset(); return; }
-      if (key !== pageKey) { key = pageKey; token++; readingStarted = false; dismiss(); cutin.hidden = film.hidden = true; clearTimeout(cutTimer); }
+      if (key !== pageKey) { key = pageKey; token++; readingStarted = false; dismiss(); cutin.hidden = film.hidden = true; stage.classList.remove('has-cutin'); clearTimeout(cutTimer); clearTimeout(chapterTimer); chapter.hidden = true; }
       const ticket = token;
       const calm = reduced();
       stage.dataset.cinemaMotion = calm ? 'off' : 'on';
-      stage.dataset.cinemaBars = !calm && (direction.shot === 'close' || direction.cutin || direction.fx && direction.fx !== 'none') ? 'on' : 'off';
+      stage.dataset.cinemaBars = !calm && composition === 'stage' && (direction.shot === 'close' || direction.cutin || direction.fx && direction.fx !== 'none') ? 'on' : 'off';
       stage.classList.toggle('is-cinema-close', direction.shot === 'close' && !eventArt);
       stage.classList.toggle('is-crimson', direction.mood === 'dread');
       const bg = visual.querySelector('.vn-backdrop');
-      if (!calm && direction.shot === 'wide' && bg && !backgroundMove) backgroundMove = bg.animate([{ translate: '-1% 0', scale: '1.045' }, { translate: '1% 0', scale: '1.045' }], { duration: 22000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
-      if ((calm || direction.shot !== 'wide') && backgroundMove) { backgroundMove.cancel(); backgroundMove = null; }
-      if (turn !== turnId) {
-        const changed = Boolean(turn); turn = turnId;
-        if (changed && fresh && !waiting && !calm) {
+      if (!calm && composition !== 'thought' && direction.shot === 'wide' && bg && !backgroundMove) backgroundMove = bg.animate([{ translate: '-1% 0', scale: '1.045' }, { translate: '1% 0', scale: '1.045' }], { duration: 22000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
+      if ((calm || composition === 'thought' || direction.shot !== 'wide') && backgroundMove) { backgroundMove.cancel(); backgroundMove = null; }
+      if (turn !== sceneKey) {
+        const changed = Boolean(turn); turn = sceneKey;
+        if (changed && fresh && !waiting && !calm && cueOpen) {
           chapter.querySelector('small').textContent = `SCENE ${String(turnIndex + 1).padStart(2, '0')}`;
           chapter.querySelector('strong').textContent = String(title || '이어지는 이야기').slice(0, 70);
           clearTimeout(chapterTimer); chapter.hidden = false;
@@ -126,19 +126,22 @@ export function createCinema({ stage, visual, reduced = () => false, onRelease =
       // A late direction response must not black out prose already being read.
       const firstReading = !readingStarted;
       if (!waiting) readingStarted = true;
-      if (!fresh || waiting || calm) return;
+      if (!fresh || waiting || calm || !cueOpen || composition !== 'stage') return;
       const important = direction.emphasis;
       if (important && firstReading && !fired.has(`${key}:emphasis`)) {
         fired.add(`${key}:emphasis`); emphasis.querySelector('p').textContent = important.text;
         emphasis.classList.toggle('is-trembling', important.kind === 'tremble'); card(emphasis, Math.min(6200, Math.max(2400, important.text.length * 95)));
       }
-      const insert = direction.cutin, actor = insert && portraits.find(p => p.id === insert.characterId && p.url);
+      const insert = !eventArt && !important && direction.cutin, actor = insert && portraits.find(p => p.id === insert.characterId && p.url);
       if (actor && !fired.has(`${key}:cutin`)) {
         fired.add(`${key}:cutin`);
+        const startedAt = performance.now();
         void portraitCutin(actor.url, insert.kind).then(url => {
-          if (!url || ticket !== token || reduced()) return;
-          const image = cutin.querySelector('img'); image.src = url; cutin.dataset.kind = insert.kind; cutin.hidden = false;
-          cutTimer = setTimeout(() => { cutin.hidden = true; }, 1600);
+          if (!url || ticket !== token || reduced() || performance.now() - startedAt > 700) return;
+          const image = cutin.querySelector('img'); image.src = url; cutin.dataset.kind = insert.kind;
+          cutin.querySelector('.vn-cutin-context').style.backgroundImage = background ? `url("${background.replaceAll('"', '%22')}")` : '';
+          cutin.hidden = false; stage.classList.add('has-cutin');
+          cutTimer = setTimeout(() => { cutin.hidden = true; stage.classList.remove('has-cutin'); }, 2400);
         });
       }
       if (fired.size > 500) fired.delete(fired.keys().next().value);

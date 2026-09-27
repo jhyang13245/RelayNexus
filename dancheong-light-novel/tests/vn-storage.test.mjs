@@ -8,6 +8,16 @@ import { createVoice, VOICE_CACHE_LIMIT } from '../public/vn-voice.mjs';
 const key = (kind, scope = 'book:story', tail = '') => JSON.stringify([`vn-${kind}-1`, scope, tail]);
 const fixture = () => makeSlot({ slot: 1, slug: 'book', title: '테스트', snapshot: { scenario: { runtime: { storyId: 'story' }, world: {} }, turns: [{ id: 't', status: 'COMMITTED', text: '본문' }], settings: { apiKey: 'never-export' }, media: { schema: 'CORTEX_MEDIA_BACKUP_V1', generated: [], packageAssets: [] } }, presentation: { values: [null, '[]', null, null, null], openingArt: '', actions: false } });
 const assets = () => [{ key: key('portrait'), url: 'data:image/png;base64,eA==' }, { key: key('voice'), url: 'data:audio/mpeg;base64,eA==' }];
+
+test('new TTS formats and Typecast credits survive a backup round trip', async () => {
+  const record = fixture();
+  for (const mime of ['wav', 'mp3', 'ogg', 'opus', 'webm', 'aac', 'mp4']) {
+    const media = [{ key: key('voice'), url: `data:audio/${mime};base64,eA==` }];
+    const ledger = [{ id: 'tc-voice', at: Date.now(), slug: record.slug, provider: 'typecast', model: 'ssfm-v30', cost: { kind: 'credits', usd: null } }];
+    const result = await readBackup(await makeBackup(record, { assets: media, costs: ledger }));
+    assert.deepEqual(result.assets, media); assert.deepEqual(result.costs, ledger);
+  }
+});
 const costs = () => [{ id: 'receipt', slug: 'book', at: 10, usage: { input_tokens: 20 }, cost: { usd: .03, kind: 'exact' }, authorization: 'never-export' }];
 
 test('nested media scope comes from schema positions, never names/passages from another work', () => {
