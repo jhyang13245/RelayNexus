@@ -1,5 +1,5 @@
 // Music spans a dramatic passage; visual colour may change every sentence.
-export const musicCues = ['keep', 'silence', 'normal', 'warm', 'sad', 'tense', 'eerie', 'memory'];
+export const musicCues = ['keep', 'silence', 'normal', 'warm', 'sad', 'tense', 'battle', 'eerie', 'memory'];
 export function validatedMusic(value, text) {
   const evidence = typeof value?.evidence === 'string' ? value.evidence.trim() : '';
   return value?.cue !== 'keep' && musicCues.includes(value?.cue) && evidence.length >= 6 && String(text || '').includes(evidence)

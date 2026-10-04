@@ -1,11 +1,11 @@
-import { readAsset, writeAsset } from './vn-assets.mjs?v=e0d140d50b0f';
-import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=e0d140d50b0f';
-import { waitForBoundary } from './vn-loop.mjs?v=e0d140d50b0f';
-import { analyzeMusicData, basicMusicAnalysis } from './vn-audio-analysis.mjs?v=e0d140d50b0f';
-import { analyzeInWorker } from './vn-audio-task.mjs?v=e0d140d50b0f';
-import { requestDurableStorage, withMediaTask } from './vn-storage.mjs?v=e0d140d50b0f';
-import { MUSIC_MODELS, moodPrompt, generateMusic, generatedRecord } from './vn-music-ai.mjs?v=e0d140d50b0f';
-export const musicMoods = { normal: '평상시', warm: '따뜻함', sad: '슬픔', tense: '긴장·전투', eerie: '불길함·공포', memory: '회상' };
+import { readAsset, writeAsset } from './vn-assets.mjs?v=88af24489d44';
+import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=88af24489d44';
+import { waitForBoundary } from './vn-loop.mjs?v=88af24489d44';
+import { analyzeMusicData, basicMusicAnalysis } from './vn-audio-analysis.mjs?v=88af24489d44';
+import { analyzeInWorker } from './vn-audio-task.mjs?v=88af24489d44';
+import { requestDurableStorage, withMediaTask } from './vn-storage.mjs?v=88af24489d44';
+import { MUSIC_MODELS, moodPrompt, generateMusic, generatedRecord } from './vn-music-ai.mjs?v=88af24489d44';
+export const musicMoods = { normal: '평상시', warm: '따뜻함', sad: '슬픔', tense: '긴장·대치', battle: '전투', eerie: '불길함·공포', memory: '회상' };
 export const musicKey = (work, mood) => JSON.stringify(['vn-work-music-1', work, mood]);
 export function licensedTrack(value) {
   if (!value || typeof value.url !== 'string' || !String(value.license || '').trim() || !String(value.credit || '').trim()) return null;
@@ -18,7 +18,7 @@ export function licensedTrack(value) {
 export async function selectedTrack(work, mood, packaged = {}, read = readAsset) {
   if (mood === 'silence') return null;
   const kind = mood === 'dread' ? 'eerie' : Object.hasOwn(musicMoods, mood) ? mood : 'normal';
-  for (const name of [...new Set([kind, 'normal'])]) {
+  for (const name of [...new Set([kind, ...(kind === 'battle' ? ['tense'] : []), 'normal'])]) {
     const local = await read(musicKey(work, name)).catch(() => null);
     if (local?.disabled) continue;
     if (local?.blob instanceof Blob && local.blob.type.startsWith('audio/')) return { ...local, id: `${work}:${name}:${local.savedAt}` };

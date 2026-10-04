@@ -34,7 +34,7 @@
    const response=await fetch('/vn-runtime/manifest.json',{cache:'no-cache'});if(!response.ok)throw Error('비주얼노벨 화면을 불러오지 못했습니다.');
    const manifest=await response.json();
    preload=document.createElement('link');preload.rel='modulepreload';preload.href='/vn-runtime/'+(manifest.entry||'vn.js')+'?v='+manifest.version;document.head.append(preload);
-   styles=[...manifest.styles.map(name=>'/vn-runtime/'+name),'/cortex-vn-layout.css'].map(url=>{const link=document.createElement('link');link.rel='stylesheet';link.href=url+'?v='+manifest.version;link.media='not all';document.head.append(link);return link});
+   styles=[...manifest.styles.map(name=>'/vn-runtime/'+name),'/cortex-vn-layout.css','/cortex-vn-stagecraft.css'].map(url=>{const link=document.createElement('link');link.rel='stylesheet';link.href=url+'?v='+manifest.version;link.media='not all';document.head.append(link);return link});
    await Promise.all(styles.map(link=>new Promise((resolve,reject)=>{if(link.sheet)return resolve();link.onload=resolve;link.onerror=()=>reject(Error('비주얼노벨 스타일을 불러오지 못했습니다.'))})));
    return manifest;
   })().catch(error=>{preparing=null;preload?.remove();preload=null;for(const style of styles)style.remove();styles=[];throw error});

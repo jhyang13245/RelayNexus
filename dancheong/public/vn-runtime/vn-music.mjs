@@ -5,8 +5,8 @@
  * All patterns are original and generated deterministically per mood.
  */
 
-import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=e0d140d50b0f';
-const MOODS = ["normal", "warm", "sad", "tense", "eerie", "memory"];
+import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=88af24489d44';
+const MOODS = ["normal", "warm", "sad", "tense", "battle", "eerie", "memory"];
 
 // Per-mood generative config: tempo, centre pitch, scale, and 8-bar root progression.
 // Scales are semitone offsets; progressions are semitone offsets from the root.
@@ -14,6 +14,7 @@ const MOOD_CONFIG = {
   normal: { bpm: 92, root: 60, scale: [0, 2, 4, 5, 7, 9, 11], prog: [0, 7, 9, 5, 0, 7, 5, 4] },
   warm: { bpm: 76, root: 62, scale: [0, 2, 4, 5, 7, 9, 11], prog: [0, 5, 9, 7, 0, 5, 4, 7] },
   sad: { bpm: 66, root: 57, scale: [0, 2, 3, 5, 7, 8, 10], prog: [0, 8, 5, 7, 3, 8, 5, 7] },
+  battle: { bpm: 152, root: 52, scale: [0, 2, 3, 5, 7, 8, 10], prog: [0, 0, 8, 10, 0, 0, 5, 7] },
   tense: { bpm: 112, root: 56, scale: [0, 2, 3, 5, 7, 8, 10], prog: [0, 1, 0, 8, 0, 1, 10, 8] },
   eerie: { bpm: 60, root: 64, scale: [0, 1, 3, 5, 6, 8, 10], prog: [0, 6, 1, 8, 0, 6, 10, 1] },
   memory: { bpm: 72, root: 67, scale: [0, 2, 4, 7, 9, 12, 14], prog: [0, 9, 5, 4, 0, 9, 7, 5] },
@@ -86,7 +87,7 @@ export function musicPattern(mood) {
 
     // Bass rhythm: downbeat root + syncopated fifth; sad/memory sparser.
     const bass = [{ beat: 0, midi: chordRoot - 12, dur: 0.9 }];
-    if (name === "tense" || name === "normal" || name === "warm") {
+    if (name === "tense" || name === "battle" || name === "normal" || name === "warm") {
       bass.push({ beat: 2, midi: chordRoot - 12 + 7, dur: 0.6 });
       if (rand() < 0.5) bass.push({ beat: 3.5, midi: chordRoot - 12, dur: 0.4 });
     } else if (rand() < 0.6) {
@@ -95,7 +96,7 @@ export function musicPattern(mood) {
 
     // Melody/arpeggio: 8 eighth-note slots with rests and chord-tone bias.
     const melody = [];
-    const density = name === "tense" ? 0.85 : name === "eerie" ? 0.5 : 0.7;
+    const density = name === "battle" ? 0.92 : name === "tense" ? 0.85 : name === "eerie" ? 0.5 : 0.7;
     for (let slot = 0; slot < 8; slot++) {
       const beat = slot * 0.5;
       if (rand() > density) continue; // rest keeps phrasing breathing
@@ -253,6 +254,7 @@ export function createScore(getEnabled, { getVolume = () => 0.22, contextFactory
     for (const m of slot.chord) {
       playTone({ freq: midiToFreq(m), time, dur: beatSec * 1.8, type: "sine", peak: 0.05 * (0.4 + vol) });
     }
+    if (pattern.mood === "battle" && idx % 2 === 0) playTone({ freq: 62, time, dur: 0.11, type: "sine", peak: 0.26 * (0.4 + vol) });
     for (const b of slot.bass) {
       playTone({ freq: midiToFreq(b.midi), time, dur: beatSec * 0.9, type: "sine", peak: 0.22 * (0.4 + vol) });
     }

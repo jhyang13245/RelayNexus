@@ -4,6 +4,7 @@ import path from 'node:path';
 import { build } from 'rolldown';
 import {upgradeLunaModel} from '../public/cortex-luna-model.mjs';
 import {adaptPerformance} from '../vendor/visual-novel/nexus-performance-adapter.mjs';
+import {adaptStagecraft} from '../vendor/visual-novel/nexus-stagecraft-adapter.mjs';
 const source='vendor/visual-novel/public',destination='public/vn-runtime';
 const read=path=>fs.readFileSync(path,'utf8');
 function replace(code,before,after){if(code.split(before).length!==2)throw Error('VN integration target changed: '+before.slice(0,90));return code.replace(before,after)}
@@ -50,6 +51,7 @@ export async function buildVN(){
   adapters.push('public/cortex-vn-camera.mjs','public/cortex-vn-registration.mjs',...cameraOverrides.map(name=>'vendor/visual-novel/nexus-'+name+'.mjs'));
   adapters.push('public/cortex-vn-writer-speakers.mjs');
   adapters.push('vendor/visual-novel/nexus-performance-adapter.mjs',...['performance','cue-player','foley','foley-score'].map(name=>'public/cortex-vn-'+name+'.mjs'));
+  adapters.push('vendor/visual-novel/nexus-stagecraft-adapter.mjs',...['stagecraft','stagecraft-dom','sound'].map(name=>'public/cortex-vn-'+name+'.mjs'),'public/cortex-vn-stagecraft.css','public/vn-sfx/manifest.json');
   const hash=crypto.createHash('sha256').update(JSON.stringify(manifest));for(const path of adapters)hash.update(read(path));const version=hash.digest('hex').slice(0,12);
   const cameraHash=crypto.createHash('sha256').update(read('public/cortex-vn-camera.mjs')).update(read('public/cortex-vn-registration.mjs'));for(const part of cameraOverrides)cameraHash.update(read('vendor/visual-novel/nexus-'+part+'.mjs'));
   const cameraVersion='stage-camera-main-body-'+cameraHash.digest('hex').slice(0,12);
@@ -246,7 +248,7 @@ export async function buildVN(){
       // not hold the image preparation queue after the paid inference finishes.
       code=replace(code,"          try { await write({ key, policy: DIRECTION_POLICY, decision, savedAt: Date.now() }); } catch { onError('인물 배치를 기기에 저장하지 못했습니다.'); }","          void Promise.resolve().then(() => write({ key, policy: DIRECTION_POLICY, decision, savedAt: Date.now() })).catch(() => onError('인물 배치를 기기에 저장하지 못했습니다.'));");
     }
-    code=adaptPerformance(name,code,version);
+    code=adaptStagecraft(name,adaptPerformance(name,code,version),version);
     if(/\.(?:m?js)$/.test(name))code=code.replace(/from '(\.\/vn-[^']+\.mjs)'/gu,`from '$1?v=${version}'`).replace(/new URL\('(\.\/vn-[^']+\.mjs)'/gu,`new URL('$1?v=${version}'`);
     fs.writeFileSync(destination+'/'+name,code);
   }

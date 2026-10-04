@@ -1,8 +1,8 @@
-import { displaySprite } from './vn-sprite.mjs?v=e0d140d50b0f';
-import { createByteLru } from './vn-byte-lru.mjs?v=e0d140d50b0f';
-import { retainDisplay } from './vn-display-memory.mjs?v=e0d140d50b0f';
-import { detectMotionGeometry } from './vn-motion-landmarks.mjs?v=e0d140d50b0f';
-import { preciseMotionPixels, regionWeight, supportedFeatures, transformGeometry } from './vn-motion-geometry.mjs?v=e0d140d50b0f';
+import { displaySprite } from './vn-sprite.mjs?v=88af24489d44';
+import { createByteLru } from './vn-byte-lru.mjs?v=88af24489d44';
+import { retainDisplay } from './vn-display-memory.mjs?v=88af24489d44';
+import { detectMotionGeometry } from './vn-motion-landmarks.mjs?v=88af24489d44';
+import { preciseMotionPixels, regionWeight, supportedFeatures, transformGeometry } from './vn-motion-geometry.mjs?v=88af24489d44';
 export const motionKey = (portraitKey, kind) => JSON.stringify(['vn-motion-mask-1', portraitKey, kind]);
 export const motionPrompt = kind => `Produce ONE animation frame for this exact reference sprite. Preserve its canvas, pixel alignment, camera, pose, proportions, head angle, hairstyle, clothing, lighting and transparent background. ${kind === 'blink' ? 'The same character briefly closes their eyelids for a natural blink; mouth and current emotion stay unchanged.' : 'The same character opens their mouth slightly for one natural speaking frame; eyes and current emotion stay unchanged.'} No gesture, redraw of the body, facial embellishment, change of expression, new scene, text or extra panels. Return the complete aligned transparent character sprite.`;
 

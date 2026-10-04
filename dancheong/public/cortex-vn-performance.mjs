@@ -1,3 +1,4 @@
+import {stagecraftCues} from './cortex-vn-stagecraft.mjs';
 // Evidence-bound presentation only. Never changes story, presence or identity.
 const enumeration = values => ({ type:'string', enum:values });
 const text = { type:'string' };
@@ -57,7 +58,8 @@ export function posePrompt(actor) {
 }
 export function cuePlan(direction={}, visible='') {
   const plan=[], p=direction.performance;
-  if(direction.emphasis?.text&&visible.includes(direction.emphasis.text))return [{kind:'emphasis',sound:'none',when:'text',at:Array.from(visible.slice(0,visible.indexOf(direction.emphasis.text)+direction.emphasis.text.length)).length}];
+  // Emphasis stands alone (no stacked action), but a stinger may land on it.
+  if(direction.emphasis?.text&&visible.includes(direction.emphasis.text))return [{kind:'emphasis',sound:'none',when:'text',at:Array.from(visible.slice(0,visible.indexOf(direction.emphasis.text)+direction.emphasis.text.length)).length},...stagecraftCues(direction.stagecraft,visible,{emphasis:true})].sort((a,b)=>a.at-b.at);
   for(const c of p?.cues||[]) {
     const at=visible.indexOf(c.anchor);if(at<0)continue;
     plan.push({...c,at:Array.from(visible.slice(0,at+c.anchor.length)).length});
@@ -69,7 +71,7 @@ export function cuePlan(direction={}, visible='') {
     if(direction.fx&&direction.fx!=='none')plan.push({kind:'impact',sound:'impact',when:'text',at:at>=0&&anchor?Array.from(visible.slice(0,at+anchor.length)).length:Array.from(visible).length});
     else if(direction.cutin)plan.push({kind:'cutin',sound:'none',when:'text',at:Math.min(14,Array.from(visible).length)});
   }
-  return plan.sort((a,b)=>a.at-b.at);
+  return [...plan,...stagecraftCues(direction.stagecraft,visible)].sort((a,b)=>a.at-b.at);
 }
 export function stageBlocking(actors, ids, positions, focusId, framing='hold') {
   return ids.map((id,i)=>{

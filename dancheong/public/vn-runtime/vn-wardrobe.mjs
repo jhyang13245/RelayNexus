@@ -1,6 +1,6 @@
 // Wardrobe is a presentation projection of published prose, never canonical
 // story state. Closed categories keep inferred outfits reusable across lines.
-import { labelOccurrences } from './vn-identity.mjs?v=e0d140d50b0f';
+import { labelOccurrences } from './vn-identity.mjs?v=88af24489d44';
 export const outfitKinds = ['default', 'swimwear', 'sleepwear', 'formal', 'sport', 'uniform', 'outerwear', 'combat', 'custom'];
 export const outfitNames = { swimwear: 'swimwear suited to swimming and beach play', sleepwear: 'comfortable sleepwear', formal: 'formal occasion clothing', sport: 'sports clothing', uniform: 'the publicly described uniform', outerwear: 'weather-appropriate outerwear', combat: 'the publicly described combat clothing', custom: 'the explicitly described outfit' };
 const quotes = /[“「『‘][^”」』’]*(?:[”」』’]|$)|"[^"\n]*(?:"|$)/gu;

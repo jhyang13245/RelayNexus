@@ -1,4 +1,4 @@
-import {createCachedPages} from '../cortex-vn-page-cache.mjs?v=e0d140d50b0f';
+import {createCachedPages} from '../cortex-vn-page-cache.mjs?v=88af24489d44';
 const quotePattern = /[“「『][^”」』]*(?:[”」』]|$)/gu;
 
 function proseChunks(source, offset, maxChars) {

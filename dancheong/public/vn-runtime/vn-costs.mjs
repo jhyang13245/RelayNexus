@@ -1,7 +1,7 @@
-import { estimateCost, sumCosts, usageReceipt, pricingDate } from './vn-cost-core.mjs?v=e0d140d50b0f';
-import { requestDurableStorage } from './vn-storage.mjs?v=e0d140d50b0f';
-import { createBudget } from './vn-budget.mjs?v=e0d140d50b0f';
-import { diagnostics } from './vn-diagnostics.mjs?v=e0d140d50b0f';
+import { estimateCost, sumCosts, usageReceipt, pricingDate } from './vn-cost-core.mjs?v=88af24489d44';
+import { requestDurableStorage } from './vn-storage.mjs?v=88af24489d44';
+import { createBudget } from './vn-budget.mjs?v=88af24489d44';
+import { diagnostics } from './vn-diagnostics.mjs?v=88af24489d44';
 
 function database() {
   return new Promise((resolve, reject) => {

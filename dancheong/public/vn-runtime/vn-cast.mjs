@@ -1,14 +1,15 @@
-import {performanceSchema,performanceInstructions,validatePerformance} from '../cortex-vn-performance.mjs?v=e0d140d50b0f';
-import { compactCastRequest, expandCastDecision } from '../cortex-vn-cast-wire.mjs?v=e0d140d50b0f';
-import { applyWriterSpeaker } from '../cortex-vn-writer-speakers.mjs?v=e0d140d50b0f';
+import {stagecraftSchema,stagecraftInstructions,validateStagecraft} from '../cortex-vn-stagecraft.mjs?v=88af24489d44';
+import {performanceSchema,performanceInstructions,validatePerformance} from '../cortex-vn-performance.mjs?v=88af24489d44';
+import { compactCastRequest, expandCastDecision } from '../cortex-vn-cast-wire.mjs?v=88af24489d44';
+import { applyWriterSpeaker } from '../cortex-vn-writer-speakers.mjs?v=88af24489d44';
 // Old name-only decisions can bind a generic speaker to an unrelated person.
 // Recheck those decisions while retaining already-paid character artwork.
-import { outfitKinds, wardrobeState, createWardrobeReplay, continueOutfit, wardrobeAnchors } from './vn-wardrobe.mjs?v=e0d140d50b0f';
-import { shotKinds, validatedShot } from './vn-shots.mjs?v=e0d140d50b0f';
-import { ruleTransitions, validatedEmphasis, validatedCutin } from './vn-cinema.mjs?v=e0d140d50b0f';
-import { labelOccurrences, identityLabel, unsafePresenceEvidence, evidenceContext } from './vn-identity.mjs?v=e0d140d50b0f';
-import { musicCues, validatedMusic } from './vn-music-direction.mjs?v=e0d140d50b0f';
-import { validatedComposition } from './vn-storyboard.mjs?v=e0d140d50b0f';
+import { outfitKinds, wardrobeState, createWardrobeReplay, continueOutfit, wardrobeAnchors } from './vn-wardrobe.mjs?v=88af24489d44';
+import { shotKinds, validatedShot } from './vn-shots.mjs?v=88af24489d44';
+import { ruleTransitions, validatedEmphasis, validatedCutin } from './vn-cinema.mjs?v=88af24489d44';
+import { labelOccurrences, identityLabel, unsafePresenceEvidence, evidenceContext } from './vn-identity.mjs?v=88af24489d44';
+import { musicCues, validatedMusic } from './vn-music-direction.mjs?v=88af24489d44';
+import { validatedComposition } from './vn-storyboard.mjs?v=88af24489d44';
 const POLICY = 'PUBLIC_PHYSICAL_CAST_TIMELINE_V8';
 const DIRECTION_POLICY = 'PUBLIC_CAST_DIRECTION_V8';
 const POLICIES = new Set([DIRECTION_POLICY]);
@@ -191,8 +192,8 @@ Return ONLY JSON with this shape: {"beats":[{"beat":"P0","speaker":"C0","speaker
   // This existing provider supports Responses but not its JSON-schema format.
   // Request JSON explicitly up front, without a failed call or provider retry.
   const props=request.text.format.schema.properties.beats.items;
-  props.properties.performance=performanceSchema;props.required.push('performance');
-  request.instructions=request.instructions.replace('Return ONLY JSON with this shape:',performanceInstructions+'\nReturn ONLY JSON with this shape:');
+  props.properties.performance=performanceSchema;props.required.push('performance');props.properties.stagecraft=stagecraftSchema;props.required.push('stagecraft');
+  request.instructions=request.instructions.replace('Return ONLY JSON with this shape:',performanceInstructions+stagecraftInstructions+'\nReturn ONLY JSON with this shape:');
   const compact = compactCastRequest(request);
   if (model === 'muse-spark-1.3-contributor') delete compact.text;
   return compact;
@@ -310,7 +311,7 @@ export function directionFor(beat, candidates, selected, expressionSource = '', 
   const castComplete = beat.eventCastComplete === true && participants !== null && participants.every(at => selected.has(at) && candidates[at]?.id);
   const event = grounded ? { evidence, focus: eventFocus, castComplete, characterIds: [...new Set((participants || []).filter(at => selected.has(at) && candidates[at]?.id).map(at => candidates[at].id))] } : null;
   const focusId = selected.has(focus) ? candidates[focus].id : '';
-  return { expressions, focusId, performance:validatePerformance(beat.performance,candidates,selected,expressionSource,eventSource), ...('composition' in beat ? { composition: validatedComposition(beat.composition, eventSource) } : {}), ...('music' in beat ? { music: validatedMusic(beat.music, eventSource) } : {}), ...('emphasis' in beat ? { emphasis: validatedEmphasis(beat.emphasis, eventSource) } : {}), ...('cutin' in beat ? { cutin: validatedCutin(beat, focusId, narration) } : {}), ...('artShot' in beat ? { artShot: validatedShot(beat, focusId, narration) } : {}), shot: pick('shot', beat.shot), transition: pick('transition', beat.transition),
+  return { expressions, focusId, stagecraft:validateStagecraft(beat.stagecraft,eventSource,{focusId}), performance:validatePerformance(beat.performance,candidates,selected,expressionSource,eventSource), ...('composition' in beat ? { composition: validatedComposition(beat.composition, eventSource) } : {}), ...('music' in beat ? { music: validatedMusic(beat.music, eventSource) } : {}), ...('emphasis' in beat ? { emphasis: validatedEmphasis(beat.emphasis, eventSource) } : {}), ...('cutin' in beat ? { cutin: validatedCutin(beat, focusId, narration) } : {}), ...('artShot' in beat ? { artShot: validatedShot(beat, focusId, narration) } : {}), shot: pick('shot', beat.shot), transition: pick('transition', beat.transition),
     fx: pick('fx', beat.fx), mood: pick('mood', beat.mood), cg: beat.cg === true && grounded && castComplete, ...('eventEvidence' in beat ? { event } : {}) };
 }
 export function createCastDirector({ getConnection, read, write, onChange = () => {}, onError = () => {}, fetchDecision = fetch }) {

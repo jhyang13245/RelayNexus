@@ -12,7 +12,7 @@ export function rasterTask(payload) {
   if (unavailable || typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined' || typeof createImageBitmap === 'undefined') return Promise.resolve(null);
   try {
     if (!worker) {
-      worker = new Worker(new URL('./vn-raster-worker.mjs?v=e0d140d50b0f', import.meta.url), { type: 'module' });
+      worker = new Worker(new URL('./vn-raster-worker.mjs?v=88af24489d44', import.meta.url), { type: 'module' });
       worker.onmessage = ({ data }) => {
         const task = pending.get(data.id); if (!task) return;
         clearTimeout(task.timer); pending.delete(data.id); task.resolve(data.report || data.url || null);

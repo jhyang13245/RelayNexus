@@ -1,0 +1,141 @@
+{
+ "version": 1,
+ "license": "All files CC0-1.0 (public domain dedication). See CREDITS.md.",
+ "kinds": {
+  "impact": [
+   {
+    "path": "kenney_impact.ogg",
+    "author": "Kenney (Starter Kit Racing, sounds CC0)",
+    "source": "https://github.com/KenneyNL/Starter-Kit-Racing",
+    "license": "CC0-1.0",
+    "sha256": "964c5fcfb91e7710e2af25c2243c8b7160756b223b0984bacc9eb25bfeea057b"
+   },
+   {
+    "path": "dig_choppy_1.ogg",
+    "author": "Sheyvan (via Minetest Game)",
+    "source": "https://freesound.org/people/Sheyvan/sounds/476113/",
+    "license": "CC0-1.0",
+    "sha256": "04fbc08a6a1f1c292975022512c70382ba50361b1484142718042aa5b0110c5d"
+   },
+   {
+    "path": "dig_choppy_2.ogg",
+    "author": "Sheyvan (via Minetest Game)",
+    "source": "https://freesound.org/people/Sheyvan/sounds/476113/",
+    "license": "CC0-1.0",
+    "sha256": "33353ac9bde8eca97960baa250e59c8f482f03999b363a9c4dd2baa6fbc7e202"
+   },
+   {
+    "path": "dig_choppy_3.ogg",
+    "author": "Sheyvan (via Minetest Game)",
+    "source": "https://freesound.org/people/Sheyvan/sounds/476113/",
+    "license": "CC0-1.0",
+    "sha256": "0375363e545b8f6b7a1bde99f9d43987ed4178d53500037d577b541c9b634019"
+   }
+  ],
+  "heavy": [
+   {
+    "path": "tnt_explode.ogg",
+    "author": "steveygos93, edited by TumeniNodes (via Minetest Game)",
+    "source": "https://freesound.org/s/80401/",
+    "license": "CC0-1.0",
+    "sha256": "c0b6e3166be83fcd3717c65dcfd59fa229919ba433a9fcb1289b7a55754b3150",
+    "gain": 0.9
+   }
+  ],
+  "metal": [
+   {
+    "path": "dug_metal_1.ogg",
+    "author": "Iwan Gabovitch / qubodup (via Minetest Game)",
+    "source": "http://opengameart.org/users/qubodup",
+    "license": "CC0-1.0",
+    "sha256": "9aad3353607fb874bb8c187d03717786f011d34bf9dac80bd23f7237ae78d37d"
+   },
+   {
+    "path": "dug_metal_2.ogg",
+    "author": "Iwan Gabovitch / qubodup (via Minetest Game)",
+    "source": "http://opengameart.org/users/qubodup",
+    "license": "CC0-1.0",
+    "sha256": "014b4c58be2673ddb68f355fb4b6cb80964ad14f28720b9c3dc89ce00d856b9f"
+   },
+   {
+    "path": "place_node_metal_1.ogg",
+    "author": "Ogrebane (via Minetest Game)",
+    "source": "http://opengameart.org/content/wood-and-metal-sound-effects-volume-2",
+    "license": "CC0-1.0",
+    "sha256": "a76a4dd2ac5bf8df841a9af3c21fc55623900757556a64c2ff9804a70cd46786"
+   },
+   {
+    "path": "place_node_metal_2.ogg",
+    "author": "Ogrebane (via Minetest Game)",
+    "source": "http://opengameart.org/content/wood-and-metal-sound-effects-volume-2",
+    "license": "CC0-1.0",
+    "sha256": "d4d9026b983bfbe2fb54c6d767777d2ab63fced846d3529212350ced10c9aa9b"
+   }
+  ],
+  "door": [
+   {
+    "path": "doors_fencegate_open.ogg",
+    "author": "mhtaylor67 (via Minetest Game)",
+    "source": "http://www.freesound.org/people/mhtaylor67/sounds/126041/",
+    "license": "CC0-1.0",
+    "sha256": "68334be94edec603b3e7c6f40fb3169d4a25a854452d8b879fd92ccdbd9ac650"
+   },
+   {
+    "path": "doors_glass_door_close.ogg",
+    "author": "SkeetMasterFunk69 (via Minetest Game)",
+    "source": "https://www.freesound.org/people/SkeetMasterFunk69/sounds/235546/",
+    "license": "CC0-1.0",
+    "sha256": "0c32629f52b13d8b4c739b8810ba6c51e02513100228b0bd0cf8aebdab57a739"
+   },
+   {
+    "path": "doors_glass_door_open.ogg",
+    "author": "SkeetMasterFunk69 (via Minetest Game)",
+    "source": "https://www.freesound.org/people/SkeetMasterFunk69/sounds/235546/",
+    "license": "CC0-1.0",
+    "sha256": "5de408bd6f7c6afe5099dc3fe4727c8aff69342b7b008f231a3dbcc990a109c0"
+   }
+  ],
+  "snow": [
+   {
+    "path": "snow_footstep_1.ogg",
+    "author": "Ryding (via Minetest Game)",
+    "source": "http://freesound.org/people/Ryding/sounds/94337/",
+    "license": "CC0-1.0",
+    "sha256": "db0e8d254c09b99a72f6f23951a179bcb0e120f3693c0832d3cdd237fd1ba8b5",
+    "gain": 0.8
+   },
+   {
+    "path": "snow_footstep_2.ogg",
+    "author": "Ryding (via Minetest Game)",
+    "source": "http://freesound.org/people/Ryding/sounds/94337/",
+    "license": "CC0-1.0",
+    "sha256": "e522df1e1108b9ce4d26e48211eac73575d23c386d96f1d2a7c6bdf1052ad086",
+    "gain": 0.8
+   },
+   {
+    "path": "snow_footstep_3.ogg",
+    "author": "Ryding (via Minetest Game)",
+    "source": "http://freesound.org/people/Ryding/sounds/94337/",
+    "license": "CC0-1.0",
+    "sha256": "a5f95310d6a27549a2ec98bbb40f916cdcdbbd7f9836556aeffed3bf498cd206",
+    "gain": 0.8
+   },
+   {
+    "path": "snow_footstep_4.ogg",
+    "author": "Ryding (via Minetest Game)",
+    "source": "http://freesound.org/people/Ryding/sounds/94337/",
+    "license": "CC0-1.0",
+    "sha256": "154585bdd27761b21d4299809860927076934b56220ea852341c18852b3e31ed",
+    "gain": 0.8
+   },
+   {
+    "path": "snow_footstep_5.ogg",
+    "author": "Ryding (via Minetest Game)",
+    "source": "http://freesound.org/people/Ryding/sounds/94337/",
+    "license": "CC0-1.0",
+    "sha256": "6cf2266f57376ae1b82ef98858bc34c2a4637ab6edcd78adba548ed0beda3c30",
+    "gain": 0.8
+   }
+  ]
+ }
+}

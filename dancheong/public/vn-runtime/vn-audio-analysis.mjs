@@ -1,5 +1,5 @@
-import { integratedLoudness, normalizationGain, peakOf } from './vn-loudness.mjs?v=e0d140d50b0f';
-import { analyzeTrack } from './vn-loop.mjs?v=e0d140d50b0f';
+import { integratedLoudness, normalizationGain, peakOf } from './vn-loudness.mjs?v=88af24489d44';
+import { analyzeTrack } from './vn-loop.mjs?v=88af24489d44';
 
 export function analyzeMusicData(channels, sampleRate, bpmHint = 0) {
   const loudness = integratedLoudness(channels, sampleRate);

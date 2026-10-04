@@ -1,4 +1,4 @@
-import { progressLabel } from './vn-event-progress.mjs?v=e0d140d50b0f';
+import { progressLabel } from './vn-event-progress.mjs?v=88af24489d44';
 
 function el(tag, className, text) {
   const node = document.createElement(tag); if (className) node.className = className;

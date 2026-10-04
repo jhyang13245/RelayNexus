@@ -21,7 +21,8 @@ test('compact request retains every public input and all original semantic instr
     assert.ok(request.input.startsWith('{"references":'),'stable public roster leads the cacheable input prefix');
     assert.equal(request.model,model);assert.deepEqual(request.reasoning,old.reasoning);
     assert.equal(request.stream,false);assert.equal(request.max_output_tokens,old.max_output_tokens);
-    assert.ok(request.instructions.startsWith(old.instructions.split('Return ONLY JSON with this shape:')[0]));
+    // The only intended wording change is the added battle music cue.
+    assert.ok(request.instructions.replace('|tense|battle|','|tense|').startsWith(old.instructions.split('Return ONLY JSON with this shape:')[0]));
     assert.doesNotMatch(request.input,/PRIVATE/);
     if(model.startsWith('muse'))assert.equal(request.text,undefined);
     else {

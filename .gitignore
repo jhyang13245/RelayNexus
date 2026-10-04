@@ -1,0 +1,4 @@
+
+# Vision runtime binaries are installed by scripts/install-vn-vision.mjs
+dancheong/public/vn-vision/1.0.1/*.task
+dancheong/public/vn-vision/1.0.1/wasm/

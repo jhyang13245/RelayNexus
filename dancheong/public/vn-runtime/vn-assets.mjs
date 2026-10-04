@@ -1,16 +1,16 @@
-import {poseAssetKey,posePrompt} from '../cortex-vn-performance.mjs?v=e0d140d50b0f';
-import { expressionsAt, portraitKey, stageCast, locationAnchorKey, environmentKey } from './vn-scene.mjs?v=e0d140d50b0f';
-import { matteForReferences, transparentSprite, cleanSpriteEdges, chromaVersion } from './vn-chroma.mjs?v=e0d140d50b0f';
-import { CHARACTER_FINISH, portraitPrompt, workPortrait, STAGE_FRAME_VERSION, STAGE_FRAME_DIRECTION } from './vn-character-art.mjs?v=e0d140d50b0f';
-import { characterHeight, stageReferenceHeight } from './vn-stature.mjs?v=e0d140d50b0f';
-import { checkSpriteFrame } from './vn-sprite.mjs?v=e0d140d50b0f';
-import { outfitKey } from './vn-wardrobe.mjs?v=e0d140d50b0f';
-import { shotAssetKey, shotPrompt } from './vn-shots.mjs?v=e0d140d50b0f';
-import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs?v=e0d140d50b0f';
-import { withMediaTask } from './vn-storage.mjs?v=e0d140d50b0f';
-import { optimizeImageRecord } from './vn-image-codec.mjs?v=e0d140d50b0f';
-import { createImageReuseIndex } from './vn-image-reuse.mjs?v=e0d140d50b0f';
-import { savedCamera } from './vn-camera-store.mjs?v=e0d140d50b0f';
+import {poseAssetKey,posePrompt} from '../cortex-vn-performance.mjs?v=88af24489d44';
+import { expressionsAt, portraitKey, stageCast, locationAnchorKey, environmentKey } from './vn-scene.mjs?v=88af24489d44';
+import { matteForReferences, transparentSprite, cleanSpriteEdges, chromaVersion } from './vn-chroma.mjs?v=88af24489d44';
+import { CHARACTER_FINISH, portraitPrompt, workPortrait, STAGE_FRAME_VERSION, STAGE_FRAME_DIRECTION } from './vn-character-art.mjs?v=88af24489d44';
+import { characterHeight, stageReferenceHeight } from './vn-stature.mjs?v=88af24489d44';
+import { checkSpriteFrame } from './vn-sprite.mjs?v=88af24489d44';
+import { outfitKey } from './vn-wardrobe.mjs?v=88af24489d44';
+import { shotAssetKey, shotPrompt } from './vn-shots.mjs?v=88af24489d44';
+import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs?v=88af24489d44';
+import { withMediaTask } from './vn-storage.mjs?v=88af24489d44';
+import { optimizeImageRecord } from './vn-image-codec.mjs?v=88af24489d44';
+import { createImageReuseIndex } from './vn-image-reuse.mjs?v=88af24489d44';
+import { savedCamera } from './vn-camera-store.mjs?v=88af24489d44';
 
 // One art direction for every generated asset, so backgrounds, sprites,
 // expressions and event CG read as the same work. A per-work note refines it.
@@ -152,8 +152,8 @@ export async function replaceAssetEncoding(original, optimized) {
   } finally { db.close(); }
 }
 
-import { createPriorityPool } from './vn-priority.mjs?v=e0d140d50b0f';
-import { diagnostics } from './vn-diagnostics.mjs?v=e0d140d50b0f';
+import { createPriorityPool } from './vn-priority.mjs?v=88af24489d44';
+import { diagnostics } from './vn-diagnostics.mjs?v=88af24489d44';
 // Jobs are keyed by reusable assets, not turns. Failed jobs require explicit retry.
 export function createStageAssets({ getKey, getQuality, getReferences, getQualityReference = async () => '', getLockedPortraitKey = () => '', getPortraitReplacement = () => '', getProvider = () => 'openai', getStyle = () => '', getCgEnabled = () => false, getShotsEnabled = () => false, getMotionEnabled = () => false, castDirector, onChange, onSpriteReady = () => {}, onError, fetchImage = fetch, read = readAsset, write = writeAsset, listKeys = readImageKeys, chooseMatte = matteForReferences, removeMatte = transparentSprite, maxConcurrent = Infinity, cleanEdges = cleanSpriteEdges, prepareMaskedEdit = prepareMotionEdit, finishMaskedEdit = finishMotionEdit, reviewFrame = checkSpriteFrame }) {
   const cache = new Map(), loads = new Map(), jobs = new Map(), failures = new Map();

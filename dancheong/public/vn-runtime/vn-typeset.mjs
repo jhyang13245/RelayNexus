@@ -9,7 +9,7 @@ const RUBY = new RegExp(`(${HANJA}{1,12})\\s*[（(]([가-힣][가-힣\\s]{0,23})
 const EMPHASIS = /\*\*([^*\n]{1,60})\*\*|\*([^*\n]{1,60})\*/gu;
 
 // → { visible, segments: [{ text } | { text, ruby } | { text, dots: true }] }
-export function typeset(input, dramatic = '') {
+export function typeset(input, dramatic = '', effects = []) {
   const source = String(input ?? ''), segments = [];
   const marks = [];
   for (const match of source.matchAll(RUBY)) marks.push({ at: match.index, end: match.index + match[0].length, text: match[1] || match[3], ruby: (match[2] || match[4]).trim() });
@@ -19,12 +19,16 @@ export function typeset(input, dramatic = '') {
   }
   const dramaticAt=dramatic&&source.indexOf(dramatic);
   if(dramatic&&dramatic.length>=6&&dramatic.length<=110&&dramaticAt>=0&&!marks.some(mark=>dramaticAt<mark.end&&dramaticAt+dramatic.length>mark.at))marks.push({at:dramaticAt,end:dramaticAt+dramatic.length,text:dramatic,dramatic:true});
+  for(const effect of Array.isArray(effects)?effects:[]){
+    const value=String(effect?.text||'');if(!value)continue;
+    for(let at=source.indexOf(value);at>=0;at=source.indexOf(value,at+1)){const end=at+value.length;if(!marks.some(mark=>at<mark.end&&end>mark.at)){marks.push({at,end,text:value,fx:effect.style});break;}}
+  }
   marks.sort((a, b) => a.at - b.at);
   let cursor = 0;
   for (const mark of marks) {
     if (mark.at < cursor) continue;
     if (mark.at > cursor) segments.push({ text: source.slice(cursor, mark.at) });
-    segments.push(mark.dramatic ? {text:mark.text,dramatic:true} : mark.dots ? { text: mark.text, dots: true } : { text: mark.text, ruby: mark.ruby });
+    segments.push(mark.fx ? {text:mark.text,fx:mark.fx} : mark.dramatic ? {text:mark.text,dramatic:true} : mark.dots ? { text: mark.text, dots: true } : { text: mark.text, ruby: mark.ruby });
     cursor = mark.end;
   }
   if (cursor < source.length) segments.push({ text: source.slice(cursor) });
@@ -41,7 +45,9 @@ export function renderTypeset(element, { segments }, count = Infinity, doc = ele
     if (left <= 0) break;
     const glyphs = Array.from(row.text), shown = glyphs.slice(0, left).join('');
     left -= glyphs.length;
-    if(row.dramatic){const line=doc.createElement('span');line.className='vn-dramatic-line';line.textContent=shown;nodes.push(line);}
+    if(row.fx){const span=doc.createElement('span');span.className='vn-fx vn-fx-'+String(row.fx).replace(/[^a-z]/gu,'');
+      if(row.fx==='tremble')Array.from(shown).forEach((glyph,index)=>{const part=doc.createElement('span');part.style.setProperty('--g',String(index));part.textContent=glyph;span.append(part);});else span.textContent=shown;nodes.push(span);}
+    else if(row.dramatic){const line=doc.createElement('span');line.className='vn-dramatic-line';line.textContent=shown;nodes.push(line);}
     else if (row.ruby) {
       const ruby = doc.createElement('ruby'); ruby.append(shown);
       // The reading appears once its base is complete.

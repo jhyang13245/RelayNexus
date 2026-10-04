@@ -74,11 +74,11 @@ export function createTextRevealer({ write, onComplete, isPaused = () => false, 
     state.timer = 0;
     if (isPaused()) { state.timer = schedule(step, 160); return; }
     if (state.length < state.glyphs.length) { state.length++; paint(); }
-    if (state.length < state.glyphs.length) state.timer = schedule(step, glyphDelay(state.glyphs[state.length - 1], state.speed));
+    if (state.length < state.glyphs.length) state.timer = schedule(step, glyphDelay(state.glyphs[state.length - 1], state.speed) * (state.pace?.(state.length) || 1));
     else onComplete();
   }
   return Object.assign(state, {
-    update({ key, text, speed = 'natural', immediate = false }) {
+    update({ key, text, speed = 'natural', immediate = false, pace = null }) {
       const changedPage = key !== state.key, next = Array.from(text);
       if (changedPage) { stop(); state.length = 0; }
       else {
@@ -86,11 +86,11 @@ export function createTextRevealer({ write, onComplete, isPaused = () => false, 
         while (common < state.length && next[common] === state.glyphs[common]) common++;
         state.length = common;
       }
-      state.key = key; state.text = text; state.glyphs = next; state.speed = speed;
+      state.key = key; state.text = text; state.glyphs = next; state.speed = speed; state.pace = typeof pace === 'function' ? pace : null;
       if (immediate || speed === 'instant') { stop(); state.length = next.length; paint(); onComplete(); return; }
       paint();
       if (state.length >= next.length) { stop(); onComplete(); }
-      else if (!state.timer) state.timer = schedule(step, changedPage ? 0 : glyphDelay(state.glyphs[state.length - 1] || '', speed));
+      else if (!state.timer) state.timer = schedule(step, changedPage ? 0 : glyphDelay(state.glyphs[state.length - 1] || '', speed) * (state.pace?.(state.length) || 1));
     },
     finish() {
       if (state.length >= state.glyphs.length) return false;

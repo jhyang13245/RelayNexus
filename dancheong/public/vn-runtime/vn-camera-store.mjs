@@ -1,6 +1,6 @@
 // Geometry is keyed by the exact source bytes, never by a person's name.
 // A changed expression gets its own measurement; aligned animation uses the base.
-import { createByteLru } from './vn-byte-lru.mjs?v=e0d140d50b0f';
+import { createByteLru } from './vn-byte-lru.mjs?v=88af24489d44';
 export const CAMERA_VERSION = "stage-camera-main-body-b9cc189e8530";
 const memory = createByteLru({ maxBytes: 8 * 1024 * 1024, maxEntries: 48 });
 const ids = createByteLru({ maxBytes: 8 * 1024 * 1024, maxEntries: 24 });

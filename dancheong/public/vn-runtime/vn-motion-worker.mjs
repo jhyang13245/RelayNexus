@@ -1,8 +1,8 @@
 import { FaceLandmarker, PoseLandmarker, FilesetResolver } from '/vn-vision/1.0.1/vision_bundle.mjs';
 import ModuleFactory from '/vn-vision/1.0.1/wasm/vision_wasm_module_internal.js';
-import { motionGeometry } from './vn-motion-geometry.mjs?v=e0d140d50b0f';
-import { measureStageBody } from '../cortex-vn-camera.mjs?v=e0d140d50b0f';
-import { drawingRegistration, registeredStageCamera } from '../cortex-vn-registration.mjs?v=e0d140d50b0f';
+import { motionGeometry } from './vn-motion-geometry.mjs?v=88af24489d44';
+import { measureStageBody } from '../cortex-vn-camera.mjs?v=88af24489d44';
+import { drawingRegistration, registeredStageCamera } from '../cortex-vn-registration.mjs?v=88af24489d44';
 let detectors, queue = Promise.resolve();
 const drawings=[]; // At most 12 thumbnails, about 3 MiB; no full image history.
 async function models() {

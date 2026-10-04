@@ -1,4 +1,4 @@
-import { readableTurnPages } from './vn-core.mjs?v=e0d140d50b0f';
+import { readableTurnPages } from './vn-core.mjs?v=88af24489d44';
 
 // A closed, published paragraph is the smallest stable directing unit. Never
 // inspect raw writer drafts; a later paragraph cannot change an earlier beat.

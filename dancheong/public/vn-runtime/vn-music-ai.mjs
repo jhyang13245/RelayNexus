@@ -24,6 +24,7 @@ export const MOODS = {
   warm: { bpm: 76, text: 'warm, tender and hopeful; heartfelt melody, soft dynamics', major: true },
   sad: { bpm: 66, text: 'melancholic, bittersweet and lonely; sparse arrangement, expressive solo melody' },
   tense: { bpm: 138, text: 'tense confrontation or battle; driving ostinato, strong percussion, urgent strings, dark and heroic' },
+  battle: { bpm: 152, text: 'full-scale battle; fast driving percussion ostinato, aggressive low strings and brass stabs, heroic and violent, relentless forward momentum' },
   eerie: { bpm: 60, text: 'ominous horror atmosphere; unsettling textures, low drones, sparse dissonant tones, no resolution' },
   memory: { bpm: 72, text: 'nostalgic recollection; dreamy, reverberant, music-box-like tones, soft and distant', major: true },
 };

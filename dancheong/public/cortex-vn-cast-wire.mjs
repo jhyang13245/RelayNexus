@@ -7,7 +7,7 @@ const defaults = {
   composition:{mode:'stage',evidence:''}, emphasis:{kind:'none',text:''}, transition:'none',
   fx:'none', mood:'normal', music:{cue:'keep',evidence:''}, cg:false, eventEvidence:'',
   eventFocus:'', eventParticipants:[], eventCastComplete:false,
-  performance:null,
+  performance:null, stagecraft:null,
 };
 const cueFields = new Set(['focus',...Object.keys(defaults)]);
 const integer = {type:'integer',minimum:0};
