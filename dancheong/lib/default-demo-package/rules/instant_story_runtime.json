@@ -1,0 +1,245 @@
+{
+  "format": "RELAY_NOVEL_INSTANT_STORY_RUNTIME_V2",
+  "schemaVersion": "2.0",
+  "compilerVersion": "studio-1.8.0",
+  "sourcePackageSha256": "59891d0ba12201c1750792a350598132d5d2217967245ee82c5a2b3ce2e0c87b",
+  "sourceHashMethod": "sha256(stable-json(runtime-source-without-derived-cache))",
+  "generatedAt": "2026-08-23T12:24:21.205Z",
+  "featureId": "instant_story_runtime_v2",
+  "runtimeMode": "instant_story",
+  "exclusiveRuntime": true,
+  "incompatibleRuntimeFeatures": [
+    "narrative_runtime_extension_v1",
+    "required_event_contracts",
+    "npc_autonomy",
+    "route_graph",
+    "loop_policy"
+  ],
+  "enabled": true,
+  "profile": "instant_story",
+  "promptPreset": "simulation",
+  "corePrompt": "플레이어 입력에서 실행 가능한 행동·대사·이동을 첫 인과로 삼아 즉시 장면화한다. 사용자가 쓰지 않은 윤지훈의 행동·대사·감정·결론은 만들지 않는다. 시작은 신입생 종합검사와 공식 능력 판정이다. 검사 결과 윤지훈의 능력 분류는 정사대로 원소조작으로 확정하되, 물·불·바람·땅 중 주변에 실제 존재하는 한 원소만 제한적으로 다루며 원소 전환에는 짧은 집중 시간이 필요하다는 한계를 장면 속 실험과 설명으로 보여 준다. 추가 능력 잠재력은 재검 표시·짧은 미분류 파형 같은 이상 징후로만 남기고 확정하지 않는다. 이후에는 미리 정해진 사건 순서나 비트 완료 조건으로 사용자를 유도하지 않는다. 매 턴 현재 위치·시간·최근 선택·활성 인물·학교 일정에서 가장 자연스러운 다음 장면을 만든다. 초반 체감은 학교생활·능력성장 약 70, 미스터리 약 30으로 유지한다. 긴장도가 낮은 흐름이 2~3턴 이어지면 현재 맥락에서 파생되는 작은 훅 하나를 제시할 수 있다: 수업/실기 문제, 친구·라이벌 관계, 교사 요청, 기숙사·식당·동아리 일, 소문·기록 불일치, 작은 안전사고, 능력 오작동, 설명되지 않는 시설 반응. 한 번에 새 주요 훅은 하나만 만들고, 이미 열린 중요한 미해결 훅은 최대 3개 정도만 유지한다. 사건은 랜덤으로 떨어뜨리지 말고 이전 행동의 결과 또는 현재 장소·일정·NPC 목표에서 인과적으로 발생시킨다. 플레이어가 훅을 무시하면 강제로 되돌리지 않고 NPC 행동·소문·기록·환경 변화 같은 후속 흔적만 남길 수 있다. 높은 긴장 뒤에는 일상·관계·회복 장면을 허용해 계속 위기만 터지지 않게 한다. 단역 교사·의료기사·학생은 필요한 역할 범위에서 자연스럽게 만들 수 있으나 새 흑막·비밀조직·만능 해결사는 임의 생성하지 않는다. 한 턴은 현재 감각적 변화→관련 NPC의 성격과 현재 지식에 따른 반응→입력으로 생긴 직접 결과→다음 선택 지점 순으로 진행한다. 설명문보다 행동·사물·대사를 우선하고 현대 한국 학교의 시간·거리·행정·비용을 지킨다. 큰 미스터리는 관측 가능한 흔적→복수 가설→검증 순으로 진행하며 한 턴에 정답을 밝히지 않는다. 매 턴 입력과 관련된 키워드 노트를 최대 3개만 활성화한다. 추천 행동 세 개는 현재 플레이어가 아는 정보만 사용하고 서로 다른 목적과 위험을 가지며, 미래 사건·숨은 정답·성공을 보장하지 않는다.",
+  "exampleScenes": [
+    {
+      "id": "EXAMPLE_ADMISSION_SCAN",
+      "userInput": "학생증을 검사대에 올려놓고 안내에 따라 검사를 시작한다.",
+      "narration": "학생증이 유리판에 닿자 이름과 검사번호만 떠올랐다. 담당 의료기사는 먼저 혈압과 심박을 확인하고, 손목에 얇은 센서를 채웠다.\n\n“능력부터 보는 게 아니에요?”\n\n옆 부스에서 누군가 묻자 검사자는 고개도 들지 않고 답했다. “몸이 못 버티면 능력도 못 씁니다.”\n\n윤지훈 차례의 기 측정 링이 닫혔다. 숫자는 빠르게 올라가다가 7,180에서 멈췄다. 입학 기준선 5,000이 화면 아래 작은 글씨로 지나갔다. 이어서 차단부스 안쪽의 네 개 샘플 표시등이 순서대로 켜졌다. 물. 열원. 송풍구. 토질 샘플.\n\n첫 반응은 하나만 고르는 시험처럼 보였다. 그런데 물의 표면이 먼저 떨린 뒤, 출력이 끊긴 상태에서 다른 세 샘플에도 약한 반응이 차례로 잡혔다. 검사자가 손가락을 멈췄다.\n\n“복수 반응이네요. 다음은 어느 계통을 강하게 만드는 시험이 아니라, 전환이 되는지 확인할 겁니다.”\n\n아직 능력명은 뜨지 않았다.",
+      "recommendations": [
+        "물을 가장 약한 출력으로 움직여 본다. [정밀도 확인]",
+        "검사자에게 복수 반응이 흔한지 묻는다. [정보 확인]",
+        "다른 샘플은 건드리지 않고 검사 장비의 표시부터 살핀다. [관찰 우선]"
+      ]
+    },
+    {
+      "id": "EXAMPLE_ABILITY_ASSIGNMENT",
+      "userInput": "물에서 바람으로 바꾸라는 지시에 따라 천천히 전환을 시도한다.",
+      "narration": "물방울이 받침대로 떨어진 뒤에도 바로 바람은 움직이지 않았다.\n\n센서 그래프가 한 번 바닥까지 내려갔다. 짧은 공백. 그다음 송풍구 앞의 얇은 리본이 옆으로 밀렸다.\n\n검사자가 타이머를 멈췄다. “전환 지연 확인. 동시에 쓰는 건 아니고, 계통을 갈아타는 방식이네요.”\n\n결과창에 분류명이 올라왔다.\n\n`공식 능력 분류 : 원소조작`\n`운용 범위 : 주변 환경에 존재하는 물·불·바람·땅 중 단일 계통`\n`주의 : 연속 전환 시 집중력 저하`\n\n그 아래에 아주 짧게 노란 줄 하나가 생겼다가 사라졌다. `미분류 신호 0.17 sec · 자동 재검 대기`. 검사자는 결과지를 출력하기 전에 화면을 한 번 더 확인했지만, 그것을 새로운 능력이라고 부르지는 않았다.\n\n“공식 결과는 원소조작입니다. 저 짧은 건 장비 쪽인지 전환 특성인지 나중에 한 번 더 보면 되고요.”",
+      "recommendations": [
+        "재검 표시가 왜 떴는지 바로 묻는다. [이상 신호 확인]",
+        "공식 운용 제한과 첫 훈련 방법부터 확인한다. [성장 우선]",
+        "결과지를 받아들고 주변 다른 신입생들의 분위기를 살핀다. [학교생활 관찰]"
+      ]
+    },
+    {
+      "id": "EXAMPLE_DYNAMIC_HOOK",
+      "userInput": "검사가 끝났으니 배정된 교실로 가면서 학교를 둘러본다.",
+      "narration": "검사센터 밖은 조금 전의 흰색 부스보다 훨씬 평범했다. 새 교복 냄새, 반 배정표를 찍는 학생들, 길을 잘못 들어 다시 뛰어가는 신입생. 운동장 건너 실기동에서는 누군가의 바람 계통 훈련 때문에 안전망이 크게 부풀었다가 가라앉았다.\n\n윤지훈의 단말기에는 `1학년 3반 · 09:50 오리엔테이션`이 떴다. 교실까지는 걸어서 7분.\n\n계단을 내려가려는 순간, 바로 앞의 게시판에서 전자 배정표가 한 번 깜박였다. 다른 이름들은 그대로였는데 윤지훈의 능력 분류 칸만 `원소조작`에서 빈칸으로 바뀌었다가 1초 뒤 돌아왔다. 옆에서 종이를 들고 있던 붉은 머리 신입생도 화면을 본 듯 고개를 갸웃했다.\n\n“방금 네 칸만 이상하지 않았어?”\n\n복도는 그대로 바빴고, 누구도 비상사태처럼 움직이지 않았다. 오리엔테이션 시간도 계속 줄고 있었다.",
+      "recommendations": [
+        "붉은 머리 신입생에게 자기도 봤다고 답하고 이름을 묻는다. [관계 시작]",
+        "배정표 오류를 학생지원실에 바로 문의한다. [공식 확인]",
+        "지금은 수업에 늦지 않게 이동하고 화면 오류만 기억해 둔다. [일상 우선]"
+      ]
+    }
+  ],
+  "startProfiles": [
+    {
+      "id": "START_GISEONG_ADMISSION_EXAM",
+      "name": "입학 첫날 · 신입생 종합검사",
+      "prologue": "입학 첫날 오전 8시 35분.\n\n기성학원 신입생 종합검사센터의 전광판에 윤지훈의 번호가 켜졌다.\n\n`신입생 종합검사 · 능력판정 4번실`\n\n복도에는 새 교복을 입은 학생들이 검사표를 들고 줄을 서 있었다. 한쪽에서는 키와 체성분을 재고 있었고, 유리 너머 차단부스에서는 누군가가 손바닥만 한 물덩이를 공중에 붙잡으려 애쓰고 있었다. 성공하자 친구들이 작게 탄성을 질렀고, 담당 교사는 곧바로 “출력 낮춰”라고 말했다.\n\n윤지훈의 입학 자격은 이미 정해져 있었다. 기 수치가 기준을 넘긴다는 사실도 알고 있었다. 하지만 오늘은 조금 달랐다. 이 검사 결과가 앞으로 학교에서 어떤 능력자로 분류되고, 어떤 실기반에 들어갈지 결정한다.\n\n4번실 문이 열렸다. 안에는 투명 차단부스와 기 측정 링, 그리고 물이 든 비커·가열판·송풍구·토질 샘플이 각각 떨어져 놓여 있었다. 검사 담당 교사가 태블릿을 확인한 뒤 빈 검사대를 가리켰다.\n\n“윤지훈 학생. 학생증 여기 올려놓고, 기초 검사부터 시작할게요.”\n\n아직 공식 능력명은 정해지지 않았다.",
+      "startSituation": "2026-03-02 08:35, 기성학원 신입생 종합검사센터 능력판정 4번실. 윤지훈은 막 입학 등록을 마쳤고 공식 능력 판정을 받기 직전이다. 담당 교직원은 검사 절차를 안내하지만 윤지훈의 말·행동·감정은 플레이어가 정한다.",
+      "recommendedReplies": [
+        "학생증을 올려놓고 안내에 따라 검사를 시작한다.",
+        "검사 전에 어떤 순서로 진행되는지 물어본다.",
+        "차단부스와 네 종류의 샘플을 먼저 살펴본다."
+      ]
+    }
+  ],
+  "statRules": [
+    {
+      "id": "FAST_HP",
+      "label": "체력",
+      "minimum": 0,
+      "maximum": 100,
+      "initial": 92,
+      "unit": "점",
+      "increaseWhen": "충분한 수면·식사·양호실 치료가 실제로 이루어질 때",
+      "decreaseWhen": "부상, 장시간 달리기, 기갑 충격, 능력 과부하가 실제로 발생할 때",
+      "tiers": [
+        {
+          "id": "HP_LOW",
+          "minimum": 0,
+          "maximum": 29,
+          "prompt": "움직임이 뚜렷하게 제한되고 즉시 휴식·치료가 필요하다."
+        },
+        {
+          "id": "HP_MID",
+          "minimum": 30,
+          "maximum": 69,
+          "prompt": "피로 또는 부상이 행동에 영향을 주지만 제한적 활동은 가능하다."
+        },
+        {
+          "id": "HP_HIGH",
+          "minimum": 70,
+          "maximum": 100,
+          "prompt": "일상 행동에 큰 제약이 없다."
+        }
+      ]
+    },
+    {
+      "id": "FAST_FOCUS",
+      "label": "집중력",
+      "minimum": 0,
+      "maximum": 100,
+      "initial": 74,
+      "unit": "점",
+      "increaseWhen": "휴식, 호흡 조절, 안전한 환경에서 원소 전환 준비가 이루어질 때",
+      "decreaseWhen": "원소 전환, 정밀 제어, 공명음 노출, 복수 자극 속 능력 사용 때",
+      "tiers": [
+        {
+          "id": "FOCUS_LOW",
+          "minimum": 0,
+          "maximum": 24,
+          "prompt": "정밀 제어와 원소 전환이 어렵고 실수 위험이 높다."
+        },
+        {
+          "id": "FOCUS_MID",
+          "minimum": 25,
+          "maximum": 69,
+          "prompt": "한 가지 원소 제어는 가능하지만 연속 전환에는 부담이 있다."
+        },
+        {
+          "id": "FOCUS_HIGH",
+          "minimum": 70,
+          "maximum": 100,
+          "prompt": "안정적인 제어와 한 번의 신중한 전환이 가능하다."
+        }
+      ]
+    },
+    {
+      "id": "FAST_KI",
+      "label": "기력",
+      "minimum": 0,
+      "maximum": 100,
+      "initial": 100,
+      "unit": "점",
+      "increaseWhen": "능력 사용을 멈추고 충분히 회복하거나 지정된 회복 조치를 받을 때",
+      "decreaseWhen": "원소를 움직이거나 감지 범위를 넓히고 공명에 저항할 때",
+      "tiers": [
+        {
+          "id": "KI_LOW",
+          "minimum": 0,
+          "maximum": 24,
+          "prompt": "능력 발현이 불안정하며 추가 사용은 과부하 위험이 크다."
+        },
+        {
+          "id": "KI_MID",
+          "minimum": 25,
+          "maximum": 69,
+          "prompt": "제한적인 능력 사용이 가능하나 큰 출력은 위험하다."
+        },
+        {
+          "id": "KI_HIGH",
+          "minimum": 70,
+          "maximum": 100,
+          "prompt": "현재 한계 안의 일반적인 능력 사용이 가능하다."
+        }
+      ]
+    },
+    {
+      "id": "FAST_CONTROL",
+      "label": "능력 안정도",
+      "minimum": 0,
+      "maximum": 100,
+      "initial": 0,
+      "unit": "점",
+      "increaseWhen": "공식 능력 판정, 안전한 실기 훈련, 원소 전환 성공처럼 실제 제어 경험이 쌓일 때",
+      "decreaseWhen": "무리한 출력, 연속 전환, 과부하로 실제 제어가 흔들릴 때",
+      "tiers": [
+        {
+          "id": "CONTROL_UNASSESSED",
+          "minimum": 0,
+          "maximum": 19,
+          "prompt": "입학 검사 전후의 미숙한 단계. 능력의 공식 운용 한계와 전환 특성을 배우는 중이다."
+        },
+        {
+          "id": "CONTROL_BASIC",
+          "minimum": 20,
+          "maximum": 59,
+          "prompt": "한 계통의 기초 제어가 가능하지만 원소 전환과 고출력은 신중해야 한다."
+        },
+        {
+          "id": "CONTROL_STABLE",
+          "minimum": 60,
+          "maximum": 100,
+          "prompt": "훈련 범위 안에서 안정적인 제어와 계획된 전환이 가능하다."
+        }
+      ]
+    }
+  ],
+  "contextBudget": {
+    "maxDynamicPromptChars": 10000,
+    "recentTurns": 4,
+    "activeCharacters": 5,
+    "semanticMemories": 10,
+    "activeKeywordNotes": 3,
+    "relevantMedia": 6
+  },
+  "generation": {
+    "ordinaryTurnMaxOutputTokens": 2200,
+    "singleCallPreferred": true,
+    "reasoningEffort": "none",
+    "streamingRequiredForFastPath": true
+  },
+  "deepPathTriggers": [
+    "identity_reveal",
+    "ending"
+  ],
+  "turnPolicy": {
+    "inputFirst": "player_input_becomes_immediate_scene_cause",
+    "continuation": "activate_bounded_keyword_notes_and_continue_freely",
+    "directPlayerActionFirst": true,
+    "immediateDiscardReasons": [
+      "undisclosed_information_leak",
+      "structured_output_corruption"
+    ]
+  },
+  "endingPolicy": {
+    "minimumTurn": 20,
+    "checkInterval": 5
+  },
+  "streamContract": {
+    "endpoint": "/api/simulate/stream",
+    "publicEvents": [
+      "turn_ack",
+      "narration_commit",
+      "turn_sidecar",
+      "turn_abort",
+      "done",
+      "error"
+    ],
+    "upstreamDeltaVisibility": "server_internal_only",
+    "sentenceSafetyGate": true,
+    "usePreRevealAlias": true,
+    "turnAbortRemovesProvisionalNarration": true,
+    "doneSemantics": "validated_and_memory_applied",
+    "durableCommit": "existing_debounced_session_save",
+    "futureAtomicCommitExtension": true
+  },
+  "researchPolicy": {
+    "cacheFirst": true,
+    "missBehavior": "stream_with_package_canon_and_research_in_background",
+    "applyFreshResult": "next_turn",
+    "failureBehavior": "continue_with_package_canon"
+  },
+  "fallback": "reject_if_unsupported"
+}

@@ -1,0 +1,177 @@
+/* Jieum: an open hanji manuscript, jade index tabs and blue editorial notes. */
+.jieum-editor .jieum-basics{max-width:860px;margin:0 auto}
+.jieum-editor .workspace-scroll .soft-button{display:inline-flex}
+.jieum-editor .jieum-basics h1{word-break:keep-all;overflow-wrap:break-word}
+.jieum-editor .jieum-basics .panel-body{display:grid;gap:20px}
+.jieum-editor .jieum-basics textarea{min-height:180px;font-size:16px;line-height:1.85;resize:vertical}
+.jieum-editor .jieum-basics :is(input,select){font-size:16px;min-height:44px}
+.jieum-editor .jieum-basics p{font-size:14px;line-height:1.8;color:inherit;opacity:.82}
+.jieum-editor .jieum-extra{padding:16px 0;border-top:1px solid #81958a55}
+.jieum-editor .jieum-extra summary{cursor:pointer;font-size:14px;line-height:1.6;padding:8px 0;min-height:44px}
+.jieum-editor .jieum-extra[open]>.field-label,.jieum-editor .jieum-extra[open]>.text-area-label{margin-top:16px}
+.jieum-editor .jieum-writing-mode{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:860px;margin:0 auto 16px;font-size:14px}
+.jieum-editor .jieum-writing-mode button{min-height:44px;white-space:nowrap}
+@media(max-width:600px){.jieum-editor .jieum-basics .field-row{grid-template-columns:1fr}.jieum-editor .jieum-writing-mode{align-items:flex-start;flex-wrap:wrap}}
+.jieum-route{min-height:100dvh;background:#f2f0e8;color:#203d37}
+.jieum-route>.library-home{min-height:0;background:transparent}
+.jieum-route .library-nav{position:relative}
+.jieum-editor .studio-nav b{word-break:keep-all;overflow-wrap:normal}
+.jieum-editor .jieum-import-help{font-size:12px;line-height:1.7;color:#597060;margin:0 0 20px;padding-left:12px;border-left:2px solid #a9c9ae}
+.jieum-editor .page-frame{margin:0;padding:12px 0 0;max-width:none;width:100%}
+.jieum-editor .hero-actions .primary-button{background:#d7e8b5;color:#214d3b;border:1px solid #d7e8b5}.jieum-editor .hero-actions .ghost-button{font-size:13px;color:#e5eee0;border-color:#b4cbb255}
+.jieum-editor .studio-workspace{min-width:0}.jieum-editor .workspace-scroll{width:100%}
+.jieum-editor .hero-card{background:linear-gradient(115deg,#214d3b,#26565b 80%,#305970);border:1px solid #285b49;border-radius:7px;box-shadow:none}
+.jieum-editor .hero-card::after{background:url('/dancheong-jade-pattern.svg') right center/280px no-repeat;opacity:.12}
+.jieum-editor .hero-kicker{color:#c8dcae;font-size:12px}.jieum-editor .hero-copy h2{font-family:inherit;font-weight:500;color:#f6f5e5;font-size:clamp(28px,3vw,38px);line-height:1.5}.jieum-editor .hero-copy h2 em{color:#c2dcae;font-style:normal}.jieum-editor .hero-copy p{color:#d9e5d9;font-size:14px;line-height:1.8}.jieum-editor .hero-actions .light{background:#d7e8b5;color:#214d3b;border-color:#d7e8b5;box-shadow:none}.jieum-editor .hero-actions .ghost{color:#e5eee0;border-color:#b4cbb255;font-size:13px}
+.jieum-editor .hero-orbit{background:url('/dancheong-jade-pattern.svg') center/contain no-repeat;opacity:.85}.jieum-editor .orbit{display:none}.jieum-editor .progress-core{border:1px solid #c0d6b4;background:#173f3dd9;border-radius:50%;color:#e4eed5}.jieum-editor .orbit-label{color:#d5e6cb}
+.jieum-editor .metric-card{border:1px solid #c5d4c3;border-radius:6px;background:#f7f9f0;box-shadow:none}.jieum-editor .metric-card span{font-size:13px;color:#43664e}.jieum-editor .metric-card strong{color:#35604b}.jieum-editor .metric-card::before{background:#92bda3}
+.jieum-editor .runtime-choice>span{color:#537e68;font-size:12px}.jieum-editor .runtime-choice.instant{background:#edf4f5;border-color:#b7ced3}.jieum-editor .runtime-choice.instant.active{background:#dfedf0;border-color:#66959f;box-shadow:inset 3px 0 #66959f}
+.jieum-editor .brand-lockup{position:relative;background-image:none!important;isolation:isolate}.jieum-editor .brand-lockup::after{content:'';position:absolute;inset:0;z-index:-1;background:url('/dancheong-jade-pattern.svg') right center/160px auto no-repeat;opacity:.14}
+.jieum-editor .workspace-scroll :is(.toggle-row b,.issue b,.step-list b){font-size:14px}.jieum-editor .workspace-scroll :is(.toggle-row small,.issue span,.panel>header p){font-size:13px;line-height:1.7}.jieum-editor .studio-sidebar :is(.studio-nav small,.sidebar-foot b,.sidebar-foot span){font-size:12px}
+.jieum-editor dialog:not([open]){display:none}
+.jieum-editor dialog::backdrop{background:#10282099;backdrop-filter:blur(3px)}
+.jieum-editor .jieum-incoming,.jieum-editor .jieum-import-dialog{position:fixed;inset:0;margin:auto;max-height:85dvh;width:min(640px,calc(100vw - 32px))}
+.jieum-editor .jieum-import-dialog{color:#234637;background:#faf9f1;border:1px solid #b5c9ad}
+.jieum-editor .jieum-pending{padding:12px 24px;background:#e6efd9;font-size:14px}.jieum-editor .jieum-pending button{margin-left:16px;text-decoration:underline;min-height:44px}
+.jieum-editor{--ink:#203d37;--muted:#526b63;--paper:#f5f3eb;--panel:#fffef9;--line:#cdd5c9;--navy:#163e34;--navy-2:#245749;--copper:#326b59;--success:#326b59;--font-geist-sans:'MaruBuri',serif;--font-geist-mono:'IBM Plex Mono',monospace;font-family:'MaruBuri',serif;font-size:16px;line-height:1.65;color:var(--ink);background:var(--paper);isolation:isolate}
+.jieum-editor .studio-shell{grid-template-columns:252px minmax(0,1fr);min-height:calc(100dvh - 74px);background:var(--paper)}
+.jieum-editor .studio-shell.sidebar-is-closed{grid-template-columns:0 minmax(0,1fr)}
+.jieum-editor .studio-sidebar{height:calc(100dvh - 16px);top:0;background:linear-gradient(155deg,#163e34,#193e40);border-right:1px solid #9db7a4;box-shadow:none}
+.jieum-editor .brand-lockup{height:92px;flex-basis:92px;padding:18px 22px;border-bottom:1px solid #708b744d;background:url('/dancheong-jade-pattern.svg') right center/190px auto no-repeat}
+.jieum-editor .brand-lockup strong{font-family:inherit;font-size:25px;letter-spacing:.08em;color:#eff3dd}
+.jieum-editor .brand-lockup span{font-size:10px;color:#bdd0ba;letter-spacing:.12em}
+.jieum-editor .brand-mark{transform:none;border:0;border-radius:0;background:url('/jieum/hanji-book.svg') center/contain no-repeat;width:34px;height:44px}
+.jieum-editor .brand-mark svg{display:none}
+.jieum-editor .project-mini{margin:16px 14px;border:1px solid #99b49942;border-radius:5px;background:#dbe8cc0a;padding:16px}
+.jieum-editor .project-mini p{font-size:16px;color:#f1f1de;line-height:1.5}
+.jieum-editor .project-mini-top,.jieum-editor .project-mini small{font-size:12px;color:#bed0c3}
+.jieum-editor .project-mini-top b{color:#c9dca3}
+.jieum-editor .progress-track i{background:linear-gradient(90deg,#a5c586,#83bcc7)}
+.jieum-editor .studio-nav{padding:4px 12px 22px}
+.jieum-editor .studio-nav button{min-height:61px;padding:10px 9px;border-radius:4px;color:#d4e1d9;grid-template-columns:23px 19px minmax(0,1fr) 14px}
+.jieum-editor .studio-nav b{font-size:14px;font-weight:600}
+.jieum-editor .studio-nav small{font-size:11px;line-height:1.55;color:#a7bfb5}
+.jieum-editor .nav-index{font-size:10px;color:#87a999}
+.jieum-editor .studio-nav button.active{background:#d5e6b71c;box-shadow:inset 3px 0 #b8d096;color:#f4f5e7}
+.jieum-editor .studio-nav button.active small{color:#c0d5bc}
+.jieum-editor .studio-engine-status{color:#cbdccb;border-block:0;font-size:12px}
+.jieum-editor .studio-engine-status b{font-size:12px}
+.jieum-editor .sidebar-foot{font-size:12px;color:#bad0c4}
+.jieum-editor .sidebar-foot b,.jieum-editor .sidebar-foot span{font-size:11px;color:#c1d2c5}
+.jieum-editor .topbar{height:auto;min-height:64px;position:sticky;top:0;padding:12px 24px;border-bottom:1px solid #c6d1c3;background:#f7f6eff5;box-shadow:0 1px 0 #fff;backdrop-filter:blur(12px)}
+.jieum-editor .topbar::after{display:none}
+.jieum-editor .crumbs span{font-size:10px;color:#527f72}.jieum-editor .crumbs b{font-size:14px;color:#294f40}.jieum-editor .crumbs i{background:#a6b49a}
+.jieum-editor .save-state{font-size:12px;color:#4e6c60;white-space:nowrap}
+.jieum-editor .workspace-scroll{max-width:1500px;margin:auto;padding:24px clamp(20px,3.5vw,56px) 72px}
+.jieum-editor .jieum-edition{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid #c8d5c3;color:#507466;font-size:11px;letter-spacing:.08em}
+.jieum-editor .page-heading{margin-bottom:25px}.jieum-editor .page-heading h1{font-family:'MaruBuri',serif;color:#213f35;font-size:clamp(28px,3vw,40px);font-weight:500;line-height:1.35;letter-spacing:-.04em}
+.jieum-editor .page-heading p{font-size:14px;color:#587266;line-height:1.8}
+.jieum-editor .page-heading>div>span,.jieum-editor .page-heading>span{font-size:11px;color:#477c69;letter-spacing:.11em}
+.jieum-editor .panel,.jieum-editor .invariant-card,.jieum-editor .event-card,.jieum-editor .editor-panel{border:1px solid #cbd3c5;border-radius:7px;background:#fffef9;box-shadow:0 4px 15px #244b3810}
+.jieum-editor .panel>header,.jieum-editor .panel-head{background:linear-gradient(95deg,#f0f3e7,#f4f7f1 75%,#eef5f6);border-bottom:1px solid #d8dfd2;padding:18px 22px}
+.jieum-editor .panel h2,.jieum-editor .panel h3{font-family:inherit;color:#284d3f;font-size:19px;line-height:1.45;font-weight:600}
+.jieum-editor .panel-body{padding:22px}
+.jieum-editor :is(.field-label,.text-area-label)>span,.jieum-editor :is(.field-label,.text-area-label)>b{font-size:14px;color:#315444;line-height:1.55}
+.jieum-editor :is(input,textarea,select){font-size:16px!important;min-height:44px;line-height:1.65;border-color:#bccbbd;border-radius:4px;background:#fffefa;color:#213e33}
+.jieum-editor textarea{min-height:125px;resize:vertical}
+.jieum-editor :is(input,textarea,select):focus{outline:2px solid #91bba9;outline-offset:2px;border-color:#457c63;box-shadow:none}
+.jieum-editor :is(button,a):focus-visible{outline:3px solid #569baf;outline-offset:3px}
+.jieum-editor :is(.field-hint,.field-note,.panel-note,.text-area-label small){font-size:12px;line-height:1.65;color:#607767}
+.jieum-editor .primary-button{min-height:44px;background:#285c49;border:1px solid #285c49;color:#f7f5e5;border-radius:5px;box-shadow:none;font-size:14px;padding:10px 17px}
+.jieum-editor .primary-button:hover{background:#1e4c3c}
+.jieum-editor .soft-button,.jieum-editor .icon-button{min-height:42px;border-radius:5px;background:#f6f7ed;border:1px solid #c3cfbc;color:#355f49;font-size:13px;box-shadow:none}
+.jieum-editor .soft-button:hover{background:#eaf0df}
+.jieum-editor .section-tabs button{min-height:44px;font-size:14px;border-radius:4px}.jieum-editor .section-tabs button.active{color:#244f3e;background:#e2edda;border-color:#adbf9f}
+.jieum-editor .welcome-banner,.jieum-editor .export-hero{background:linear-gradient(115deg,#214d3b,#286267 80%,#315e75);border:1px solid #285b49;border-radius:8px;color:#f0f3e3;box-shadow:none}
+.jieum-editor .welcome-banner h1,.jieum-editor .welcome-banner h2,.jieum-editor .export-hero h2{color:#f4f4de;font-family:inherit;font-weight:500}
+.jieum-editor .welcome-banner p,.jieum-editor .export-hero p{color:#d1e1d4;font-size:14px}
+.jieum-editor .runtime-choice,.jieum-editor .package-choice{border-radius:6px;border:1px solid #bdceb9;background:#f9faf2;box-shadow:none}
+.jieum-editor .runtime-choice.active,.jieum-editor .package-choice.active{border-color:#5b8c65;background:#eaf3de;box-shadow:inset 3px 0 #64936f}
+.jieum-editor .runtime-choice h3,.jieum-editor .package-choice h3{font-size:20px;font-family:inherit;color:#254c3d}
+.jieum-editor .runtime-choice p,.jieum-editor .package-choice p{font-size:13px;line-height:1.75;color:#496759}
+.jieum-editor .empty-state,.jieum-editor .invariant-empty{background:#f4f7ed;border:1px dashed #b4c7af;border-radius:6px}
+.jieum-editor .studio-settings-dialog,.jieum-editor .demo-dialog{border:1px solid #b1c3af;border-radius:10px;background:#faf9f1;color:#234637;max-width:min(680px,calc(100vw - 32px))}
+.jieum-editor .studio-settings-dialog p{font-size:14px}
+.jieum-editor .toast{font-size:14px;background:#173f33;color:#f4f3de;border:1px solid #809e82;border-radius:7px;max-width:calc(100vw - 32px);z-index:150}
+.jieum-editor .jieum-storage-error,.jieum-shell-notice{padding:14px 22px;background:#fff0e3;color:#7d392d;border-bottom:1px solid #c59078;font-size:14px}.jieum-editor .jieum-storage-error button{margin-left:12px}
+.jieum-incoming-backdrop{position:fixed;inset:0;z-index:160;background:#10282099;display:grid;place-items:center;padding:20px}.jieum-incoming{width:min(640px,100%);max-height:85dvh;overflow:auto;background:#faf9f1;border:1px solid #b5c9ad;padding:32px;border-radius:10px;box-shadow:0 20px 80px #09261966}.jieum-incoming h2{font-size:26px;color:#244b3d}.jieum-incoming p{font-size:15px;line-height:1.8}.jieum-incoming div{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.jieum-incoming button{min-height:44px;padding:10px 14px;border:1px solid #9fb49e;border-radius:4px;background:#eff3e5;color:#28543d}.jieum-incoming button:first-child{background:#285744;color:#fffef1}
+.jieum-open-editor{display:inline-flex;align-items:center;margin:16px 0;padding:10px 16px;border:1px solid #60836b;border-radius:4px;color:#285340;font-size:14px}
+@media(max-width:1100px){.jieum-editor .crumbs span,.jieum-editor .topbar>.primary-button{display:none}.jieum-editor .workspace-scroll{padding-inline:22px}}
+@media(max-width:980px){.jieum-editor .studio-shell,.jieum-editor .studio-shell.sidebar-is-closed{display:block;min-height:calc(100dvh - 124px)}.jieum-editor .studio-sidebar{position:fixed;z-index:130;height:min(75dvh,660px);top:auto;inset:auto 10px 86px;border-radius:9px;background:#173e34}.jieum-editor .sidebar-backdrop{z-index:120}.jieum-editor .topbar{top:0}.jieum-editor .mobile-dock{z-index:110;background:#163e34;border-top:2px solid #b2cc94;border-radius:0;box-shadow:none}.jieum-editor .mobile-dock button{color:#c3d9ca;font-size:12px}.jieum-editor .mobile-dock button.active{color:#eff3cc}.jieum-editor .mobile-dock-icon{background:transparent;border-radius:4px}.jieum-editor .mobile-topbar-copy span{color:#557d65}.jieum-editor .mobile-topbar-copy b{color:#254d3d}.jieum-editor .sidebar-close{color:#e4eacb}}
+@media(max-width:680px){.jieum-editor .workspace-scroll{padding:20px 16px 110px}.jieum-editor .topbar{padding:10px 14px;gap:8px;min-height:62px}.jieum-editor .save-state{margin-left:auto;font-size:11px;padding-right:0}.jieum-editor .save-state span{max-width:88px;white-space:normal;line-height:1.4}.jieum-editor .crumbs{display:none}.jieum-editor .mobile-topbar-copy{display:flex}.jieum-editor .mobile-topbar-copy span{font-size:9px}.jieum-editor .panel-body{padding:17px}.jieum-editor .panel>header,.jieum-editor .panel-head{padding:16px}.jieum-editor .jieum-edition{font-size:10px;gap:8px;margin-bottom:20px}.jieum-editor .page-heading h1{font-size:30px}.jieum-editor .page-heading p{font-size:14px}.jieum-editor .toast{bottom:90px}.jieum-editor .field-row,.jieum-editor .form-grid.two-col{grid-template-columns:1fr}.jieum-incoming{padding:22px}.jieum-editor .studio-nav small{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.jieum-editor *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Instant Story's compact authoring flow. */
+.jieum-editor .instant-world-pair{align-items:stretch}.jieum-editor .instant-world-pair>.panel{margin:0}.jieum-editor .instant-world-pair .panel-body{display:flex;flex-direction:column}.jieum-editor .instant-world-pair .text-area-label,.jieum-editor .instant-world-pair .instant-textarea{flex:1}.jieum-editor .instant-world-pair textarea{min-height:300px}
+.jieum-editor .instant-private-note{display:grid;grid-template-columns:34px minmax(0,1fr);gap:11px;align-items:start;margin-top:12px;padding:13px 15px;border:1px solid #d5c8b4;border-radius:6px;background:#faf4e8;color:#5e4d36}.jieum-editor .instant-private-note>svg{padding:8px;border-radius:50%;box-sizing:content-box;background:#eee0c8}.jieum-editor .instant-private-note p{margin:0}.jieum-editor .instant-private-note b,.jieum-editor .instant-private-note span{display:block}.jieum-editor .instant-private-note b{font-size:13px}.jieum-editor .instant-private-note span{margin-top:3px;font-size:12px;line-height:1.7;color:#75664e}.jieum-editor .instant-textarea.secret-field>span{display:flex;align-items:center;gap:5px;color:#6f5135}
+.jieum-editor .instant-character-layout .character-list{border-radius:7px}.jieum-editor .instant-character-layout .character-list>button{grid-template-columns:42px minmax(0,1fr)}.jieum-editor .character-avatar{width:40px;height:44px;display:grid;place-items:center;overflow:hidden;border-radius:5px;background:#e4ecdf;color:#416d59}.jieum-editor .character-avatar img{width:100%!important;height:100%!important;border-radius:0!important;object-fit:cover}.jieum-editor .instant-character-layout .character-editor{padding:23px;border:1px solid #cbd3c5;border-radius:7px;background:#fffef9;box-shadow:0 4px 15px #244b3810}.jieum-editor .character-editor-head{display:flex;justify-content:space-between;align-items:start;gap:15px;padding-bottom:16px;border-bottom:1px solid #d8dfd2}.jieum-editor .character-editor-head span{font-size:10px;letter-spacing:.12em;color:#527f72}.jieum-editor .character-editor-head h2{margin:4px 0 0;font-size:24px;font-weight:600;color:#284d3f}.jieum-editor .icon-button.danger{color:#9a5144;background:#f9eeea;border-color:#e7c9c1}
+.jieum-editor .instant-image-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:8px;padding-top:18px;border-top:1px solid #d8dfd2}.jieum-editor .instant-image-head b,.jieum-editor .instant-image-head span{display:block}.jieum-editor .instant-image-head b{font-size:14px;color:#315444}.jieum-editor .instant-image-head span{margin-top:3px;font-size:12px;color:#607767}.jieum-editor .instant-image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:11px}.jieum-editor .instant-image-grid article{position:relative;overflow:hidden;padding:5px;border:1px solid #d7ddd1;border-radius:6px;background:#f7f8f1}.jieum-editor .instant-image-grid article.primary{border-color:#5f9278;box-shadow:0 0 0 2px #5f92781c}.jieum-editor .instant-image-grid img{width:100%;height:168px;display:block;object-fit:cover;border-radius:3px}.jieum-editor .instant-image-grid article>div{position:absolute;right:9px;top:9px;display:flex;gap:4px}.jieum-editor .instant-image-grid button{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:4px;color:#fff;background:#173f33d9}.jieum-editor .instant-image-grid article>span{display:block;padding:7px 4px 3px;overflow:hidden;color:#496759;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.jieum-editor .instant-image-empty{min-height:170px;display:grid;place-content:center;justify-items:center;gap:5px;border:1px dashed #b8c8b4;border-radius:6px;background:#f5f8ef;color:#567263}.jieum-editor .instant-image-empty b{font-size:13px}.jieum-editor .instant-image-empty span{font-size:11px}
+.jieum-editor .instant-opening-list{display:grid;gap:18px}.jieum-editor .instant-opening-list>.panel{margin:0}.jieum-editor .instant-wave-head{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;align-items:start;margin:18px 0 10px;padding:13px 15px;border-radius:6px;background:#edf4ea;color:#315c49}.jieum-editor .instant-wave-head>svg{padding:9px;box-sizing:content-box;border-radius:50%;background:#dcead6}.jieum-editor .instant-wave-head p{margin:0}.jieum-editor .instant-wave-head b,.jieum-editor .instant-wave-head span{display:block}.jieum-editor .instant-wave-head b{font-size:13px}.jieum-editor .instant-wave-head span{margin-top:3px;color:#567263;font-size:12px}.jieum-editor .instant-wave-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.jieum-editor .instant-opening-empty{min-height:320px;display:grid;place-content:center;justify-items:center;gap:7px;border:1px dashed #afc2ac;border-radius:8px;background:#f7f9f1;color:#456b58}.jieum-editor .instant-opening-empty h2{margin:5px 0 0;font-size:20px}.jieum-editor .instant-opening-empty p{margin:0;font-size:13px;color:#607767}
+@media(max-width:800px){.jieum-editor .instant-world-pair,.jieum-editor .instant-wave-grid{grid-template-columns:1fr}.jieum-editor .instant-character-layout .character-editor{padding:17px}.jieum-editor .instant-image-head{align-items:start;flex-direction:column}.jieum-editor .instant-image-head .soft-button{width:100%;justify-content:center}.jieum-editor .instant-image-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.jieum-editor .instant-image-grid img{height:clamp(150px,48vw,220px)}}
+
+/* The shared Nexus appearance preference also reaches the authoring surface. */
+.jieum-route.theme-dark{background:#142c28;color:#e1e8d9}
+.jieum-route.theme-dark .jieum-editor{--ink:#e1e8d9;--muted:#afc3b5;--paper:#162d28;--panel:#213b32;--line:#486151;color:var(--ink);background:var(--paper)}
+.jieum-route.theme-dark .jieum-editor :is(.topbar,.panel,.editor-panel,.invariant-card,.event-card,.metric-card,.runtime-choice,.package-choice,.character-list,.character-cover,.validation-summary>div,.snapshot-notice,.empty-state,.cortex-closure-box,.cortex-condition-row,.instant-runtime-notice,.jieum-incoming,.jieum-import-dialog,.studio-settings-dialog,.demo-picker,.demo-choice){background:#213b32;color:#e1e8d9;border-color:#486151;box-shadow:none}
+.jieum-route.theme-dark .jieum-editor :is(.panel>header,.panel-head,.runtime-choice.active,.section-tabs button.active){background:#304c3d;border-color:#668460}
+.jieum-route.theme-dark .jieum-editor :is(.page-heading h1,.panel h2,.panel h3,.runtime-choice h3,.character-title h2,.jieum-incoming h2,.crumbs b,.mobile-topbar-copy b,.field-label>span,.text-area-label>span,.metric-card strong){color:#e4ecd8}
+.jieum-route.theme-dark .jieum-editor :is(.page-heading p,.panel>header p,.runtime-choice p,.jieum-import-help,.jieum-edition,.save-state,.field-note,.field-hint,.panel-note,.image-export-note,.toggle-row small,.metric-card span){color:#b6cbb8}
+.jieum-route.theme-dark .jieum-editor :is(input,textarea,select){background:#142a24;color:#e7eddd;border-color:#5a7862}
+.jieum-route.theme-dark .jieum-editor :is(.soft-button,.icon-button,.section-tabs button){background:#2c4538;color:#d8e7c8;border-color:#5a7862}
+.jieum-route.theme-dark .jieum-editor :is(.instant-character-layout .character-editor,.instant-editor-card,.instant-image-grid article){background:#213b32;color:#e1e8d9;border-color:#486151}.jieum-route.theme-dark .jieum-editor :is(.instant-private-note,.instant-wave-head,.instant-image-empty,.instant-opening-empty){background:#2b4437;color:#dce8d2;border-color:#5a7862}.jieum-route.theme-dark .jieum-editor :is(.instant-private-note span,.instant-wave-head span,.instant-image-head span,.instant-opening-empty p){color:#b6cbb8}
+.jieum-route.theme-dark .jieum-editor .jieum-pending{background:#304c3d;color:#e4ecd8}
+.jieum-route.theme-dark .jieum-editor :is(.crumbs span,.page-heading>div>span,.runtime-choice>span,.runtime-choice>strong){color:#aac8b4}
+
+/* Focus hides examples without changing the author data. */
+.jieum-editor input:focus::placeholder,.jieum-editor textarea:focus::placeholder{color:transparent;opacity:0}
+.jieum-editor .canon-route{padding:24px;border:1px solid #d0d8cf;border-radius:18px;margin:24px 0;background:#faf9f4}.jieum-editor .canon-route-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}.jieum-editor .canon-route-head b{font-size:22px}.jieum-editor .canon-route-head small{display:block;margin-top:8px}.jieum-editor .canon-card,.jieum-editor .canon-branch{padding:20px;border:1px solid #d5dbd3;border-radius:12px;margin:20px 0}.jieum-editor .canon-ending{margin-top:28px;padding-top:24px;border-top:2px solid #2a6050}.jieum-editor .canon-values,.jieum-editor .canon-replies{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}.jieum-editor .canon-sample{background:#eff4ef;border-left:3px solid #39705d;padding:18px;line-height:1.8}.jieum-editor .canon-issue{display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ddd;padding:14px 0}.jieum-editor .canon-home{margin-bottom:24px}.jieum-editor .canon-events textarea{min-height:120px}
+@media(max-width:640px){.jieum-editor .canon-route{padding:12px}.jieum-editor .canon-route-head{align-items:flex-start}.jieum-editor .canon-values,.jieum-editor .canon-replies{grid-template-columns:1fr}.jieum-editor .canon-issue{display:block}}
+
+.jieum-editor .canon-character-hero:has(.canon-portrait){background:linear-gradient(115deg,#10242d,#203f4c);color:#fff;border-radius:18px;padding:28px;justify-content:flex-start;gap:28px}.jieum-editor .canon-portrait{width:150px;height:190px;display:grid;place-items:center;border-radius:14px;overflow:hidden;background:#294452;flex-shrink:0}.jieum-editor .canon-portrait img{width:100%;height:100%;object-fit:cover}.jieum-editor .canon-character-hero:has(.canon-portrait) h2{font-size:36px;color:#fff}@media(max-width:640px){.jieum-editor .canon-portrait{width:90px;height:120px}.jieum-editor .canon-character-hero:has(.canon-portrait){padding:18px;gap:16px}.jieum-editor .canon-character-hero:has(.canon-portrait) h2{font-size:25px}}
+
+.jieum-editor .canon-image-controls{display:none}.jieum-route.theme-dark .jieum-editor :is(.canon-route,.canon-sample,.canon-card,.canon-branch){background:#213b32;border-color:#486151;color:#e1e8d9}
+@media(max-width:640px){.jieum-editor .canon-events .panel>header{flex-wrap:wrap}.jieum-editor .canon-events .panel>header>div:first-child{flex-basis:100%}}
+
+/* Text actions need their own width; icon controls keep the compact square style. */
+.jieum-editor .danger-button{width:auto;height:auto;min-height:44px;padding:9px 14px;white-space:nowrap;flex-shrink:0;border-color:#d9b6aa;color:#9d4d3c;background:#fff5f0}
+.jieum-editor .danger-button:hover{background:#f9e6dc}
+.jieum-editor .workspace-scroll .page-actions{flex-wrap:wrap;align-items:center;gap:8px}
+.jieum-editor .workspace-scroll .page-actions>button{width:auto;flex:0 0 auto;min-height:44px;white-space:nowrap}
+.jieum-editor .panel>header{flex-wrap:wrap;align-items:center}
+.jieum-editor .panel>header>div:first-child{min-width:0;flex:1 1 220px}
+.jieum-editor .panel>header .page-actions{width:auto;max-width:100%;flex:0 0 auto;margin-left:auto}
+.jieum-editor .panel>header>.soft-button{flex:0 0 auto;white-space:nowrap}
+.jieum-editor .canon-route-head>div{min-width:0;overflow-wrap:anywhere}.jieum-editor .canon-route-head>.soft-button{flex-shrink:0;white-space:nowrap}
+.jieum-editor .canon-card :is(input,select,textarea),.jieum-editor .canon-branch :is(input,select,textarea){min-width:0;max-width:100%}
+.jieum-editor .canon-card>button,.jieum-editor .canon-branch>button{margin:8px 8px 0 0;white-space:nowrap}
+.jieum-route.theme-dark .jieum-editor .danger-button{background:#49352f;color:#f2b9a5;border-color:#815b4e}
+@media(max-width:680px){.jieum-editor .panel>header>div:first-child{flex-basis:100%}.jieum-editor .panel>header .page-actions{margin-left:0}.jieum-editor .canon-route-head{flex-wrap:wrap}.jieum-editor .canon-route-head>div{flex:1 1 160px}.jieum-editor .canon-card,.jieum-editor .canon-branch{padding:14px}}
+
+/* Every authored image is physically cropped to the Cortex scene frame before it enters a project. */
+.jieum-editor .image-crop-dialog{position:fixed;inset:0;margin:auto;width:min(920px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:0;overflow:auto;border:1px solid #83978d;border-radius:14px;background:#f9f8f1;color:#213e33;box-shadow:0 24px 90px #071e1873}
+.jieum-editor .image-crop-dialog>header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:22px 24px 18px;border-bottom:1px solid #d0d8cf}
+.jieum-editor .image-crop-dialog>header span{font-family:var(--font-geist-mono);font-size:11px;letter-spacing:.14em;color:#4f7a69}
+.jieum-editor .image-crop-dialog>header h2{margin:3px 0 0;font-size:24px;line-height:1.4;color:#23483a}
+.jieum-editor .image-crop-dialog>header p{margin:3px 0 0;font-size:13px;color:#61766c}
+.jieum-editor .crop-close{width:44px;height:44px;display:grid;place-items:center;flex:0 0 auto;border:1px solid #c2cdc1;border-radius:6px;background:#f2f4e9;color:#375d4b}
+.jieum-editor .crop-stage{position:relative;aspect-ratio:1088/608;margin:24px;overflow:hidden;border:1px solid #83958d;border-radius:8px;background:#29312f;touch-action:none;user-select:none}
+.jieum-editor .crop-stage canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.jieum-editor .crop-stage canvas:active{cursor:grabbing}
+.jieum-editor .crop-stage canvas:focus-visible{outline:4px solid #9ed3c1;outline-offset:-4px}
+.jieum-editor .crop-stage.loading canvas,.jieum-editor .crop-stage.error canvas{opacity:.25}
+.jieum-editor .crop-stage>p{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:20px;text-align:center;color:#f4f2e6;font-size:14px}
+.jieum-editor .crop-thirds{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px #fff8}
+.jieum-editor .crop-thirds i{position:absolute;background:#fff6;filter:drop-shadow(0 0 1px #0008)}
+.jieum-editor .crop-thirds i:nth-child(1),.jieum-editor .crop-thirds i:nth-child(2){top:0;bottom:0;width:1px}.jieum-editor .crop-thirds i:nth-child(1){left:33.333%}.jieum-editor .crop-thirds i:nth-child(2){left:66.666%}
+.jieum-editor .crop-thirds i:nth-child(3),.jieum-editor .crop-thirds i:nth-child(4){left:0;right:0;height:1px}.jieum-editor .crop-thirds i:nth-child(3){top:33.333%}.jieum-editor .crop-thirds i:nth-child(4){top:66.666%}
+.jieum-editor .crop-zoom{display:flex;align-items:center;gap:12px;padding:0 24px 22px;color:#587064;font-size:12px}
+.jieum-editor .crop-zoom input{flex:1;min-height:32px;accent-color:#2f785f}
+.jieum-editor .crop-zoom button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:7px 11px;white-space:nowrap;border:1px solid #c3cec1;border-radius:5px;background:#f1f3e8;color:#355e4b;font-size:13px}
+.jieum-editor .image-crop-dialog>footer{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px 24px 24px;border-top:1px solid #d5ddd2}
+.jieum-editor .image-crop-dialog>footer button{justify-content:center;min-height:50px;font-size:15px}
+.jieum-editor .scene-image-editor{display:grid;grid-template-columns:minmax(190px,260px) minmax(0,420px);align-items:start;gap:14px;margin:4px 0 18px}
+.jieum-editor .scene-image-upload{min-height:118px;display:grid;place-content:center;justify-items:center;gap:3px;padding:18px;border:1px dashed #9fb5a5;border-radius:6px;background:#f5f7ee;color:#356049;cursor:pointer}
+.jieum-editor .scene-image-upload:hover{background:#ebf1e2;border-color:#608b70}.jieum-editor .scene-image-upload span{font-size:14px;font-weight:700}.jieum-editor .scene-image-upload small{font-size:11px;color:#6a7d71}
+.jieum-editor .scene-image-editor figure{margin:0;overflow:hidden;border:1px solid #c8d2c7;border-radius:6px;background:#f7f7f0}.jieum-editor .scene-image-editor img{display:block;width:100%;aspect-ratio:1088/608;object-fit:cover}.jieum-editor .scene-image-editor figcaption{padding:7px 9px;color:#617568;font-size:11px}
+.jieum-route.theme-dark .jieum-editor .image-crop-dialog{background:#1f372f;color:#e2e9dc;border-color:#547063}.jieum-route.theme-dark .jieum-editor .image-crop-dialog>header,.jieum-route.theme-dark .jieum-editor .image-crop-dialog>footer{border-color:#496257}.jieum-route.theme-dark .jieum-editor .image-crop-dialog>header h2{color:#f1f3df}.jieum-route.theme-dark .jieum-editor .image-crop-dialog>header p{color:#b6c9bc}.jieum-route.theme-dark .jieum-editor :is(.crop-close,.crop-zoom button,.scene-image-upload){background:#29483b;color:#e0eadb;border-color:#5c7868}.jieum-route.theme-dark .jieum-editor .scene-image-editor figure{background:#29443a;border-color:#536e61}
+@media(max-width:680px){.jieum-editor .image-crop-dialog{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:10px}.jieum-editor .image-crop-dialog>header{padding:16px}.jieum-editor .image-crop-dialog>header h2{font-size:20px}.jieum-editor .image-crop-dialog>header p{font-size:12px}.jieum-editor .crop-stage{margin:14px 10px;border-radius:5px}.jieum-editor .crop-zoom{padding:0 14px 14px;gap:8px}.jieum-editor .crop-zoom>span{display:none}.jieum-editor .crop-zoom button{padding-inline:9px}.jieum-editor .image-crop-dialog>footer{padding:14px;gap:8px}.jieum-editor .scene-image-editor{grid-template-columns:1fr}.jieum-editor .scene-image-upload{min-height:96px}}

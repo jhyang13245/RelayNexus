@@ -1,0 +1,13 @@
+{
+  "version": "1.42.0",
+  "extensionRevision": "1.0.0",
+  "assembly": "scripts/vendor-cortex.mjs",
+  "extensions": [
+    "instant-runtime.js",
+    "occurrence-runtime.js"
+  ],
+  "upstreamSha256": "6dfbd01ae4f7774ac06cb3c6960b3e419526b28ba2f673ab5d87dfb99386da84",
+  "sha256": "4c00f8afe19d76abfd357ff597c951bcb0b036213830566093dddde1c39bb193",
+  "bundledStory": false,
+  "policy": "Cortex 1.42.0 with explicit Dancheong Instant V2 and occurrence-selection extensions; unchanged canon execution parity tested against the official standalone engine"
+}

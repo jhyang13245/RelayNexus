@@ -1,0 +1,117 @@
+/* Jade/blue dancheong: quiet paper surfaces with chromatic lotus joinery. */
+.nexus-library-shell {
+  --library-green: #a8cc99;
+}
+.nexus-library-shell .library-nav {
+  /* Preserve the original dark header; the new palette belongs below it. */
+  --library-green: #87bd72;
+}
+.nexus-library-shell .continue-stage::before,
+.app-shell .topbar::after {
+  background-image: url("/dancheong-jade-pattern.svg");
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: .36;
+}
+.nexus-library-shell .library-mobile-nav {
+  background: #183c38;
+  border-bottom-color: #719785;
+}
+.nexus-library-shell .library-mobile-nav a { color: #bdd0ca; }
+.nexus-library-shell .library-mobile-nav a.active { color: #d7e8b5; }
+.nexus-library-shell .continue-stage {
+  background: linear-gradient(120deg, #173d33, #214a4b 60%, #284d65);
+}
+.nexus-library-shell .continue-stage::before { opacity: .2; }
+.nexus-library-shell .continue-stage::after {
+  background: linear-gradient(90deg, rgba(14,39,32,.72), rgba(21,48,48,.12) 62%, rgba(24,49,66,.25));
+}
+.nexus-library-shell .studio-gateway {
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 0% 8%, rgba(174,205,154,.32), transparent 57%),
+    radial-gradient(ellipse at 100% 90%, rgba(134,187,212,.32), transparent 61%),
+    linear-gradient(125deg, #f4f6ec, #edf4ed 53%, #e8f1f5);
+  color: #203d37;
+  border-block: 1px solid #c5d5ca;
+}
+.nexus-library-shell .studio-gateway::before {
+  position: absolute; inset: 0 0 auto; height: 4px; content: ""; pointer-events: none;
+  background: linear-gradient(90deg, #367864, #adc58a 34%, #4d7f9c 67%, #a8d0db);
+}
+.nexus-library-shell .studio-gateway::after {
+  inset: auto -110px -170px auto;
+  width: 650px; height: 650px;
+  border: 0; border-radius: 0; box-shadow: none;
+  background: url("/dancheong-jade-pattern.svg") center / contain no-repeat;
+  opacity: .11; transform: rotate(15deg);
+}
+.nexus-library-shell .studio-gateway-copy > p:first-child { color: #356e5c; font-size: 9px; }
+.nexus-library-shell .studio-gateway-copy > span { color: #547b7f; font-size: 9px; }
+.nexus-library-shell .studio-gateway-copy { min-width: 0; }
+.nexus-library-shell .studio-gateway-copy h2 { font-size: clamp(34px, 4vw, 54px); line-height: 1.3; white-space: normal; word-break: keep-all; overflow-wrap: break-word; }
+.nexus-library-shell .studio-gateway-description { color: #4a625c; font-size: 14px; }
+.nexus-library-shell .studio-gateway-tags { gap: 8px; }
+.nexus-library-shell .studio-gateway-tags span {
+  padding: 9px 12px; border: 1px solid #bfd0c2; border-radius: 4px; font-size: 9px;
+  background: rgba(255,255,255,.44); color: #365d50;
+}
+.nexus-library-shell .studio-gateway-tags span:nth-child(3),
+.nexus-library-shell .studio-gateway-tags span:nth-child(4) {
+  border-color: #b9d0d9; color: #355e78; background: rgba(234,245,249,.7);
+}
+.nexus-library-shell .studio-prompt-launcher > label { color: #294c40; font-size: 13px; }
+.nexus-library-shell .studio-prompt-launcher > textarea {
+  border: 1px solid #adc5ba; border-radius: 9px;
+  background: rgba(255,255,252,.86); color: #203c33; font-size: 16px;
+  box-shadow: 0 4px 18px rgba(33,76,64,.035);
+}
+.nexus-library-shell .studio-prompt-launcher > textarea::placeholder { color: #63786e; }
+.nexus-library-shell .studio-prompt-launcher > textarea:focus {
+  border-color: #487f76; background: #fffefa; box-shadow: 0 0 0 3px rgba(99,153,153,.14);
+}
+.nexus-library-shell .studio-runtime-actions { gap: 12px; }
+.nexus-library-shell .studio-runtime-actions strong { font-size: 13px; }
+.nexus-library-shell .studio-runtime-actions button {
+  border: 1px solid #386953; border-radius: 9px;
+  background: linear-gradient(120deg, #265644, #3f7262); color: #f5f8ee;
+}
+.nexus-library-shell .studio-runtime-actions button:nth-child(2) {
+  border-color: #a4c4d0; background: linear-gradient(120deg, #eef5f3, #dcecf4); color: #294e65;
+}
+.nexus-library-shell .studio-runtime-actions button:disabled { opacity: .72; }
+.nexus-library-shell .studio-runtime-actions small { color: #d1e2b6; font-size: 9px; }
+.nexus-library-shell .studio-runtime-actions button:nth-child(2) small { color: #476d80; }
+.nexus-library-shell .studio-runtime-actions b { color: #d2e6b5; }
+.nexus-library-shell .studio-runtime-actions button:nth-child(2) b { color: #46748a; }
+.nexus-library-shell .studio-runtime-actions button:focus-visible {
+  outline: 3px solid #5a96a7; outline-offset: 4px;
+}
+.nexus-library-shell .studio-prompt-launcher > p { color: #4d6863; font-size: 11px; }
+.nexus-library-shell .studio-workflow { border-top-color: #b9cdc4; }
+.nexus-library-shell .studio-workflow article { border-bottom-color: #c2d3cd; }
+.nexus-library-shell .studio-workflow article > span { color: #447b68; }
+.nexus-library-shell .studio-workflow article:nth-child(2) > span { color: #4d7894; }
+.nexus-library-shell .studio-workflow article p { color: #526d66; font-size: 12px; }
+.nexus-library-shell .studio-draft-progress { border-color: #b5cdc2; border-radius: 6px; }
+.nexus-library-shell .studio-draft-progress-track i { background: linear-gradient(90deg, #3f7963, #abc986, #72a8bf); }
+@media (max-width: 560px) {
+  .nexus-library-shell .studio-gateway { padding: 52px 20px; gap: 34px; }
+  .nexus-library-shell .studio-gateway-copy > span { margin-top: 27px; }
+  .nexus-library-shell .studio-gateway-copy h2 { font-size: clamp(30px, 8vw, 40px); line-height: 1.38; letter-spacing: -.05em; }
+  .nexus-library-shell .studio-gateway-description { font-size: 13px; line-height: 1.85; }
+  .nexus-library-shell .studio-gateway-tags span { font-size: 8px; padding: 8px 9px; }
+  .nexus-library-shell .studio-prompt-launcher { margin-top: 28px; gap: 12px; }
+  .nexus-library-shell .studio-prompt-launcher > label { font-size: 13px; }
+  .nexus-library-shell .studio-prompt-launcher > textarea { font-size: 16px; min-height: 150px; }
+  .nexus-library-shell .studio-runtime-actions button { min-height: 104px; padding: 20px 48px 20px 18px; }
+  .nexus-library-shell .studio-runtime-actions small { font-size: 9px; }
+  .nexus-library-shell .studio-runtime-actions strong { font-size: 13px; }
+  .nexus-library-shell .studio-prompt-launcher > p { font-size: 11px; line-height: 1.8; }
+  .nexus-library-shell .studio-gateway::after { width: 430px; height: 430px; right: -185px; bottom: -105px; opacity: .09; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-library-shell .studio-runtime-actions button,
+  .nexus-library-shell .studio-draft-progress-track i { transition: none; }
+}
+.jieum-open-editor{display:inline-flex;align-items:center;margin:16px 0;padding:10px 16px;border:1px solid #60836b;border-radius:4px;color:inherit;font-size:14px}

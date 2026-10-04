@@ -1,0 +1,413 @@
+/* vn-storage.css — settings storage panel + saves-dialog storage/file extensions. Scoped only. No overlays. */
+.vn-storage-panel {
+  --st-ink: #070f16;
+  --st-panel: #0b1620;
+  --st-card: #111f2b;
+  --st-cream: #f5efe3;
+  --st-muted: #b9c6c9;
+  --st-gold: #e8c68a;
+  --st-gold-soft: #f6d6a8;
+  --st-line: rgba(232, 198, 138, 0.28);
+  --st-line-soft: rgba(215, 229, 224, 0.16);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: clamp(14px, 3vw, 24px);
+  border: 1px solid var(--st-line);
+  background:
+    radial-gradient(ellipse at 78% 0%, #22374a 0, transparent 42%),
+    linear-gradient(115deg, #080e15, #101e2a 58%, #080d14);
+  background-color: var(--st-panel);
+  color: var(--st-cream);
+  font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.vn-storage-panel *,
+.vn-storage-panel *::before,
+.vn-storage-panel *::after {
+  box-sizing: border-box;
+}
+
+.vn-storage-panel [hidden],
+.vn-saves-dialog [hidden] {
+  display: none !important;
+}
+
+.vn-storage-panel h2 {
+  margin: 0;
+  font: 600 clamp(20px, 2.4vw, 26px)/1.25 Georgia, "Noto Serif KR", serif;
+  letter-spacing: -0.01em;
+  color: var(--st-cream);
+}
+
+.vn-storage-panel p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--st-muted);
+}
+
+/* Overview: text + meter. */
+.vn-storage-panel .vn-storage-overview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vn-storage-panel .vn-storage-overview p {
+  color: var(--st-cream);
+}
+
+.vn-storage-panel .vn-storage-overview progress {
+  width: 100%;
+  height: 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--st-line);
+  border-radius: 6px;
+  background: #060c12;
+  overflow: hidden;
+}
+
+.vn-storage-panel .vn-storage-overview progress::-webkit-progress-bar {
+  background: #060c12;
+}
+
+.vn-storage-panel .vn-storage-overview progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--st-gold), var(--st-gold-soft));
+}
+
+.vn-storage-panel .vn-storage-overview progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--st-gold), var(--st-gold-soft));
+}
+
+/* Action buttons. */
+.vn-storage-panel .vn-storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vn-storage-panel button {
+  font: inherit;
+  touch-action: manipulation;
+  cursor: pointer;
+  min-height: 44px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.vn-storage-panel .vn-storage-actions button {
+  flex: 1 1 140px;
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 2px;
+  background: #1b303d;
+  color: #eef3f0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vn-storage-panel .vn-storage-actions button:hover:not(:disabled) {
+  border-color: #fff;
+}
+
+.vn-storage-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.vn-storage-panel button:focus-visible,
+.vn-saves-dialog .vn-saves-storage button:focus-visible,
+.vn-saves-dialog .vn-save-file-tools button:focus-visible,
+.vn-saves-dialog .vn-save-file-tools select:focus-visible,
+.vn-saves-dialog .vn-save-actions button:focus-visible {
+  outline: 2px solid var(--st-gold-soft, #f6d6a8);
+  outline-offset: 3px;
+}
+
+.vn-storage-panel .vn-storage-status {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--st-gold-soft);
+}
+
+.vn-storage-panel .vn-storage-status:empty {
+  min-height: 0;
+}
+
+/* Per-work cards. */
+.vn-storage-panel .vn-storage-works {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vn-storage-panel article.vn-storage-work {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--st-line-soft);
+  border-radius: 2px;
+  background: var(--st-card);
+}
+
+.vn-storage-panel article.vn-storage-work h3 {
+  margin: 0;
+  font: 600 16px/1.4 Georgia, "Noto Serif KR", serif;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+
+.vn-storage-panel article.vn-storage-work p {
+  font-size: 14px;
+}
+
+.vn-storage-panel article.vn-storage-work > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.vn-storage-panel article.vn-storage-work > div button {
+  flex: 1 1 120px;
+  padding: 10px 12px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 2px;
+  background: #1b303d;
+  color: #eef3f0;
+  font-weight: 600;
+}
+
+.vn-storage-panel article.vn-storage-work > div button:hover:not(:disabled) {
+  border-color: #fff;
+}
+
+/* Inline confirmation: normal flow, bordered distinction, never an overlay. */
+.vn-storage-panel .vn-storage-confirm {
+  position: static;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 2px solid var(--st-gold);
+  border-radius: 2px;
+  background: #16283a;
+}
+
+.vn-storage-panel .vn-storage-confirm p {
+  color: #fff;
+  font-size: 14px;
+}
+
+.vn-storage-panel .vn-storage-confirm > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vn-storage-panel .vn-storage-confirm > div button {
+  flex: 1 1 140px;
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 227, 216, 0.35);
+  border-radius: 2px;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+}
+
+.vn-storage-panel .vn-storage-confirm > div button:last-child {
+  background: var(--st-gold);
+  border-color: var(--st-gold);
+  color: #1a1206;
+}
+
+.vn-storage-panel .vn-storage-confirm > div button:last-child:hover:not(:disabled) {
+  background: var(--st-gold-soft);
+}
+
+/* ---- Saves dialog extensions (scoped to dialog) ---- */
+.vn-saves-dialog .vn-saves-storage {
+  margin: 0;
+  padding: 12px clamp(16px, 3vw, 30px) 0;
+  display: grid;
+  gap: 8px;
+}
+
+.vn-saves-dialog .vn-saves-storage p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #b9c6c9;
+}
+
+.vn-saves-dialog .vn-saves-storage button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 2px;
+  background: #1b303d;
+  color: #eef3f0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.vn-saves-dialog .vn-saves-storage button:hover:not(:disabled) {
+  border-color: #fff;
+}
+
+.vn-saves-dialog .vn-save-file-tools {
+  margin: 0;
+  padding: 12px clamp(16px, 3vw, 30px) 0;
+  display: grid;
+  gap: 8px;
+}
+
+.vn-saves-dialog .vn-save-file-tools p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #b9c6c9;
+}
+
+.vn-saves-dialog .vn-save-file-tools label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #f5efe3;
+  min-width: 0;
+}
+
+.vn-saves-dialog .vn-save-file-tools select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 2px;
+  background: #0a141d;
+  color: #f5efe3;
+  font-size: 16px;
+  line-height: 1.4;
+  touch-action: manipulation;
+}
+
+.vn-saves-dialog .vn-save-file-tools button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 227, 216, 0.3);
+  border-radius: 2px;
+  background: #1b303d;
+  color: #eef3f0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.vn-saves-dialog .vn-save-file-tools button:hover:not(:disabled) {
+  border-color: #fff;
+}
+
+/* Four slot buttons: fixed two-column grid on all widths. */
+.vn-saves-dialog .vn-save-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vn-saves-dialog .vn-save-actions button {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+/* Only the load control is gold; neutralize ref last-child gold. */
+.vn-saves-dialog .vn-save-actions button:last-child {
+  background: #1b303d;
+  border-color: rgba(210, 227, 216, 0.3);
+  color: #eef3f0;
+}
+
+.vn-saves-dialog .vn-save-actions button:last-child:hover:not(:disabled) {
+  border-color: #fff;
+  background: #1b303d;
+}
+
+.vn-saves-dialog .vn-save-actions button[data-slot-load] {
+  background: #e8c68a;
+  border-color: #e8c68a;
+  color: #1a1206;
+}
+
+.vn-saves-dialog .vn-save-actions button[data-slot-load]:hover:not(:disabled) {
+  background: #f6d6a8;
+  border-color: #f6d6a8;
+}
+
+/* Portrait phone 390px: stack confirm/action buttons full width. */
+@media (max-width: 480px) {
+  .vn-storage-panel {
+    padding: 14px;
+  }
+
+  .vn-storage-panel .vn-storage-actions button,
+  .vn-storage-panel article.vn-storage-work > div button,
+  .vn-storage-panel .vn-storage-confirm > div button {
+    flex-basis: 100%;
+  }
+
+  .vn-saves-dialog .vn-saves-storage button,
+  .vn-saves-dialog .vn-save-file-tools button {
+    width: 100%;
+  }
+}
+
+/* Short landscape (e.g. 844x390): compress spacing, keep two columns. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .vn-storage-panel {
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .vn-storage-panel h2 {
+    font-size: 19px;
+  }
+
+  .vn-storage-panel article.vn-storage-work {
+    padding: 10px;
+  }
+
+  .vn-storage-panel .vn-storage-confirm {
+    padding: 10px 12px;
+  }
+
+  .vn-saves-dialog .vn-saves-storage,
+  .vn-saves-dialog .vn-save-file-tools {
+    padding-top: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vn-storage-panel,
+  .vn-storage-panel *,
+  .vn-storage-panel *::before,
+  .vn-storage-panel *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

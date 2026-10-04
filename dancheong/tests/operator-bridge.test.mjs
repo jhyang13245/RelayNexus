@@ -1,0 +1,28 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {operatorService} from '../lib/operator-service.ts';
+test('all registered players, paging, authorization, suspension and audit',async()=>{
+ const sql=new DatabaseSync(':memory:');
+ sql.exec(`CREATE TABLE relay_accounts(id TEXT,email TEXT,email_key TEXT,display_name TEXT,role TEXT,status TEXT,created_at TEXT,updated_at TEXT,last_seen_at TEXT);
+ CREATE TABLE simulation_sessions(owner_key TEXT);
+ CREATE TABLE admin_audit_logs(id TEXT,actor_account_id TEXT,actor_display_name TEXT,actor_role TEXT,action TEXT,target_type TEXT,target_id TEXT,detail_json TEXT,created_at TEXT);`);
+ for(let i=0;i<61;i++)sql.prepare('INSERT INTO relay_accounts VALUES (?,?,?,?,?,?,?,?,?)').run(String(i),`p${i}@example.test`,`p${i}@example.test`,`Player ${i}`,i===0?'MASTER':'USER','ACTIVE','2026-01-01','v1','2026-01-01');
+ const DB={prepare(query){let args=[];return{bind(...values){args=values;return this},async first(){return sql.prepare(query).get(...args)},async all(){return{results:sql.prepare(query).all(...args)}},async run(){return{meta:{changes:Number(sql.prepare(query).run(...args).changes)}}}}},async batch(stmts){sql.exec('BEGIN');try{const rows=[];for(const s of stmts) rows.push(await s.run());sql.exec('COMMIT');return rows}catch(e){sql.exec('ROLLBACK');throw e}}};
+ const env={DB,RELAY_OPERATOR_SECRET:'a'.repeat(96),RELAY_MASTER_EMAILS:'p0@example.test'};
+ const req=(method='GET',body,query='')=>new Request('https://test/api/relay-operator'+query,{method,headers:{Authorization:'Bearer '+env.RELAY_OPERATOR_SECRET,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+ assert.equal((await operatorService(new Request('https://test/api/relay-operator'),env)).status,401);
+ const first=await(await operatorService(req(),env)).json();assert.equal(first.total,61);assert.equal(first.accounts.length,50);
+ assert.equal((await(await operatorService(req('GET',null,'?page=1'),env)).json()).accounts.length,11);
+ const body={id:'1',status:'SUSPENDED',reason:'test policy',expectedUpdatedAt:'v1',actorId:'operator',actorName:'Operator'};
+ assert.equal((await operatorService(req('PATCH',body),env)).status,200);
+ assert.equal(sql.prepare('SELECT status FROM relay_accounts WHERE id=?').get('1').status,'SUSPENDED');
+ assert.equal(sql.prepare('SELECT count(*) AS n FROM admin_audit_logs').get().n,1);
+ assert.equal((await operatorService(req('PATCH',body),env)).status,409);
+ assert.equal((await operatorService(req('PATCH',{...body,id:'0'}),env)).status,403);
+ assert.equal((await operatorService(req('PATCH',{...body,id:'2',role:'MASTER'}),env)).status,403);
+ assert.equal((await(await operatorService(req('GET',null,'?status=SUSPENDED'),env)).json()).total,1);
+ const updated=sql.prepare('SELECT updated_at FROM relay_accounts WHERE id=?').get('1').updated_at;
+ assert.equal((await operatorService(req('PATCH',{...body,status:'ACTIVE',expectedUpdatedAt:updated}),env)).status,200);
+ assert.equal(sql.prepare('SELECT count(*) AS n FROM relay_accounts').get().n,61);
+});

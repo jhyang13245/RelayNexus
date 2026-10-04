@@ -1,0 +1,6 @@
+{
+  "runtimeMode": "instant_story",
+  "requiredFeature": "instant_story_runtime_v2",
+  "sourcePackageSha256": "59891d0ba12201c1750792a350598132d5d2217967245ee82c5a2b3ce2e0c87b",
+  "entrypoint": "rules/instant_story_runtime.json"
+}

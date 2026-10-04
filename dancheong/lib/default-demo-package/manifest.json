@@ -1,0 +1,42 @@
+{
+  "packageVersion": "1.5",
+  "engineVersion": "2.4",
+  "projectId": "RN-DEMO-GISEONG-INSTANT-001",
+  "title": "기성학원 : 첫 번째 공명",
+  "runtimeMode": "instant_story",
+  "exclusiveRuntime": true,
+  "difficulty": "HARD",
+  "randomSeed": 2026030201,
+  "createdAt": "2026-08-23T12:24:21.205Z",
+  "recommendedUpload": null,
+  "assetStorage": {
+    "format": "RELAY_NOVEL_ASSET_ONCE_V1",
+    "integrity": "SHA-256",
+    "inlineDataUrls": false,
+    "logicalAssetCount": 0,
+    "originalAssetBytes": 0,
+    "storedAssetCount": 0,
+    "storedAssetBytes": 0
+  },
+  "features": [
+    "asset_once_storage",
+    "sha256_asset_integrity",
+    "character_images",
+    "character_visual_bible",
+    "live_status_window",
+    "recommended_replies",
+    "instant_story_runtime_v2",
+    "status_relationship_display_v1",
+    "exclusive_instant_runtime",
+    "safe_sentence_sse",
+    "bounded_keyword_activation",
+    "compiled_start_profiles",
+    "derived_runtime_cache_integrity"
+  ],
+  "requiredFeatures": [
+    "instant_story_runtime_v2",
+    "status_relationship_display_v1"
+  ],
+  "optionalFeatures": [],
+  "unsupportedBehavior": "reject_package"
+}

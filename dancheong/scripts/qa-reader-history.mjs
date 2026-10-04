@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/jhyan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const browser=await chromium.launch({headless:true,channel:'chrome'});
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!=='http://127.0.0.1:5198')return route.abort();if(url.pathname.startsWith('/api/'))return route.fulfill({status:200,contentType:'application/json',body:'{}'});return route.continue()});
+ await page.goto('http://127.0.0.1:5198/cortex.html?session=history-window-qa');await page.waitForFunction(()=>window.NexusCortexSpeakerMedia);
+ await page.evaluate(async()=>{const api=window.__DANCHEONG_NEW_ENGINE_TEST__,scenario=structuredClone(api._scenario()),body='복도 끝의 불빛과 발소리를 확인했다. '.repeat(45);scenario.runtime.storyId='history-window-qa';scenario.title='장기 세션 검수';const recommendations=[{label:'계속 관찰한다',risk:'LOW',source:'SAME_TURN_PROSE_WRITER'},{label:'조심스럽게 움직인다',risk:'MEDIUM',source:'SAME_TURN_PROSE_WRITER'},{label:'즉시 행동한다',risk:'HIGH',source:'SAME_TURN_PROSE_WRITER'}],turns=Array.from({length:100},(_,i)=>({id:`long-${i+1}`,input:`입력 ${i+1}`,text:`${i+1}번째 본문. ${body}`,status:'COMMITTED',metrics:{authorRecommendations:{status:'ACCEPTED'}},recommendations}));api.applyImportedState({scenario,turns},{persistState:false});await api.persist()});
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.documentElement.classList.contains('nexus-view-ready'));
+ await page.waitForTimeout(250);const initial=await page.evaluate(()=>({readyMs:performance.now(),engineTurns:window.__DANCHEONG_NEW_ENGINE_TEST__._turns().length,rendered:document.querySelectorAll('#feed > article.turn:not(.opening-scene)').length,start:window.__DANCHEONG_NEW_ENGINE_TEST__._renderedTurnRange().start,atBottom:Math.max(0,document.querySelector('.story-scroll').scrollHeight-document.querySelector('.story-scroll').scrollTop-document.querySelector('.story-scroll').clientHeight)<=2}));
+ assert.equal(initial.engineTurns,100);assert.equal(initial.rendered,5);assert.equal(initial.start,95);assert.equal(initial.atBottom,true);
+ await page.evaluate(()=>{document.querySelector('.story-scroll').scrollTop=250});await page.waitForTimeout(50);
+ const anchor=await page.evaluate(()=>{const story=document.querySelector('.story-scroll'),first=document.querySelector('[data-turn-index="95"]');story.dispatchEvent(new WheelEvent('wheel',{deltaY:-100}));story.scrollTop=0;const y=first.getBoundingClientRect().top;story.dispatchEvent(new Event('scroll'));return y});await page.waitForFunction(()=>document.querySelectorAll('#feed > article.turn:not(.opening-scene)').length===15);await page.waitForTimeout(250);
+ const loaded=await page.evaluate(()=>{const story=document.querySelector('.story-scroll'),first=document.querySelector('[data-turn-index="95"]');return{rendered:document.querySelectorAll('#feed > article.turn:not(.opening-scene)').length,start:window.__DANCHEONG_NEW_ENGINE_TEST__._renderedTurnRange().start,anchorY:first.getBoundingClientRect().top,scrollTop:story.scrollTop}});
+ console.log(JSON.stringify({initial,loaded,anchor,anchorShift:loaded.anchorY-anchor}));
+ assert.equal(loaded.start,85);assert.ok(loaded.scrollTop>0,'prepended history preserves the prior reading anchor');assert.ok(Math.abs(loaded.anchorY-anchor)<4,`anchor moved ${loaded.anchorY-anchor}px`);assert.deepEqual(errors,[]);
+}finally{await browser.close()}

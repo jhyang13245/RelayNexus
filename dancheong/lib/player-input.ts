@@ -1,0 +1,1 @@
+export const MAX_PLAYER_INPUT_CHARS = 12_000;

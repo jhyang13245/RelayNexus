@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {draftFixture} from './generated-fixture';
+import {projectFromGeneratedDraft,jieumDraftSchema} from '../../features/jieum/generated-draft';
+import {projectFromNexusBlueprint} from '../../features/jieum/nexus-blueprint';
+import {validateProject} from '../../features/jieum/studio-model';
+import {STUDIO_CORTEX_TARGET} from '../../lib/studio-cortex-target';
+import {exportScenarioPack} from '../../features/jieum/studio-export';
+test('generated drafts survive handoff and package export in both modes',async()=>{for(const mode of ['intelligent_canon','instant_story'] as const){const p=projectFromGeneratedDraft(draftFixture(mode),mode),received=projectFromNexusBlueprint({format:'RELAY_NEXUS_STUDIO_BLUEPRINT_V1',target:STUDIO_CORTEX_TARGET,runtimeMode:mode,project:p});assert.equal(received.player.name,'윤서');assert.deepEqual(validateProject(received).filter(i=>i.severity==='error'),[]);if(mode==='intelligent_canon'){assert.equal(received.canonDesign?.events.A.ending,true);assert.equal(received.canonDesign?.replies[0],'편지를 살핀다.');}else{assert.equal(received.events.length,0);assert.equal(received.instantStory.startProfiles[0].recommendedReplies[2],'책장 뒤를 조사한다.');}assert.ok((await exportScenarioPack(received,false)).blob.size>0);}});
+test('generator rejects malformed replies and unresolved branch targets',()=>{const broken=draftFixture();broken.opening.replies=['한 개'];assert.throws(()=>projectFromGeneratedDraft(broken,'intelligent_canon'),/항목 수/);const d=draftFixture();d.routes[0].events[0].nextEventId='missing';assert.throws(()=>projectFromGeneratedDraft(d,'intelligent_canon'),/연결|후속|사건/);});
+test('strict schema excludes retired technical fields and has complete required lists',()=>{for(const mode of ['intelligent_canon','instant_story'] as const){const schema=jieumDraftSchema(mode),walk=(s:any)=>{assert.equal(s.uniqueItems,undefined);if(s.type==='object'){assert.equal(s.additionalProperties,false);assert.deepEqual(s.required,Object.keys(s.properties));Object.values(s.properties).forEach(walk);}if(s.items)walk(s.items);};walk(schema);assert.equal(schema.properties?.statusWindow,undefined);assert.equal(schema.properties?.difficulty,undefined);assert.equal(Boolean(schema.properties?.routes),mode==='intelligent_canon');}});

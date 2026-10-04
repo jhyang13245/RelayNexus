@@ -1,0 +1,38 @@
+{
+  "fate-seoul": {
+    "publicAliases": {
+      "NPC_SERVANT_SABER_JEONGJO_TS": ["소녀 검사", "소녀검사", "세이버"]
+    },
+    "roleNames": ["세이버", "Saber"],
+    "eventPublicAliases": [
+      {
+        "characterId": "NPC_SERVANT_LANCER_SCATHACH",
+        "eventIds": [
+          "EV_ACT2_KADOC_04_RED_SPEAR",
+          "EV_ACT2_KADOC_05_PROBE_DUEL",
+          "EV_ACT2_KADOC_06_ENOUGH",
+          "EV_ACT2_KADOC_07_SPEAR_SCAR",
+          "EV_ACT2_KADOC_08_MASTER_AND_LANCER",
+          "EV_ACT2_NIGHT_01_TWO_TRUTHS",
+          "EV_ACT2_NIGHT_03_WORD_SPEAR",
+          "EV_ACT2_NIGHT_05_SPEAR_AND_GENERAL_1",
+          "EV_ACT2_NIGHT_07_RAIL_AND_FLEET",
+          "EV_ACT2_NIGHT_08_LANCER_NP",
+          "EV_ACT2_NIGHT_09_GENERAL_RISES",
+          "EV_ACT2_NIGHT_10_COUNTER_NP",
+          "EV_ACT2_NIGHT_11_DEFEAT",
+          "EV_ACT2_NIGHT_12_GOLDEN_NET",
+          "EV_ACT2_NIGHT_13_LAST_CHOICE"
+        ],
+        "name": "붉은 창의 여자",
+        "aliases": ["붉은 창을 든 여자", "붉은 쌍창의 여자", "랜서", "Lancer"]
+      },
+      {
+        "characterId": "NPC_SERVANT_ARCHER_TESLA",
+        "eventIds": ["EV_ACT1_HISHIRI_05_FAKE_LIGHTNING", "EV_ACT1_HISHIRI_06_LIGHTNING_USER", "EV_ACT1_HISHIRI_07_STRANGERS", "EV_ACT1_HISHIRI_08_SECOND_MIMIC"],
+        "name": "정체불명의 남자",
+        "aliases": ["능선의 남자", "장신의 남자", "정체불명의 뇌전 사용자", "남자"]
+      }
+    ]
+  }
+}

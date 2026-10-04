@@ -1,0 +1,121 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {createRequire} from 'node:module';
+import {webcrypto} from 'node:crypto';
+import ts from 'typescript';
+import React,{act} from 'react';
+import {createRoot} from 'react-dom/client';
+import {JSDOM} from 'jsdom';
+import * as reliability from '../lib/reader-reliability';
+
+for(const initialMode of ['novel','visual'])test(`cloud receipt and direct reader entry preserve the running session (${initialMode})`,async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://test/',pretendToBeVisual:true});
+ const prior={window:globalThis.window,document:globalThis.document};Object.assign(globalThis,{window:dom.window,document:dom.window.document,IS_REACT_ACT_ENVIRONMENT:true});
+ const requests:any[]=[],posts:any[]=[];let remote={revision:3,turn:3,id:'session',name:'test',updatedAt:'2026-09-18T00:00:00Z'},fail=false,release:(()=>void)|null=null,hold:Promise<void>|null=null;
+ const fetch=async(url:string,options:any={})=>{const body=options.body?JSON.parse(options.body):undefined;requests.push({url,body,method:options.method});
+  if(url.endsWith('/lease'))return {ok:true,status:200,clone(){return this},json:async()=>({lease:{epoch:'epoch',ttlMs:90000}})};
+  if(options.method==='PUT'){if(hold)await hold;if(fail)return {ok:false,status:500,json:async()=>({error:'offline fixture'})};remote={...remote,revision:remote.revision+1,turn:body.snapshot?.turns?.length||4};return {ok:true,status:200,json:async()=>({session:remote})};}
+  return {ok:true,status:200,json:async()=>({session:{...remote},snapshot:{schema:'CORTEX_TEST',turns:Array.from({length:remote.turn},()=>({status:'COMMITTED',text:'test'}))}})};
+ };
+ const require=createRequire(import.meta.url),exports:any={};
+ const modeExports:any={};dom.window.localStorage.setItem('dancheong-reading-mode-v1',initialMode);
+ const modeCode=ts.transpileModule(fs.readFileSync('app/components/reading-mode.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+ vm.runInNewContext(modeCode,{exports:modeExports,require,window:dom.window,localStorage:dom.window.localStorage,Event:dom.window.Event});
+ const compiled=ts.transpileModule(fs.readFileSync('app/cortex-player.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+ vm.runInNewContext(compiled,{exports,require:(name:string)=>{
+  if(name.includes('components/reading-mode'))return modeExports;
+  if(name.includes('cortex-account-scope'))return {accountFetch:(_owner:any,...args:any[])=>fetch(args[0],args[1]),accountStorageKey:(k:string)=>k};
+  if(name.includes('reader-reliability'))return reliability;
+  if(name.includes('cortex-cloud-delta'))return {cloudDelta:()=>null};
+  if(name.includes('cortex-cloud-content'))return {sameCloudContent:(a:any,b:any)=>JSON.stringify(a)===JSON.stringify(b)};
+  if(name.includes('text-provider'))return {deviceTextProvider:()=> 'openai',deviceMuseReasoningEffort:()=> 'low'};
+  if(name.includes('openai-image-key'))return {OPENAI_IMAGE_KEY_CHANGED:'image-key',resolveOpenAIImageKey:async()=>null};
+  if(name.includes('use-runtime-engine'))return {readCortexProjectPackage:async()=>null,rememberCortexProjectPackage:async()=>{},saveCortexSession:()=>{}};
+  return require(name);
+ },window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,navigator:dom.window.navigator,crypto:webcrypto,CustomEvent:dom.window.CustomEvent,AbortController,AbortSignal,TextEncoder,console,fetch,File:dom.window.File});
+ const root=createRoot(dom.window.document.getElementById('root')!);
+ try{
+  await act(async()=>root.render(React.createElement(exports.CortexPlayer,{accountOwnerKey:'qa',sessionId:'session',projectId:'project',sessionName:'test',apiKey:'fake',theme:'light',readingWidth:'normal',fontSize:'small',typingSpeed:'natural',imageQuality:'low',imageEvery:0,file:null,onHome:()=>{},onSettings:()=>{},onFileConsumed:()=>{}})));
+  const frame=dom.window.document.querySelector('iframe')!;frame.contentWindow!.postMessage=(data:any)=>posts.push(data);
+  const originalSrc=frame.src;
+  assert.equal(new URL(frame.src).searchParams.get('view'),initialMode);
+  if(initialMode==='visual')assert.equal(frame.style.visibility,'hidden','never expose the novel shell before the renderer is ready');
+  const message=async(data:any)=>act(async()=>{dom.window.dispatchEvent(new dom.window.MessageEvent('message',{origin:dom.window.location.origin,source:frame.contentWindow,data:{channel:'NEXUS_CORTEX_HOST_V1',...data}}))});
+  await message({type:'READY',local:{restored:false,turn:0,savedAt:''}});
+  const restored=posts.find(p=>p.type==='CLOUD_RESTORE');assert.ok(restored);
+  await message({type:'CLOUD_RESTORE_COMPLETE',syncEpoch:restored.syncEpoch,turn:3,savedAt:'start',contentKey:'base'});
+  if(initialMode==='visual'){
+    const request=posts.filter(p=>p.type==='VIEW_MODE').at(-1);
+    assert.ok(request?.requestId);assert.equal(frame.style.visibility,'hidden','cloud restore is not visual readiness');
+    await message({type:'VIEW_MODE_READY',mode:'novel',requestId:request.requestId});
+    assert.equal(frame.style.visibility,'hidden','a different renderer cannot reveal the iframe');
+    await message({type:'VIEW_MODE_ERROR',mode:'visual',requestId:request.requestId,message:'준비 실패 테스트'});
+    assert.match(dom.window.document.querySelector('.cortex-visual-entry')?.textContent||'',/준비 실패 테스트/);
+    await act(async()=>{(dom.window.document.querySelector('.cortex-visual-entry button') as HTMLButtonElement).click()});
+    const retry=posts.filter(p=>p.type==='VIEW_MODE').at(-1);assert.notEqual(retry.requestId,request.requestId);
+    await message({type:'VIEW_MODE_READY',mode:'visual',requestId:request.requestId});
+    assert.equal(frame.style.visibility,'hidden','ignore stale completions after retry');
+    await message({type:'VIEW_MODE_READY',mode:'visual',requestId:retry.requestId});
+    assert.equal(frame.style.visibility,'');assert.equal(dom.window.document.querySelector('.cortex-visual-entry'),null);
+    assert.equal(dom.window.document.querySelector('iframe'),frame,'view retry keeps the loaded engine');
+  }
+  await message({type:'CLOUD_STATUS_POSITION',top:100,right:16});assert.match(dom.window.document.body.textContent||'',/3비트까지 저장 완료/);
+  await message({type:'CLOUD_WRITE_REQUEST',requestId:'write'});assert.equal(posts.find(p=>p.type==='CLOUD_WRITE_RESULT')?.allowed,true);
+  await message({type:'BUSY',busy:true});
+  const beforeSwitch=posts.filter(p=>p.type==='CLOUD_EXPORT').length;
+  await message({type:'VIEW_MODE_REQUEST',mode:'visual'});
+  assert.equal(frame.closest('.cortex-reader')?.getAttribute('data-reading-mode'),'visual','landscape allowance follows the active mode');
+  assert.equal(dom.window.document.querySelector('iframe'),frame,'a renderer switch must retain the running engine iframe');
+  assert.ok(posts.some(p=>p.type==='VIEW_MODE'&&p.mode==='visual'));
+  assert.equal(posts.filter(p=>p.type==='CLOUD_EXPORT').length,beforeSwitch,'mode switching must not duplicate a turn or a cloud save');
+  await message({type:'VIEW_MODE_REQUEST',mode:'novel'});
+  assert.equal(frame.closest('.cortex-reader')?.getAttribute('data-reading-mode'),'novel');
+  assert.equal(dom.window.document.querySelector('iframe'),frame);
+  assert.equal(frame.src,originalSrc,'initial URL is stable across view changes');
+  await message({type:'BUSY',busy:false});
+  await message({type:'SUMMARY',turn:4});await message({type:'CLOUD_WRITE_FINISHED'});await message({type:'SUMMARY',turn:4});
+  assert.equal(posts.filter(p=>p.type==='CLOUD_EXPORT').length,1,'duplicate notifications produce one full export');
+  hold=new Promise<void>(r=>{release=r});const snapshot={schema:'CORTEX_TEST',turns:Array.from({length:4},()=>({status:'COMMITTED',text:'test'}))};
+  await message({type:'CLOUD_SNAPSHOT',syncEpoch:restored.syncEpoch,snapshot,turn:4,savedAt:'new',contentKey:'new'});
+  assert.match(dom.window.document.body.textContent||'',/4비트 저장 중/);assert.doesNotMatch(dom.window.document.body.textContent||'',/4비트까지 저장 완료/);
+  await message({type:'CLOUD_WRITE_REQUEST',requestId:'cancelled'});
+  await message({type:'CLOUD_WRITE_CANCELLED',requestId:'cancelled'});
+  await message({type:'CLOUD_WRITE_REQUEST',requestId:'next'});
+  assert.equal(posts.some(p=>p.type==='CLOUD_WRITE_RESULT'&&p.requestId==='next'),false,'a retry waits for the outstanding save instead of being rejected');
+  await message({type:'SUMMARY',turn:4});await act(async()=>{hold=null;release!();await new Promise(r=>setTimeout(r,10))});
+  assert.match(dom.window.document.body.textContent||'',/4비트까지 저장 완료/);assert.equal(posts.filter(p=>p.type==='CLOUD_EXPORT').length,1,'ack cancels redundant queued export');
+  await act(async()=>{await new Promise(r=>setTimeout(r,130))});
+  assert.equal(posts.find(p=>p.type==='CLOUD_WRITE_RESULT'&&p.requestId==='next')?.allowed,true,'the saved retry resumes automatically exactly once');
+  assert.equal(posts.filter(p=>p.type==='CLOUD_WRITE_RESULT'&&p.requestId==='next').length,1);
+  assert.equal(posts.some(p=>p.type==='CLOUD_WRITE_RESULT'&&p.requestId==='cancelled'),false,'a cancelled waiting action never resumes after the save');
+  await message({type:'BUSY',busy:true});await message({type:'BUSY',busy:false});await message({type:'SUMMARY',turn:5});await message({type:'CLOUD_WRITE_FINISHED'});
+  fail=true;const fifth={...snapshot,turns:[...snapshot.turns,{status:'COMMITTED',text:'fifth'}]};await message({type:'CLOUD_SNAPSHOT',syncEpoch:restored.syncEpoch,snapshot:fifth,turn:5,savedAt:'fifth',contentKey:'fifth'});
+  assert.match(dom.window.document.body.textContent||'',/5비트 미저장/);
+  const retry=dom.window.document.querySelector('.cortex-cloud-sync button') as HTMLButtonElement;assert.ok(retry);
+  fail=false;await act(async()=>retry.click());await message({type:'CLOUD_SNAPSHOT',syncEpoch:restored.syncEpoch,snapshot:fifth,turn:5,savedAt:'fifth',contentKey:'fifth'});
+  assert.match(dom.window.document.body.textContent||'',/5비트까지 저장 완료/);
+  assert.equal(requests.filter(r=>r.method==='PUT').length,3);
+  // A missing iframe export response must not latch saving forever. A late
+  // response from that timed-out export must not replace the new snapshot.
+  const setTimer=dom.window.setTimeout.bind(dom.window);let watchdog:(()=>void)|null=null;
+  dom.window.setTimeout=((handler:any,ms?:number,...args:any[])=>{
+    if(ms===30_000)watchdog=()=>handler(...args);
+    return setTimer(handler,ms,...args);
+  }) as typeof dom.window.setTimeout;
+  await message({type:'SUMMARY',turn:6});
+  const expired=posts.filter(p=>p.type==='CLOUD_EXPORT').at(-1);assert.ok(watchdog);
+  await act(async()=>watchdog!());
+  assert.match(dom.window.document.body.textContent||'',/미저장/);
+  await act(async()=>{(dom.window.document.querySelector('.cortex-cloud-sync button') as HTMLButtonElement).click()});
+  const fresh=posts.filter(p=>p.type==='CLOUD_EXPORT').at(-1);assert.notEqual(fresh.exportId,expired.exportId);
+  await message({type:'CLOUD_SNAPSHOT',syncEpoch:restored.syncEpoch,exportId:expired.exportId,snapshot:fifth,turn:5,savedAt:'late',contentKey:'late'});
+  assert.equal(requests.filter(r=>r.method==='PUT').length,3,'late response is ignored after an export timeout');
+  const sixth={...snapshot,turns:[...fifth.turns,{status:'COMMITTED',text:'sixth'}]};
+  await message({type:'CLOUD_SNAPSHOT',syncEpoch:restored.syncEpoch,exportId:fresh.exportId,snapshot:sixth,turn:6,savedAt:'sixth',contentKey:'sixth'});
+  assert.equal(requests.filter(r=>r.method==='PUT').length,4);
+  assert.match(dom.window.document.body.textContent||'',/6비트까지 저장 완료/);
+  dom.window.setTimeout=setTimer;
+ }finally{await act(async()=>root.unmount());dom.window.close();Object.assign(globalThis,{...prior,IS_REACT_ACT_ENVIRONMENT:false})}
+});

@@ -1,0 +1,13 @@
+{
+  "difficulty": "HARD",
+  "protagonistProtection": "none",
+  "resourceTracking": "strict",
+  "hiddenInformation": "strict",
+  "retroactivePreparation": "forbidden",
+  "npcAutonomy": "full",
+  "failureMitigation": "none",
+  "deathEnabled": true,
+  "warningLevel": "observational_only",
+  "relationVolatility": "realistic",
+  "clockAdvanceSeverity": "strict"
+}

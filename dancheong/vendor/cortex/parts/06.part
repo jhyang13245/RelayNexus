@@ -1,0 +1,583 @@
+    return plan;
+  }
+
+  function sysInvariantAudit(sc,txn,text,blocks=[]){const issues=[],phase=sysEventPhase(sc),chrono=sysChronologyIssue(text,txn),state=sysStateIssue(text,txn,sc),future=sysFutureLeak(text,txn,sc),motif=sysMotifIssue(sc,text,txn?.intent?.raw);if(chrono)issues.push(`TIME_CONTINUITY:${chrono}`);if(state)issues.push(`STATE_CONTINUITY:${state}`);if(future)issues.push(future);if(motif)issues.push(motif);issues.push(...sysRealizationIssues(txn?.intent?.raw,txn,text));const graph=sysPresenceGraph(sc,text,blocks,{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,txn)}),present=new Set(graph.presentCharacterIds);for(const b of sl(blocks))if(b?.kind==='dialogue'&&b?.speakerId&&!sysSpeakerPresent(sc,present,b.speakerId))issues.push(`OUT_OF_SCENE_DIALOGUE:${b.speakerId}`);if(phase==='WAITING_FOR_START'&&txn?.eventPatch?.advanceAtCommit)issues.push('EVENT_FSM:WAITING_CANNOT_ADVANCE');const timelineEnd=blocks?.at(-1)?.sceneEnd;if(timelineEnd&&txn?.guards?.forbidTimeAfter&&parseClock(timelineEnd)>parseClock(txn.guards.forbidTimeAfter)&&(((txn?.corridor?.endDay??txn?.start?.day??0))===(txn?.start?.day||0)))issues.push('TIME_CONTINUITY:BLOCK_AFTER_CORRIDOR');return {schema:SYS_INVARIANT_SCHEMA,phase,issues:su(issues),presence:graph,actionFrames:sclone(txn?.intent?.actionFrames||[]),motif:sysMotifDirective(sc,txn?.intent?.raw)}}
+
+
+  function sysParseDuration(text){
+    const temporal=CortexContract.parseKoreanTemporalRoles(sx(text));return Number.isFinite(+temporal.durationSec)&&+temporal.durationSec>0?+temporal.durationSec:null;
+  }
+  function sysParseUntil(text){
+    const body=sx(text),m=body.match(/(?:(오전|오후)\s*)?(\d{1,2})\s*시(?!간)(?:\s*(\d{1,2})\s*분)?\s*(?:까지|전까지|무렵까지)?/u)||body.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(?:까지|전까지)?/u);if(!m)return {text:'',seconds:null};
+    let h,mi,raw=m[0];if(m.length>=4&&m[2]!=null){h=+m[2];mi=+(m[3]||0);if(m[1]==='오후'&&h<12)h+=12;if(m[1]==='오전'&&h===12)h=0}else{h=+m[1];mi=+m[2]}
+    return {text:raw,seconds:(h%24)*3600+mi*60};
+  }
+  function sysRefusal(text){return /(?:하지\s*않|안\s*(?:할|간|가|하|먹|받|보|만나)|싫(?:다|어|다니까)?|거부|필요\s*없|관두|포기하|무시하|생까|상관\s*없)/u.test(sx(text))}
+  function sysWorldAssertion(text){return /(?:사실은|원래부터|실은|이미\s+.+(?:였다|이다|있다)|내가\s+정한다|그건\s+.+(?:이다|였다))/u.test(sx(text))}
+  function sysRomanceIntent(text){return /(?:고백|키스|입맞춤|데이트|연애|사랑한다고|껴안|포옹|손을\s*잡고\s*걷)/u.test(sx(text))}
+  function sysEmotionalNeed(frame,input){const kind=sx(frame?.kind||'행동'),role=sx(frame?.destination||frame?.theme||frame?.target);return role?`${role}에 관한 ${kind} 선택의 실제 결과를 확인하고 싶다`:`자신이 선택한 ${kind} 행동의 실제 결과를 확인하고 싶다`}
+
+  function sysCarryKey(x){return `${sx(x?.kind)}|${sn(x?.eventRef)}|${sn(x?.beatRef)}|${sn(x?.statement)}`}
+  function sysReconcileCarryover(sc,txn={},ending={},visible=''){
+    sc.runtime=sc.runtime||{};const turnNo=(typeof turns!=='undefined'&&Array.isArray(turns)?turns.length:0)+1,eventRef=sx(sc?.event?.id),evidence=sysEvidenceText(sc,visible);let ledger=sl(sc.runtime.carryoverLedger).map(x=>({...x})).filter(Boolean);
+    for(const x of ledger)if(x.status!=='RESOLVED'&&x.statement){const r=sysRequirementSatisfied({description:x.statement},evidence,txn,sc);if(r.ok){x.status='RESOLVED';x.resolvedAt=new Date().toISOString();x.resolvedAtTurn=turnNo}}
+    const open=new Set(ledger.filter(x=>x.status!=='RESOLVED').map(sysCarryKey)),add=(kind,statement,opt={})=>{statement=sx(statement);if(!statement)return;const x={id:`syscarry-${stableHash(`${kind}|${eventRef}|${statement}`)}`,kind,statement,eventRef:sx(opt.eventRef||eventRef),beatRef:sx(opt.beatRef),sourceTurn:turnNo,status:'OPEN',openedAt:new Date().toISOString(),priority:+opt.priority||2};const k=sysCarryKey(x);if(!open.has(k)){open.add(k);ledger.push(x)}};
+    if(txn?.deferredGoal)add('PLAYER_INTENT',txn.deferredGoal,{priority:4});for(const m of sl(ending?.missing))add('EVENT_OBLIGATION',m,{priority:4});
+    for(const b of sl(sc?.event?.beats)){if(/^(?:DONE|COMPLETE|COMPLETED|SATISFIED|SEALED|RESOLVED)$/u.test(sx(b?.status).toUpperCase()))continue;const statement=sx(b?.goal||b?.description);if(statement&&!sysSyntheticBeats({beats:[b]}))add('BEAT_OBLIGATION',statement,{beatRef:b?.id,priority:3})}
+    sc.runtime.carryoverLedger=ledger.slice(-64);return sc.runtime.carryoverLedger;
+  }
+  /* v1.12.0 — 강제 마감으로 닫힌 사건은 봉인 사유에 실패로 남긴다. 성공과 구분되어야 한다. */
+  /* v1.34.1 — 연장 허용 판정. 종결조건은 채우고 넘어간다: 연장 2회 상한 때문에 요건이 남아도 강제 미완료로 봉인되던 것을 바꾼다.
+     상한을 8회로 올리되 무한 대기는 만들지 않는다 — 남은 요건 수가 줄면 진전으로 보고 정체 카운터를 초기화하고,
+     진전 없이 6연장이 이어지면 그때 미완료 봉인으로 간다. 작가는 매 연장 턴 남은 요건을 이름으로 받는다(기존 '반드시 성립해야 하는 것'). */
+  function sysClosureExtensionAllowedV1341(sc,visible,txn,p){
+    const missing=sl(sysAuditRequirements(sc,visible,txn)?.missing).length,prior=p.closureMissingCount==null?Infinity:+p.closureMissingCount;
+    if(missing<prior)p.closureStallTurns=0;else p.closureStallTurns=(+p.closureStallTurns||0)+1;
+    p.closureMissingCount=missing;
+    return (+p.closureExtensionCount||0)<SYS_CLOSURE_EXTENSION_LIMIT_V1341&&(+p.closureStallTurns||0)<SYS_CLOSURE_STALL_LIMIT_V1341;
+  }
+  function sysSealReason(ending){if(ending?.forcedClosure)return `FORCED_DEADLINE_CLOSURE: ${sx(ending?.forcedReason)||sl(ending?.missing).map(value=>sx(value)).join(' · ')||'UNMET_AT_DEADLINE'}`;const rows=sl(ending?.evidence).filter(x=>x?.ok);return rows.length?rows.map(x=>`${sx(x.requirement)}(${sx(x.reason||x.type||'SYSTEMIC_PASS')})`).join(' · '):'SYSTEMIC_COMPLETION_PASS'}
+  function sysSelectNext(sc,event){if(sl(event?.branchCandidates).length){try{if(typeof selectPackageBranch==='function'&&typeof packageState==='function')return selectPackageBranch(event,packageState(sc))||event.nextEvent||null}catch{}return event.branchCandidates[0]||event.nextEvent||null}return event?.nextEvent||null}
+  function sysPrepareTransitionCapsule(sc,visible){try{const turn=typeof turns!=='undefined'&&Array.isArray(turns)?turns.at(-1):null;if(turn&&typeof prepareNextTurnNarrativeCapsule==='function')turn.narrativeCapsulePrepared=prepareNextTurnNarrativeCapsule(sc,turn,'',visible)}catch{}}
+  function sysApplyBeatAdvance(event){const beats=sl(event?.beats);if(!beats.length)return;const i=sclamp(+event.activeBeatIndex||0,0,beats.length-1);beats[i].status='COMPLETED';const ni=Math.min(i+1,beats.length-1);event.activeBeatIndex=ni;if(ni!==i)beats[ni].status='ACTIVE';event.nextBeat=sx(beats[ni]?.goal||event.nextBeat)}
+  /* v1.14.0 — 비트는 본문이 그 비트의 목표를 실제로 다뤘을 때만 넘어간다.
+     여태 buildTxn 이 "마지막 비트가 아니면 진행"으로만 표시해서, 목표가 한 줄도 반영되지 않은
+     턴에서도 비트가 소진됐다. 비트를 다 쓰고도 요건이 남는 종결 실패의 직접 원인이다.
+     판정 근거인 본문은 집필 후에야 존재하므로, 결정은 커밋 시점으로 옮긴다.
+
+     다만 목표가 끝내 성립하지 않는 비트에 사건이 갇히면 마감까지 한 자리에 머문다.
+     그래서 같은 비트에 이 턴 수만큼 머물면 증거와 무관하게 진행시킨다. 진행은 늦추되 막지는 않는다. */
+  const SYS_BEAT_STALL_LIMIT_V14=3;
+  /* 완료와 진행은 다른 사건이다.
+     마지막 비트에서는 넘어갈 다음 비트가 없어서 진행이 일어나지 않는다.
+     그래서 activeBeatIndex 만 보면 "마지막 비트에 들어왔다"와 "마지막 비트를 끝냈다"를
+     구분할 수 없고, 비트 예산이 실제로 소진됐는지 아무도 알지 못한다.
+     매 커밋마다 현재 비트를 감사해 완료를 기록하고, 진행은 그 결과에서 파생시킨다. */
+  function sysBeatEvidenceAdvanceV14(event,visible,p){
+    const beats=sl(event?.beats);if(!beats.length)return {completed:false,advance:false,reason:'NO_BEATS'};
+    const last=beats.length-1,i=sclamp(+event.activeBeatIndex||0,0,last),goal=sx(beats[i]?.goal);
+    const state=p||{};
+    if(state.beatStallIndex!==i){state.beatStallIndex=i;state.beatStallTurns=0}
+    state.beatStallTurns=(+state.beatStallTurns||0)+1;
+    const done=(reason,extra={})=>{
+      state.beatStallTurns=0;
+      /* 완료는 비트에 직접 남긴다. 마지막 비트도 여기서 COMPLETED 가 되어야
+         예산 소진 판정이 성립한다. sysApplyBeatAdvance 는 진행할 때만 도는 함수라 그 역할을 못 한다. */
+      if(beats[i])beats[i].status='COMPLETED';
+      return {completed:true,advance:i<last,reason,beatIndex:i,isLastBeat:i===last,...extra};
+    };
+    /* 빈 합성 비트도 이제 자동 소진하지 않는다. 같은 Unified IR에서 현실의
+       직접 행동 결과가 확인되거나, CLOSURE 조건의 typed 증거가 성립해야 한다. */
+    if(!goal){const outputIR=sysUnifiedSemanticIRV16(visible,scenario,'GENERATED_OUTPUT'),phase=sx(beats[i]?.phase).toUpperCase(),closureAudit=phase==='CLOSURE'?sysAuditRequirements(scenario,visible,{intent:{raw:''}}):null,transitionContract=p?.activeCanonTransitionContract||null,transitionGraph=transitionContract?sysKoreanDiscourseGraphV11(visible,scenario):null,transitionAudit=transitionContract?CortexContract.auditCanonTransition(visible,transitionContract,{propositionGraph:transitionGraph,elapsedSec:transitionContract.availableSec}):null,decision=CortexContract.beatDecisionFromIR({beat:beats[i],outputIR,requirementsMet:closureAudit?.ok===true,canonProgressRequired:phase==='GUIDED'&&Boolean(transitionContract),canonProgressVerified:transitionAudit?.ok===true});if(decision.completed)return done(decision.reason,{transitionAudit});return {completed:false,advance:false,reason:decision.reason,beatIndex:i,isLastBeat:i===last,transitionAudit}}
+    const asserted=sysFactAssertedV13(goal,sx(visible));
+    if(asserted.ok)return done('BEAT_GOAL_IN_PROSE',{ratio:asserted.ratio});
+    if(state.beatStallTurns>=SYS_BEAT_STALL_LIMIT_V14){if(beats[i])beats[i].status='RECOVERY_REQUIRED';return {completed:false,advance:false,recoveryRequired:true,reason:'BEAT_STALL_REQUIRES_CANON_RECOVERY',beatIndex:i,isLastBeat:i===last,ratio:asserted.ratio,goal:sline(goal,90)}}
+    return {completed:false,advance:false,reason:'BEAT_GOAL_NOT_SHOWN',beatIndex:i,isLastBeat:i===last,ratio:asserted.ratio,goal:sline(goal,90)};
+  }
+  /* v1.14.0 — 본편 예산이 소진됐는가.
+     예산의 단위는 비트다. 비트를 선언한 사건은 선언된 비트가 곧 예산이고,
+     선언하지 않은 사건은 한 턴을 한 비트로 세어 아래 기본값을 예산으로 쓴다.
+     그래서 아래 함수가 턴 수를 돌려주더라도 그것은 "본편에 허용된 비트 수"와 같은 뜻이다.
+
+     연장은 여태 시간 마감(closure.overdue)에서만 열렸다. 그래서 42분짜리 사건을
+     턴당 몇 분씩 소화하는 동안 요건이 미충족인 채 NOT_DUE 만 반복됐고,
+     "비트를 다 쓰면 연장 두 개를 주고 종결한다"는 계약이 돌 자리가 없었다.
+
+     요건 개수는 예산으로 환산하지 않는다. 한 장면이 요건 여럿을 동시에 충족시킬 수 있어
+     턴 수와 대응하지 않기 때문이다. 아래에서 요건 개수는 보통이냐 무겁냐를 한 단계 가르는 데만 쓴다. */
+  /* 비트 선언이 없는 사건의 본편 길이. 보통 사건은 세 턴, 무겁게 굴러가는 사건은 네 턴이다.
+     한 턴은 짧다. 실측 패키지 47개 사건이 전부 비트·pacing 미선언이라 이 기본값이
+     패키지 전체를 지배하고, 값이 작으면 모든 사건이 첫 턴부터 종결 압박을 받는다. */
+  const SYS_MAIN_BUDGET_BASE_V14=3,SYS_MAIN_BUDGET_COMPLEX_V14=4;
+  /* 전투·추격처럼 한 장면 안에서 상태가 여러 번 바뀌는 사건은 한 턴이 더 필요하다.
+     작품 이름이나 특정 사건 ID 로 가르지 않는다. 패키지가 선언한 유형과 사건 자체의 구조만 본다. */
+  const SYS_COMPLEX_EVENT_RE_V14=/(?:combat|battle|fight|duel|chase|raid|siege|boss|climax|showdown|전투|교전|싸움|접전|추격|결전|대치|난입|습격)/iu;
+  function sysComplexEventV14(event){
+    const declared=[event?.type,event?.kind,event?.category,event?.sceneType,event?.packageMeta?.category,...sl(event?.tags),...sl(event?.packageMeta?.tags)].map(value=>sx(value)).join(' ');
+    if(SYS_COMPLEX_EVENT_RE_V14.test(declared))return true;
+    if(SYS_COMPLEX_EVENT_RE_V14.test(`${sx(event?.title)} ${sx(event?.summary)}`))return true;
+    /* 선언이 없으면 구조로 본다. 성립시켜야 할 조건이 셋 이상이면 한 장면에 담기 어렵다.
+       조건 개수를 턴 수로 환산하는 것이 아니라, 보통이냐 무겁냐를 한 단계 가르는 데만 쓴다. */
+    const goals=sl(event?.compiledEventIR?.completionPolicy?.goals).length||sl(event?.requiredFunctions).length;
+    return goals>=3;
+  }
+  function sysMainBudgetTurnsV14(event){
+    const beats=sl(event?.beats).filter(b=>b?.runtimeExtension!==true);
+    if(beats.length)return beats.length;
+    /* 정규화 전 낡은 세션만을 위한 복구값이다. pacing/minTurns 는 종결 권한이 아니며
+       실제 실행에서는 materializeRuntimeBeats 가 만든 3/4개 비트가 유일한 예산이다. */
+    return sysComplexEventV14(event)?SYS_MAIN_BUDGET_COMPLEX_V14:SYS_MAIN_BUDGET_BASE_V14;
+  }
+  function sysMainBudgetExhaustedV14(event,p){
+    const beats=sl(event?.beats).filter(b=>b?.runtimeExtension!==true);
+    if(beats.length)return beats.every(b=>sx(b?.status)==='COMPLETED');
+    return (+p?.eventTurns||0)>=sysMainBudgetTurnsV14(event);
+  }
+  function sysLoopResetAuthorized(sc,beforeEvent,nextEvent,committedWorld){
+    const loopPolicy=sc?.runtime?.packageV15?.loopPolicy||sc?.timeLoopRules||{};
+    const loopEnabled=sc?.timeLoop===true||loopPolicy?.enabled===true;if(!loopEnabled||!beforeEvent||!nextEvent)return false;
+    const before=sysEventBounds(beforeEvent,committedWorld||sc?.world||{}),next=sysEventBounds(nextEvent,committedWorld||sc?.world||{}),committed=sclock(committedWorld?.day??sc?.world?.day,committedWorld?.time??sc?.world?.time);
+    const explicitReset=Boolean(nextEvent?.packageMeta?.loopReset===true||nextEvent?.loopReset===true||nextEvent?.resetPoint===true||nextEvent?.packageMeta?.resetPoint===true);
+    return explicitReset||next.start<committed||next.start<before.start;
+  }
+  function sysApplyLoopResetWorld(sc,beforeEvent,nextEvent,committedWorld){
+    if(!sysLoopResetAuthorized(sc,beforeEvent,nextEvent,committedWorld))return {authorized:false,world:{...committedWorld}};
+    const b=sysEventBounds(nextEvent,committedWorld||sc?.world||{}),parts=sparts(b.start);return {authorized:true,world:{day:parts.day,time:parts.time,location:sx(nextEvent?.canonLocation||nextEvent?.location||committedWorld?.location||sc?.world?.location)}};
+  }
+  /* v1.12.0 — 마감을 넘긴 사건이 이 턴 수만큼 요건을 못 닫으면 실패로 확정하고 넘어간다. */
+  const SYS_OVERDUE_LIMIT_V12=3;
+  /* v1.12.0 — 대기 구간 압축. 다음 사건까지 이 시간 이상 남았고 사용자가 시간을 명시하지 않았으면
+     한 턴 안에서 몽타주로 압축한다. 압축 후에는 사건 개시 직전(LEADIN)까지만 보낸다. */
+  const SYS_INTERLUDE_COMPRESS_SEC_V12=5400,SYS_INTERLUDE_LEADIN_SEC_V12=300;
+  function sysActivateExtensionBeatV15(event,p){const round=Math.min(SYS_CLOSURE_EXTENSION_LIMIT_V1341,(+p?.closureExtensionCount||0)+1),phase=round===1?SYS_BEAT_PHASE_V13.RECOVERY:SYS_BEAT_PHASE_V13.HARD,id=round===1?'runtime-extension-recovery':'runtime-extension-hard';/* v1.34.1 — 2라운드 이후도 HARD 연장으로 이어간다 */for(const beat of sl(event?.beats))if(beat.status==='ACTIVE')beat.status='COMPLETED';const beat={id,title:round===1?'임시 연장 · 인과 회수':'최종 연장 · 필수 성립',goal:'',phase,status:'ACTIVE',runtimeSynthetic:true,runtimeExtension:true};event.beats=[...sl(event.beats).filter(b=>sx(b?.id)!==id),beat];event.activeBeatIndex=event.beats.length-1;event.extensionActive=true;p.closureExtensionCount=round;p.phase=`EXTENSION_${round}`;return beat}
+  function sysDirectAdvance(sc,txn,ending,visible=''){
+    const event=sc?.event;if(!event)return {status:'NO_EVENT'};sc.runtime=sc.runtime||{};event.runtimeEvidence=su([...sl(event.runtimeEvidence),sx(visible)].filter(Boolean)).slice(-12);const p=sysEnsureRuntime(sc),turnNo=p.eventTurns+1;sysExtractPhysical(sc,visible,turnNo);p.eventTurns=turnNo;p.lastAudit={...(p.lastAudit||{}),status:sx(ending?.status)};sysReconcileCarryover(sc,txn,ending,visible);
+    /* v1.12.0 — 확장 한도 초과가 BLOCKED 로 끝나고 아무 전이도 일으키지 않던 경로를 실패 봉인으로 잇는다. */
+    if(ending?.status==='EXTEND'){const extension=sysActivateExtensionBeatV15(event,p);sysUpdateMotifs(sc,visible,turnNo);return {status:'EXTEND',eventId:event.id,extension:p.closureExtensionCount,extensionBeat:extension.phase,forcedCanonRealization:p.closureExtensionCount>=2,missing:sl(ending?.missing).map(value=>sx(value))}}
+    if(!/^PASS_/u.test(sx(ending?.status))){
+      /* v1.12.0 — 마감 수렴.
+         v1.11.1 은 evaluateEnding 이 BLOCKED 를 내도 여기서 CONTINUE 로 흘려보내
+         마감을 넘긴 사건이 무한정 활성으로 남았다. 요건 판정이 fail-closed 라
+         실제로 벌어진 일도 미충족으로 남을 수 있어 출구가 반드시 필요하다.
+         마감 초과가 이어지면 실패 결과로 확정하고 다음 사건으로 넘긴다. */
+      const overdueNowV12=sysEventPhase(sc)==='OVERDUE'||sx(ending?.status)==='BLOCKED';
+      p.overdueTurns=overdueNowV12?(+p.overdueTurns||0)+1:0;
+      /* v1.14.0 — 비트 감사는 매 커밋 돈다. 진행 여부와 무관하다.
+         마지막 비트에서는 advanceBeatAtCommit 이 false 라, 그 조건 안에서만 감사하면
+         마지막 비트는 영원히 완료로 기록되지 않고 예산도 소진되지 않는다. */
+      if(!(overdueNowV12&&p.overdueTurns>=SYS_OVERDUE_LIMIT_V12)){const gateV14=sysBeatEvidenceAdvanceV14(event,visible,p);p.lastBeatGate=gateV14;if(gateV14.advance&&txn?.eventPatch?.advanceBeatAtCommit)sysApplyBeatAdvance(event);else if(gateV14.completed&&gateV14.isLastBeat&&!sysAuditRequirements(sc,visible,txn).ok&&sysClosureExtensionAllowedV1341(sc,visible,txn,p)){const extension=sysActivateExtensionBeatV15(event,p);sysUpdateMotifs(sc,visible,turnNo);return {status:'EXTEND',eventId:event.id,extension:p.closureExtensionCount,extensionBeat:extension.phase,missing:sl(ending?.missing).map(value=>sx(value)),beatGate:gateV14}}p.phase=sysEventPhase(sc);sysUpdateMotifs(sc,visible,turnNo);return {status:'CONTINUE',eventId:event.id,overdueTurns:p.overdueTurns,beatGate:gateV14}}
+      ending=Object.assign(ending||{},{status:'PASS_FORCED_DEADLINE',forcedClosure:true,forcedReason:`종결 연장 뒤에도 남은 조건: ${sl(ending?.missing).map(value=>sx(value)).join(' · ')}`});
+      p.overdueTurns=0;p.lastAudit={...(p.lastAudit||{}),forcedClosure:true,unmetAtDeadline:sl(ending?.missing).map(value=>sx(value))};
+    }
+    const committed={day:+txn?.endStatePatch?.worldDay||+sc?.world?.day||0,time:sx(txn?.endStatePatch?.worldTime||sc?.world?.time),location:sx(txn?.endStatePatch?.location||sc?.world?.location)};
+    sc.runtime.eventLedger=sc.runtime.eventLedger||{sealed:[],activeEventId:event.id};/* v1.12.0 — 실패 봉인 구분(V7 과 동일 규칙). */const sealed={id:event.id,title:event.title,status:ending?.forcedClosure?'SEALED_FAILURE':'SEALED',outcome:ending?.forcedClosure?'FAILURE':'SUCCESS',startTime:event.startTime,endTime:event.endTime,sealedAt:committed.time,sealReason:sysSealReason(ending),endingStatus:ending.status,unmetAtDeadline:ending?.forcedClosure?sl(ending?.missing).map(value=>sx(value)):[],beatCount:sl(event.beats).length};sc.runtime.eventLedger.sealed=[...sl(sc.runtime.eventLedger.sealed).filter(x=>(x?.id||x?.eventId)!==event.id),sealed].slice(-256);event.status='SEALED';for(const b of sl(event.beats))b.status='COMPLETED';
+    /* v1.12.0 — 강제 마감 봉인에는 성공 플래그를 붙이지 않는다. */
+    try{if(ending?.forcedClosure)applyPackageFailure(sc,event);else applyPackageCompletion(sc,event,visible)}catch{};let next=sysSelectNext(sc,event);if(next)event.nextEvent=next;
+    if(!next){sc.runtime.eventLedger.activeEventId=event.id;p.phase='SEALED';sysUpdateMotifs(sc,visible,turnNo);return {status:'SEALED',eventId:event.id,nextEventId:null}}
+    const beforeEvent=event,transitionWorld=sysApplyLoopResetWorld(sc,beforeEvent,next,committed);sc.event={...sclone(next),status:'ACTIVE',activeBeatIndex:Number.isFinite(+next.activeBeatIndex)?+next.activeBeatIndex:0,runtimeEvidence:[],extensionActive:false};sc.world={...(sc.world||{}),...transitionWorld.world};
+
+    if(transitionWorld.authorized)sc.runtime.lastLoopReset={schema:'CORTEX_LOOP_RESET_V2',fromEventId:sx(beforeEvent.id),toEventId:sx(sc.event.id),authorizedBy:'PACKAGE_LOOP_POLICY_OR_RESET_MARKER',at:new Date().toISOString()};
+    const phase=sysEventPhase(sc);if(phase==='WAITING_FOR_START'){for(const b of sl(sc.event.beats))if(b.status==='ACTIVE')b.status='PENDING'}else{const beats=sl(sc.event.beats);if(beats.length&&!beats.some(b=>b.status==='ACTIVE'))beats[sclamp(+sc.event.activeBeatIndex||0,0,beats.length-1)].status='ACTIVE'}
+    sc.runtime.systemicEventState={schema:SYS_EVENT_SCHEMA,activeEventId:sx(sc.event.id),phase,eventBeats:0,eventTurns:0,minTurns:sysPacing(sc.event),closureExtensionCount:0,lastAudit:null,lastTransitionTurn:typeof turns!=='undefined'&&Array.isArray(turns)?turns.length:0,lastTransitionWasLoopReset:transitionWorld.authorized};sc.runtime.eventMachine={schema:'CORTEX_EVENT_FSM_V2',activeEventId:sx(sc.event.id),state:phase,eventBeats:0,eventTurns:0,extensionCount:0};sc.runtime.eventLedger.activeEventId=sc.event.id;
+    if(phase==='WAITING_FOR_START'){const graph=sysPresenceGraph(sc,visible,[]);sc.scene={...(sc.scene||{}),presentCharacterIds:graph.presentCharacterIds}}else if(sl(sc.event.presentCharacterIds).length)sc.scene={...(sc.scene||{}),presentCharacterIds:su([sc?.protagonist?.id,...sl(sc.event.presentCharacterIds)].filter(Boolean))};
+    try{if(typeof refreshDynamicDisclosure==='function')refreshDynamicDisclosure(sc)}catch{};if(phase!=='WAITING_FOR_START')sc.summary=sx(sc.event.summary||sc.summary);sysUpdateMotifs(sc,visible,turnNo);sysPrepareTransitionCapsule(sc,visible);return {status:'SEALED',eventId:event.id,nextEventId:sc.event.id,nextPhase:phase};
+  }
+  function sysBlockSafetyIssue(sc,txn,text,blocks=[]){const c=sysChronologyIssue(text,txn),s=sysStateIssue(text,txn,sc),f=sysFutureLeak(text,txn,sc);if(c)return `TIME_CONTINUITY:${c}`;if(s)return `STATE_CONTINUITY:${s}`;if(f)return f;const graph=sysPresenceGraph(sc,text,blocks,{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,txn)}),present=new Set(graph.presentCharacterIds);for(const b of sl(blocks))if(b?.kind==='dialogue'&&b?.speakerId&&!sysSpeakerPresent(sc,present,b.speakerId))return `OUT_OF_SCENE_DIALOGUE:${b.speakerId}`;return ''}
+  function sysSafePrefixRepair(turn,txn,sc){if(!turn||!sl(turn.blocks).length)return {changed:false,visible:''};const original=[...turn.blocks],safe=[],local=sclone(sc);let reason='';for(const b of original){const candidate=[...safe,b],text=candidate.map(x=>sx(x?.text)).join('\n\n'),issue=sysBlockSafetyIssue(local,txn,text,candidate);if(issue){reason=issue;break}safe.push(b);sysExtractPhysical(local,sx(b?.text),+local?.runtime?.systemicPhysicalState?.updatedTurn||0)}if(!reason)return {changed:false,visible:original.map(b=>sx(b?.text)).join('\n\n')};turn.blocks=safe;turn.paragraphs=safe.map(b=>b?.kind==='dialogue'?`“${sx(b?.text)}”`:sx(b?.text));turn.charCount=turn.paragraphs.join('\n\n').length;turn.systemicTailCorrection={mode:'SAFE_PREFIX_REWIND',reason,removedBlocks:original.length-safe.length,keptBlocks:safe.length};if(safe.length)turn.endTime=sx(safe.at(-1)?.sceneEnd||turn.endTime);return {changed:true,reason,visible:turn.paragraphs.join('\n\n'),empty:!safe.length}}
+  function sysExplicitOpeningClock(sc){const sources=[sc?.runtime?.openingContract?.openingLine,sc?.runtime?.openingContract?.currentSituation,sc?.runtime?.openingCommit?.text].map(value=>sx(value)).filter(Boolean);for(const body of sources){let m=body.match(/(오전|오후)\s*(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?/u);if(m){let h=+m[2],mi=+(m[3]||0);if(m[1]==='오후'&&h<12)h+=12;if(m[1]==='오전'&&h===12)h=0;return `${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:00`}m=body.match(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/u);if(m)return `${String(+m[1]).padStart(2,'0')}:${m[2]}:${m[3]||'00'}`}return ''}
+  function sysFreshScenario(sc){return !sl(sc?.event?.runtimeEvidence).length&&!(+sc?.runtime?.canonLedger?.revision>0)&&!sl(sc?.runtime?.eventLedger?.sealed).length&&!(typeof turns!=='undefined'&&Array.isArray(turns)&&turns.length)}
+  function sysAlignOpeningClock(sc){const clock=sysExplicitOpeningClock(sc);if(!clock||!sysFreshScenario(sc))return false;const prior=sx(sc?.world?.time);if(prior===clock)return false;sc.world=sc.world||{};sc.world.time=clock;if(sc?.runtime?.openingCommit?.world)sc.runtime.openingCommit.world.time=clock;sc.runtime.scheduleAudit={schema:'CORTEX_SCHEDULE_AUDIT_V1',openingClock:clock,priorWorldClock:prior,status:'OPENING_CLOCK_ALIGNED',eventPhase:sysEventPhase(sc)};return true}
+
+  /* --- authoritative overrides --- */
+  const sysPrevParseIntent=typeof parseIntent==='function'?parseIntent:null;
+  try {
+    destinationFrom=function(input){ return sysPrimaryMove(input,scenario)?.destination||null; };
+  } catch {}
+  try {
+    parseIntent=function(input){
+      const turnAct=CortexContract.classifyTurnAct(input),semanticIR=sysUnifiedSemanticIRV16(input,scenario,'USER_INPUT'),allFrames=sysFramesFromUnifiedIRV16(input,scenario,'USER_INPUT'),frames=turnAct.primary==='ACTION'||turnAct.primary==='SPEECH'?allFrames:[],primary=sysPrimaryFrame(frames),move=frames.filter(f=>f.kind==='MOVE').at(-1)||null,duration=semanticIR.propositions.map(p=>p.temporal?.durationSec).filter(Number.isFinite).reduce((sum,value)=>sum+value,0)||null,until=sysParseUntil(input),refusal=sysRefusal(input),worldAssertion=sysWorldAssertion(input),longDuration=Number.isFinite(+duration)&&+duration>=3600,actionGraph=CortexContract.estimateActionGraphDuration(frames,{raw:sx(input),requestedDurationSec:duration,turnAct});
+      const facets=su([primary?.kind,move?.motionClass,move?.transport?'TRANSPORT':'',longDuration?'LONG_DURATION':'',refusal?'REFUSAL':'',worldAssertion?'WORLD_ASSERTION':'',sysRomanceIntent(input)?'ROMANCE':''].filter(Boolean));
+      return {raw:sx(input),turnAct,semanticIR,action:turnAct.primary==='ACTION'?sysIntentAction(primary):turnAct.primary.toLowerCase(),actionFrames:frames,actionGraph,movementFrame:move,facets,destination:move?.destination||'',source:move?.source||'',theme:primary?.theme||'',accompaniedEntities:move?.accompaniedEntities||[],transport:move?.transport||'',temporalPlan:semanticIR.propositions.map(p=>p.temporal),requestedDurationSec:duration,requestedUntilSec:until.seconds,requestedUntil:until.text,estimatedDurationSec:actionGraph.seconds,longTravel:Boolean(longDuration||move?.motionClass==='JOURNEY'),escape:Boolean(move?.motionClass==='ESCAPE'),refusal,avoidanceTarget:'',worldAssertion,irreversibleClaims:frames.filter(f=>['DESTROY','ATTACK','RELEASE'].includes(f.kind)).map(f=>({kind:f.kind,theme:f.theme||f.target||''})),deferredGoal:'',emotionalNeed:sysEmotionalNeed(primary,input),destruction:frames.some(f=>f.kind==='DESTROY'),violence:frames.some(f=>f.kind==='ATTACK'),sleep:frames.some(f=>f.kind==='REST'),romance:sysRomanceIntent(input)};
+    };
+  } catch {}
+
+  const sysPrevChoose=typeof chooseAbsorptionPlan==='function'?chooseAbsorptionPlan:null;
+  try {
+    chooseAbsorptionPlan=function(sc,intent,advanceAtCommit,canonConflict,deferredGoal,needsAbsorption=true,canonCapsule={entries:[]}){
+      const txn={intent:{...intent,deferredGoal},intentDisposition:'accepted',deferredGoal},closure=sysClosureState(sc,'',txn);
+      return sysAbsorptionPlan(txn,sc,closure);
+    };
+  } catch {}
+
+  const sysPrevPublicContext=typeof publicWriterContext==='function'?publicWriterContext:null;
+  try {
+    globalThis.__CORTEX_CLEAN_PUBLIC_CONTEXT__=function(sc,canonCapsule=null){
+      const base=sysPrevPublicContext?sysPrevPublicContext(sc,canonCapsule):{},phase=sysEventPhase(sc),motif=sysMotifDirective(sc,'');
+      if(phase==='WAITING_FOR_START'){
+        const safe={title:base.title,genre:base.genre,tone:base.tone,protagonist:base.protagonist,world:base.world,continuity:base.continuity,canonCapsule:base.canonCapsule,narrativeCapsule:base.narrativeCapsule,relationships:base.relationships,presentCharacters:(base.presentCharacters||[]).filter(c=>sl(sc?.scene?.presentCharacterIds).includes(c.id)||c.id===sc?.protagonist?.id)};
+        return {...safe,event:{id:'interlude',title:'사건 사이의 현재 장면',summary:'다음 예약 사건은 아직 시작되지 않았다.',stakes:[],requiredFunctions:[],nextBeat:'현재 행동·관계·환경만 이어 간다.'},systemic:{schema:SYS_SCHEMA,eventPhase:phase,motifDiscipline:motif,futureEventContextWithheld:true,policyAuthority:'SYSTEMIC_FINAL'}};
+      }
+      return {...base,systemic:{schema:SYS_SCHEMA,eventPhase:phase,motifDiscipline:motif,contract:'사용자 행동·정사·시간·상태·공개·문체 규칙은 작품별 편법 없이 동일한 구조 판정기로 처리한다.',policyAuthority:'SYSTEMIC_FINAL'}};
+    };
+  } catch {}
+
+  let sysApplyEventStartGateCompatV4=null;
+  const sysPrevApplyEventStart=typeof applyEventStartGate==='function'?applyEventStartGate:null;
+  try {
+    sysApplyEventStartGateCompatV4=function(txn,sc){
+      const phase=sysEventPhase(sc),bounds=sysEventBounds(sc.event,sc.world);sysEnsureRuntime(sc);
+      if(phase!=='WAITING_FOR_START')return txn;
+      const now=sclock(txn?.start?.day??sc.world?.day,txn?.start?.time||sc.world?.time),dur=sysWaitingDuration(txn,sc),target=Math.min(bounds.start,now+Math.max(1,dur)),parts=sparts(target),mid=sparts(now+Math.max(1,Math.floor((target-now)*.55)));
+      txn.eventWindow={schema:SYS_EVENT_SCHEMA,state:'WAITING_FOR_START',opensOnDay:bounds.startParts.day,opensAt:bounds.startParts.time,remainingSec:bounds.start-now,requestReachesStart:target>=bounds.start};
+      sysInterludeWriterContext(txn,sc,bounds);txn.intentDisposition='accepted_pending_event';
+      txn.absorptionPlan={required:false,mode:'NONE',strategy:'none',agencyRisk:'LOW',grounding:[],agencyFactsToPreserve:[],beats:[],rules:['아직 시작하지 않은 사건을 끌어오지 않는다.'],deferredGoal:txn?.intent?.deferredGoal||null,lastResortUsed:false};
+      txn.endStatePatch={...(txn.endStatePatch||{}),worldDay:parts.day,worldTime:parts.time,location:txn?.start?.location||sc.world?.location};
+      txn.corridor={...(txn.corridor||{}),startDay:Math.floor(now/86400),endDay:parts.day,endTime:parts.time,turnStartTime:sparts(now).time,turnEndLimit:parts.time,eventStartDay:bounds.startParts.day,eventStartTime:bounds.startParts.time,timeMonotonic:true};
+      txn.leases=[{id:'L1',timeRange:[sparts(now).time,mid.time],claim:'사용자가 선택한 현재 행동을 실제로 수행한다.'},{id:'L2',timeRange:[mid.time,parts.time],claim:'직접 결과와 필요한 시간만 흐르게 하고 예약 사건의 내용을 선취하지 않는다.'}];
+      txn.eventPatch={...(txn.eventPatch||{}),advanceAtCommit:false,advanceBeatAtCommit:false,auditAtCommit:false,waitingForStart:true};
+      txn.guards={...(txn.guards||{}),forbidTimeBefore:sparts(now).time,forbidTimeAfter:parts.time,forbidTimeAfterDay:parts.day,forbidLocationJump:false,forbidUnscheduledResolution:true,forbidUnlicensedCanonFacts:true};
+      return txn;
+    };
+  } catch {}
+
+  try { eventClosureState=function(sc,text='',txn=null){return sysClosureState(sc,text,txn);}; } catch {}
+  try {
+    evaluateEnding=function(text,txn){
+      const closure=sysClosureState(scenario,text,txn),p=closure.progress,eventIR=scenario.event.compiledEventIR||CortexContract.compileEventIR(scenario.event),machine=CortexContract.transitionEventMachine(scenario.runtime.eventMachine,eventIR,{ok:closure.audit.ok,rows:closure.audit.evidence,missingGoalIds:closure.audit.missing},{committed:true,overdue:closure.overdue});scenario.runtime.eventMachine=machine;
+      p.lastAudit={turn:p.eventTurns+1,at:new Date().toISOString(),ok:closure.audit.ok,missing:[...closure.audit.missing],phase:closure.phase,pressure:closure.pressure};
+      if(closure.audit.ok&&closure.closeEligible)return {status:'PASS_EQUIVALENT',missing:[],evidence:closure.audit.evidence,typedSemanticGate:true,closurePressure:closure.pressure,systemic:true};
+      if(closure.audit.ok)return {status:'NOT_DUE',missing:[],evidence:closure.audit.evidence,typedSemanticGate:true,satisfiedEarly:true,beatPending:true,systemic:true};
+      /* v1.13.0 — 임시 연장 비트를 실제로 배선한다.
+         sysDirectAdvanceV7 에는 EXTEND 처리와 확장 한도(2회) 로직이 처음부터 있었는데,
+         정작 EXTEND 상태를 만드는 곳이 없어 한 번도 발동하지 않았다.
+         마감에 닿았는데 완료조건이 남아 있으면 곧바로 실패로 넘기지 말고
+         남은 시간 안에서 비트를 한 번 더 만들어 성립을 시도한다. 두 번까지 허용하고,
+         그래도 안 되면 sysDirectAdvanceV7 이 PASS_FORCED_DEADLINE 으로 강제 종결한다. */
+      /* v1.14.0 — 연장을 여는 조건은 시계 하나가 아니다.
+         본편 비트 예산이 소진됐는데 요건이 남아 있으면 그때가 연장 시점이다.
+         v1.13.0 까지는 closure.overdue 만 봤기 때문에, 42분짜리 사건에서
+         비트를 다 쓰고도 마감까지 열 턴 넘게 NOT_DUE 만 반복됐다.
+         "비트를 다 쓰면 연장 두 개를 주고 무조건 종결한다"는 계약이 여기서 끊겨 있었다. */
+      const budgetSpentV14=sysMainBudgetExhaustedV14(scenario.event,p);
+      if(closure.overdue||budgetSpentV14){
+        /* 연장은 정확히 두 번이다. 그 안에 성립시키지 못하면 더 끌지 않고 그 자리에서 닫는다.
+           BLOCKED 를 거쳐 overdueTurns 를 3턴 더 세는 경로는 "연장 두 번 안에 종결"이라는
+           원래 계약과 다르다. 최대 다섯 턴을 끌게 되기 때문이다. */
+        if(sysClosureExtensionAllowedV1341(sc,visible,txn,p))return {status:'EXTEND',missing:closure.audit.missing,evidence:closure.audit.evidence,typedSemanticGate:true,closurePressure:true,systemic:true,extensionRound:(+p.closureExtensionCount||0)+1,reason:'RECOVERY_BEAT_FOR_UNSATISFIED_GOALS'};
+        return {status:'PASS_FORCED_DEADLINE',forcedClosure:true,missing:closure.audit.missing,evidence:closure.audit.evidence,typedSemanticGate:true,closurePressure:true,systemic:true,forcedReason:`연장 2회 후에도 미충족: ${sl(closure.audit.missing).map(value=>sx(value)).join(' · ')}`,reason:'CLOSED_AFTER_TWO_EXTENSIONS'};
+      }
+      return {status:'NOT_DUE',missing:closure.audit.missing,evidence:closure.audit.evidence,typedSemanticGate:true,beatPending:true,systemic:true};
+    };
+  } catch {}
+
+  const sysPrevPackageCompletion=typeof applyPackageCompletion==='function'?applyPackageCompletion:null;
+  try {
+    applyPackageCompletion=function(sc,event,visible=''){
+      const runtime=sc?.runtime?.packageV15;if(!runtime||!event)return;
+      runtime.completedEventIds=su([...sl(runtime.completedEventIds),event.id]).slice(-256);runtime.flags=runtime.flags||{};
+      for(const flag of sl(event?.packageMeta?.endingFlagsAdd))runtime.flags[flag]=true;
+      for(const effect of sl(event?.packageMeta?.effects)){
+        if(effect?.kind==='set_flag'&&effect.flagId)runtime.flags[effect.flagId]=effect.value??true;
+        if(effect?.kind==='increment_flag'&&effect.flagId)runtime.flags[effect.flagId]=(+runtime.flags[effect.flagId]||0)+(+effect.amount||1);
+      }
+      const endings=typeof packageItems==='function'?packageItems(runtime.endings,'endings'):sl(runtime.endings);
+      for(const ending of endings){
+        let ok=false;try{ok=packageConditionSatisfied(ending.condition,packageState(sc));}catch{}
+        if(!ok||sl(runtime.endingSeen).includes(ending.id))continue;
+        runtime.endingSeen=su([...sl(runtime.endingSeen),ending.id]);
+        for(const effect of sl(ending.effects)){
+          if(effect.kind==='unlock_route'&&effect.targetId)runtime.unlockedRouteIds=su([...sl(runtime.unlockedRouteIds),effect.targetId]);
+          if(effect.kind==='record_ending'&&effect.targetId)runtime.endingSeen=su([...sl(runtime.endingSeen),effect.targetId]);
+          if(effect.kind==='set_flag'&&effect.flagId)runtime.flags[effect.flagId]=effect.value??true;
+        }
+      }
+    };
+  } catch {}
+
+  /* Foreign runtime rejection is structural: a record that claims modern package semantics
+     but only exists as a foreign converted story is stale regardless of work/project identity. */
+  try {
+    rejectForeignRuntimeRecord=function(record){
+      const runtime=record?.scenario?.runtime?.packageV15,source=record?.scenario?.runtime?.sourcePackage||{},storyId=sx(record?.storyId),schema=(typeof PACKAGE_V15_SCHEMA!=='undefined'?PACKAGE_V15_SCHEMA:'SCENARIOPACK_CONTRACT_1_5'),claimsModern=Boolean(record?.master||runtime?.schema===schema||record?.summary?.compatibility===schema||sx(source?.packageVersion)==='1.5');
+      if(record?.master||runtime?.schema===schema)return false;
+      return /^legacy_/u.test(storyId)&&claimsModern;
+    };
+  } catch {}
+
+  try {
+    advanceEvent=function(txn,ending,visible=''){
+      const turn=typeof turns!=='undefined'&&Array.isArray(turns)?turns.at(-1):null,repair=sysSafePrefixRepair(turn,txn,scenario);if(repair.changed){visible=repair.visible;ending=evaluateEnding(visible,txn)}
+      return sysDirectAdvance(scenario,txn,ending,visible);
+    };
+  } catch {}
+
+  const sysPrevSceneLocation=typeof sceneLocationFromProse==='function'?sceneLocationFromProse:null;
+  try {
+    sceneLocationFromProse=function(text,txn){
+      const start=sx(txn?.start?.location||scenario?.world?.location),graph=txn?.semanticAuthority?.propositionGraph||sysKoreanDiscourseGraphV11(text,scenario),license=txn?.locationLicense||{},locationGraph=license.locationGraph||CortexContract.createLocationGraph({currentLocation:start}),authorizedRefs=new Set(sl(license.authorizedRefs).map(value=>sx(value)).filter(Boolean)),deferredRefs=new Set(txn?.absorptionPlan?.resumePolicy==='DEFER_AFTER_CANON'?sl(txn.absorptionPlan.deferredDestinationRefs).map(value=>sx(value)).filter(Boolean):[]);let locationRef=sx(license.currentLocationRef||locationGraph.currentLocationRef),location=start;
+      for(const node of sl(graph?.nodes).filter(item=>item?.actionKind==='MOVE'&&item?.actuality==='COMMITTED'&&item?.discourseWorld?.mode==='REALITY'&&item?.roles?.movementScope==='SCENE')){const destinationRef=sx(node?.roles?.destinationRef);if(!destinationRef||deferredRefs.has(destinationRef)||!authorizedRefs.has(destinationRef))continue;locationRef=destinationRef;location=sx(locationGraph.nodes?.find(row=>sx(row?.locationRef)===locationRef)?.label||node?.roles?.destination)||location}
+      return location||start;
+    };
+  } catch {}
+  try {
+    narrativeTravelFloor=function(text){
+      const frames=sysCompileActionFrames(text,scenario),move=frames.find(f=>f.kind==='MOVE');if(!move)return 0;
+      const explicit=typeof requestedDuration==='function'?requestedDuration(text):null;if(explicit)return Math.min(explicit,7200);
+      if(move.transport)return move.completion==='ARRIVAL'?600:120;if(move.completion==='ARRIVAL')return 120;if(move.motionClass==='JOURNEY')return 300;return 60;
+    };
+  } catch {}
+
+  const sysPrevReconcilePresence=typeof reconcileScenePresence==='function'?reconcileScenePresence:null;
+  try {
+    reconcileScenePresence=function(sc,turn,visible='',previousLocation=''){const graph=sysPresenceGraph(sc,visible,turn?.blocks||[],{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,turn?.txn)});sc.scene=sc.scene||{};sc.scene.presentCharacterIds=graph.presentCharacterIds;sc.runtime=sc.runtime||{};sc.runtime.presenceGraph={...graph,previousLocation:sx(previousLocation)};return graph.presentCharacterIds;};
+  } catch {}
+  const sysPrevImageCast=typeof imageCast==='function'?imageCast:null;
+  try {
+    imageCast=function(sc,turn,visible=''){const graph=sysPresenceGraph(sc,visible,turn?.blocks||[],{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,turn?.txn)}),ids=new Set(graph.presentCharacterIds),speakerIds=new Set(sl(turn?.blocks).map(b=>b?.speakerId).filter(Boolean));return [sc?.protagonist,...sl(sc?.characters)].filter(Boolean).filter(c=>ids.has(c.id)||speakerIds.has(c.id)).slice(0,4);};
+  } catch {}
+  // Continuity authority is installed once by the V8 clean-context compiler below.
+
+  const sysPrevSanitizeCanon=typeof sanitizeCanonDelta==='function'?sanitizeCanonDelta:null;
+  try {
+    sanitizeCanonDelta=function(sc,candidate,context={}){
+      const ev=sx(candidate?.evidence?.text||candidate?.evidence||candidate?.evidenceText||candidate?.statement||candidate?.publicStatement),kind=sx(candidate?.kind);if(!sysCanonKindSupported(kind,ev,candidate))return null;
+      const systemic=sysCanonSanitize(sc,candidate,context);if(!systemic)return null;const core=/^(?:inventory_add|inventory_remove|destruction|injury)$/u.test(kind);if(core)return systemic;
+      const enriched=sysPrevSanitizeCanon?sysPrevSanitizeCanon(sc,systemic,context):systemic;if(!enriched)return systemic;const ee=sx(enriched?.evidence?.text||enriched?.evidence||enriched?.evidenceText||enriched?.statement||enriched?.publicStatement);return sysCanonKindSupported(sx(enriched.kind),ee,enriched)?sysCanonSanitize(sc,enriched,context):systemic;
+    };
+  } catch {}
+
+  const sysPrevActionIssues=typeof actionRealizationIssues==='function'?actionRealizationIssues:null; // host bridge only
+  try { actionRealizationIssues=function(input,txn,text){return sysRealizationIssues(input,txn,text);}; } catch {}
+
+
+  const sysPrevFastWriter=typeof fastWriterInput==='function'?fastWriterInput:null; // host bridge only; not policy authority
+  function sysWriterPromptContext(sc,txn){const c=publicWriterContext(sc,txn?.writerContext?.canonCapsule||null),cap=txn?.writerContext?.narrativeCapsule||c?.narrativeCapsule||null;return {title:c?.title,genre:c?.genre,tone:c?.tone,protagonist:c?.protagonist,presentCharacters:c?.presentCharacters,relationships:c?.relationships,world:c?.world,continuity:c?.continuity,canonCapsule:c?.canonCapsule,event:c?.event,packageContract:c?.packageContract,narrativeContract:c?.narrativeContract,narrativeCapsule:cap?{schema:cap.schema,payload:cap.payload}:null,systemic:c?.systemic}}
+  try {
+    globalThis.__CORTEX_CLEAN_FAST_WRITER__=function(input,txn){const directive={schema:SYS_SCHEMA,policyAuthority:'SYSTEMIC_FINAL',eventPhase:sysEventPhase(scenario),actionFrames:sl(txn?.intent?.actionFrames),absorption:txn?.absorptionPlan?.required?txn.absorptionPlan:null,physicalState:sysPhysicalState(scenario),presence:sysPresenceGraph(scenario),motif:sysMotifDirective(scenario,input),narrativePlan:sysNarrativePlan(scenario,txn),literaryPolicy:sysLiteraryPolicy(scenario,txn),temporal:{from:txn?.guards?.forbidTimeBefore,to:txn?.guards?.forbidTimeAfter,endDay:txn?.guards?.forbidTimeAfterDay??txn?.corridor?.endDay},prose:txn?.prosePolicy,dialogue:txn?.dialoguePlan,requiredEffects:txn?.expectedEffects||[],principles:['사용자 행동 프레임을 장면 초반에 실제로 시작하고 의미 역할을 바꾸지 않는다.','성공 여부·대가·속도만 현재 정사·물리 상태·시간 회랑에 맞게 판정한다.','현재 공개 정사와 실제 존재 인물만 사용한다.','사건 종료시각은 마감이며 검사 시작점이 아니다.','예약 사건은 시작 전 내용·인물·단서를 선취하지 않는다.','정사 흡수는 사용자 계획을 취소하지 않고 공개된 인과가 실제 동선에 개입하는 방식으로 쓴다.','같은 감정 소품·비유를 반복해 감정값을 소모하지 않는다.','규칙·상태표를 설명하지 말고 행동·감각·대화·인과로 장면화한다.','직전 턴과 다른 실제 장면 변화 하나를 남기고 반복 상징 대신 그 변화로 닫는다.']};return `[공개 장면 컨텍스트]\n${JSON.stringify(sysWriterPromptContext(scenario,txn))}\n[Systemic Narrative Kernel]\n${JSON.stringify(directive)}\n- 작품명·특정 인물·장소·소품·사건 ID에 맞춘 편법은 사용하지 않는다. 패키지 데이터의 의미 역할과 위 구조 계약만 따른다.`;};
+  } catch {}
+
+  const sysPrevNormalize=typeof normalizeScenario==='function'?normalizeScenario:null;
+  try {
+    normalizeScenario=function(value){const out=sysPrevNormalize?sysPrevNormalize(value):value;out.runtime=out.runtime||{};sysAlignOpeningClock(out);sysEnsureRuntime(out);CortexProgression.activateEvent(out);sysPhysicalState(out);sysMotifLedger(out);return out;};
+  } catch {}
+  const sysPrevStorage=typeof safeScenarioForStorage==='function'?safeScenarioForStorage:null;
+  try {
+    safeScenarioForStorage=function(sc){const out=sysPrevStorage?sysPrevStorage(sc):sclone(sc);out.runtime=out.runtime||{};out.runtime.systemicEventState=sclone(sc?.runtime?.systemicEventState||sysEnsureRuntime(sc));out.runtime.systemicPhysicalState=sclone(sc?.runtime?.systemicPhysicalState||sysPhysicalState(sc));out.runtime.systemicMotifLedger=sclone(sc?.runtime?.systemicMotifLedger||sysMotifLedger(sc));out.runtime.presenceGraph=sclone(sc?.runtime?.presenceGraph||sysPresenceGraph(sc));return out;};
+  } catch {}
+
+  try {
+    const sysPrevInspector=renderEventInspector;
+    renderEventInspector=function(){sysPrevInspector?.();const root=document.getElementById?.('eventInspector'),panel=root?.querySelector?.('.panel');if(panel){const state=sysEnsureRuntime(scenario),beats=Math.max(0,+state.eventBeats||+state.eventTurns||0),budget=Math.max(1,+state.minTurns||1),line=document.createElement('div');line.className='event-time';line.textContent=`SYSTEMIC KERNEL · ${state.phase} · ${beats}/${budget} beats · extensions ${state.closureExtensionCount}/2`;panel.appendChild(line);}};
+  } catch {}
+
+
+  /* ===== Systemic v5 hardening: scoped evidence, sequential presence/state,
+     ordered multi-action frames, branch safety, and temporal assertion audit. ===== */
+  const SYS_MOVE_RE_V6=new RegExp(`${SYS_MOVE_RE.source}|(?:가서|떠나서|향해서|이동해서|출발해서|도착해서|복귀해서|귀가해서|돌아가서|들어가서|나가서|올라가서|내려가서|건너가서|진입해서|빠져나가서|벗어나서|도망가서|달아나서|피신해서|걸어서|달려가서)`,'u');
+  const SYS_NEG_LOCAL_RE=/(?:^|[\s,，])(?:안\s+[^\s]{0,10}|못\s+[^\s]{0,10})|지\s*않|지\s*못|하지\s*않|하지\s*못|말(?:자|고)|거부|아니(?:다|었다|라|며|지만)/u;
+  const SYS_HYPOTHETICAL_LOCAL_RE=/(?:려(?:고)?|하려(?:고)?|할\s*뻔|할까|하려다|시도|해\s*보려)/u;
+
+  function sysRegexMatchesV5(text,re){const flags=su([...(re.flags||'').replace(/g/g,''),'g']).join(''),rx=new RegExp(re.source,flags),out=[];let m;while((m=rx.exec(sx(text)))){out.push({index:m.index,text:m[0]});if(!m[0])rx.lastIndex++}return out}
+  function sysConnectiveBoundsV5(text,index){const body=sx(text),leftPart=body.slice(0,index),rightPart=body.slice(index),leftMatches=[...leftPart.matchAll(/(?:고|며|면서|다가|지만|는데|어서|아서|해서)(?=\s|$)|[,，;；]/gu)],left=leftMatches.length?leftMatches.at(-1).index+leftMatches.at(-1)[0].length:0;const rm=rightPart.match(/(?:고|며|면서|다가|지만|는데|어서|아서|해서)(?=\s|$)|[,，;；]/u),right=rm?index+rm.index+rm[0].length:body.length;return {left,right,segment:body.slice(left,right)}}
+  function sysLocalModalityV5(text,index,predicate){const b=sysConnectiveBoundsV5(text,index),seg=String(b.segment||''),rel=Math.max(0,index-b.left),pred=sx(predicate),before=seg.slice(Math.max(0,rel-10),rel),after=seg.slice(rel+pred.length,Math.min(seg.length,rel+pred.length+16));if(/(?:^|\s)(?:안|못)\s*$/u.test(before)||/^\s*(?:지\s*(?:않|못)|하지\s*(?:않|못))/u.test(after))return 'NEGATED';if(/(?:려(?:고)?|하려(?:고)?|시도)\s*$/u.test(before)||/^\s*(?:려(?:고)?|하려(?:고)?)/u.test(after))return 'ATTEMPT';return 'ASSERTED'}
+  function sysCasePhrasesCharV5(clause){const body=sx(clause),tokens=sysTokenize(body),out=[],offsets=[];let cursor=0;for(const tok of tokens){const idx=body.indexOf(tok,cursor);offsets.push(idx);cursor=Math.max(cursor,idx+tok.length)}for(let i=0;i<tokens.length;i++){const p=sysStripParticle(tokens[i]);if(!p)continue;const phrase=sysPhraseBefore(tokens,i,p.stem);if(phrase)out.push({phrase,particle:p.particle,index:i,charIndex:offsets[i]??0,raw:tokens[i]})}return out}
+  function sysNearestRoleV5(cases,particles,predicateIndex,minIndex=0){return cases.filter(c=>particles.includes(c.particle)&&c.charIndex>=minIndex&&c.charIndex<=predicateIndex).at(-1)||null}
+  function sysTransportBeforeV5(text,predicateIndex,minIndex,sc=null){const segment=sx(text).slice(minIndex,predicateIndex+1),tokens=sysTokenize(segment);for(let i=0;i<tokens.length;i++){if(!SYS_RIDE_PREDICATE_RE.test(tokens[i]))continue;const phrase=sysRoleObjectBefore(tokens,i,['을','를'],6);if(phrase&&!SYS_BODY_RE.test(phrase)&&!SYS_ABSTRACT_RE.test(phrase)&&!SYS_GENERIC_NOUN_RE.test(phrase))return phrase}return ''}
+  function sysAccompaniedBeforeV5(text,predicateIndex,minIndex,predicate=''){return sysAccompanied(sx(text).slice(minIndex,predicateIndex+sx(predicate).length))}
+  function sysMoveFramesV5(clause,sc=null){const text=sx(clause),matches=sysRegexMatchesV5(text,SYS_MOVE_RE_V6),out=[];let prev=0;for(const m of matches){const local=text.slice(prev,m.index+m.text.length),roles=CortexContract.movementRoles(local,Number.MAX_SAFE_INTEGER),transport=sysTransportBeforeV5(text,m.index,prev,sc);let destination=sysCleanPhrase(roles.destination||'');if(destination&&transport&&sn(destination)===sn(transport))destination='';const tokens=sysTokenize(local),carryTheme=(()=>{for(let i=0;i<tokens.length;i++){if(!SYS_CARRY_RE.test(tokens[i]))continue;const obj=sysRoleObjectBefore(tokens,i,['을','를'],6);if(obj)return obj}return ''})(),completion=SYS_ARRIVE_RE.test(m.text)?'ARRIVAL':SYS_DEPART_RE.test(m.text)?'DEPARTURE':'TRANSIT',motionClass=SYS_ESCAPE_RE.test(m.text)?'ESCAPE':SYS_RETURN_RE.test(m.text)?'RETURN':SYS_TRAVEL_CUE_RE.test(local)?'JOURNEY':completion==='ARRIVAL'?'ARRIVAL':completion==='DEPARTURE'?'DEPARTURE':'TRANSIT';out.push({schema:SYS_ACTION_SCHEMA,kind:'MOVE',lemma:'move',predicate:m.text,source:roles.source||'',destination,manner:roles.manner||'',theme:carryTheme,accompaniedEntities:sysAccompaniedBeforeV5(text,m.index,prev,m.text),transport,motionClass,completion,modality:sysLocalModalityV5(text,m.index,m.text),raw:text,position:m.index,order:0});prev=m.index+m.text.length}return out}
+  function sysPredicateMatchValidV5(text,m){const pred=sx(m?.text),next=sx(text).slice((m?.index||0)+pred.length,(m?.index||0)+pred.length+1);if(pred.length<=2&&next&&/[가-힣]/u.test(next)&&!/[한해했하아어여였었았했고며면지자려라니는은을던게기서도다]/u.test(next))return false;return true}
+  function sysOtherFramesV5(clause){const text=sx(clause),out=[];for(const [kind,re,role] of SYS_FRAME_DEFS){for(const m of sysRegexMatchesV5(text,re)){if(!sysPredicateMatchValidV5(text,m))continue;const obj=['object','attack'].includes(role)?sysObjectBeforePredicate(text,m.index):'',dative=['target','attack'].includes(role)?sysTargetBeforePredicate(text,m.index):'',target=role==='attack'?(dative||obj):dative;out.push({schema:SYS_ACTION_SCHEMA,kind,lemma:kind.toLowerCase(),predicate:m.text,theme:obj,target,source:'',destination:'',accompaniedEntities:[],transport:'',motionClass:'',completion:'ACTION',modality:sysLocalModalityV5(text,m.index,m.text),raw:text,position:m.index,order:0})}}return out}
+  function sysGenericSubactionFramesV15(clause,sc=null){const body=sx(clause),out=[];for(const segment of CortexContract.koreanActionPredicateSegments(body)){const frame=sysGenericActionFrame(segment.text,sc,segment.predicate);if(frame){frame.position=segment.start+Math.max(0,segment.text.lastIndexOf(frame.predicate||segment.predicate));frame.raw=body;out.push(frame)}}return out}
+  function sysCompileActionFramesV5(input,sc=null){const out=[];let clauseBase=0;for(const clause of sysClauses(input)){const frames=[...sysMoveFramesV5(clause,sc),...sysOtherFramesV5(clause)];for(const generic of sysGenericSubactionFramesV15(clause,sc)){const represented=frames.some(f=>Math.abs((+f.position||0)-generic.position)<=Math.max(2,sx(f.predicate).length));if(!represented)frames.push(generic)}frames.sort((a,b)=>(a.position??0)-(b.position??0));for(const f of frames){f.position=clauseBase+(f.position??0);out.push(f)}const found=sx(input).indexOf(clause,clauseBase);clauseBase=(found>=0?found:clauseBase)+clause.length}const seen=new Set();let order=0;return out.filter(f=>{const key=stableHash(JSON.stringify([f.kind,f.position,f.source,f.destination,f.theme,f.target,f.accompaniedEntities,f.transport,f.predicate,f.modality]));if(seen.has(key))return false;seen.add(key);f.order=order++;f.frameId=`frame-${key}`;return true})}
+
+  /* Korean Context IR v1
+     Action Frames answer "what action/roles?"; this layer answers whether the
+     proposition is committed, scoped, quoted, reported, planned, or conditional.
+     It is deliberately package-agnostic and fail-closed for canon/state commits. */
+  const SYS_KOREAN_COMMIT_MODALITIES=new Set(['ACTUAL']);
+  const SYS_KOREAN_REPORT_RE=/(?:다는|다고|라는|라고)\s*(?:소문|말|이야기|주장|증언|전언|보고)|(?:소문|풍문|전언)(?:만|이|은|을|이었|이었다)?\s*(?:돌|퍼지|들리)|(?:다고|라며)\s*(?:들었|전했|주장했|말했)|[가-힣]+다고\s*(?:(?:말|전|답|대답|약속|주장)?했)/u;
+  const SYS_KOREAN_INDIRECT_REPORT_RE=/([가-힣]+)(?:다고|라고)\s+((?:(?:말|전|답|대답|약속|주장)?했|(?:말|전|답|대답|약속|주장|들)었)(?:다|다고|으며|지만|는데|고)?)/gu;
+  const SYS_KOREAN_THOUGHT_RE=/(?:생각|상상|회상|기억|꿈|착각|추측)(?:했|하|이었|이었다|일\s*뿐)/u;
+  const SYS_KOREAN_PLAN_RE=/(?:ㄹ|을)\s*(?:생각|계획|예정|작정|의도)|(?:려고|고자)\s*(?:했|한다|하였다|마음먹)|(?:생각|계획|예정|작정|의도)(?:이|였|이었다|이다)/u;
+  const SYS_KOREAN_CONDITION_RE=/(?:으?면|다면|라면|는\s*경우|일\s*경우|때에만)(?:\s|,|$)/u;
+  const SYS_KOREAN_FAILURE_RE=/(?:지(?:는)?\s*못(?:했|했다|한다|하)|는\s*데\s*실패|려다\s*실패|에\s*실패|수\s*없었)/u;
+  const SYS_KOREAN_DOUBLE_NEG_RE=/(?:지\s*(?:않|못)한\s*(?:것|건|바)(?:은|는)?\s*아니|지\s*(?:않|못)았던\s*(?:것|건)(?:은|는)?\s*아니|(?:않|못|없)[^.!?。！？]{0,40}(?:것|건|바|정도)(?:은|는)?\s*아니)/u;
+  const SYS_KOREAN_DIRECT_NEG_RE=/(?:^|\s)(?:안|못)\s*$|^\s*(?:지(?:는)?\s*(?:않|못)|지는\s*못|지\s*말)|(?:지(?:는)?\s*(?:않|못)(?:았|했|한다|하였다|겠다)?)/u;
+  const SYS_KOREAN_FUTURE_RE=/(?:내일|모레|다음\s*(?:날|주|달|번)|훗날|앞으로)(?=$|[\s,，.。!?！？;；"'”’)}\]])|(?:겠|(?:ㄹ|을)\s*(?:것|예정|계획))/u;
+  const SYS_KOREAN_RELATIVE_TIME_RE=/(?:나중에|이후에|곧)(?=$|[\s,，.。!?！？;；"'”’)}\]])/u;
+  const SYS_KOREAN_STATE_FORM_RE=/(?:(?:열려|닫혀|잠겨|묶여|놓여|쓰러져)\s*(?:있|있었|있는|있다|서|진|졌다|져\s*있)|(?:서|앉아|누워)\s*있)/u;
+  const SYS_KOREAN_TEMPORAL_PREFIX_RE=/^(?:(?:오늘|어제|내일|모레|훗날|나중에|앞으로|이후에|곧|다음\s*(?:날|주|달|번))(?:은|는|에도|에)?\s+)+/u;
+  const SYS_KOREAN_TEMPORAL_NOMINAL_RE=/^(?:오늘|어제|내일|모레|훗날|나중|앞으로|이후|곧|다음\s*(?:날|주|달|번))$/u;
+  const SYS_KOREAN_NONLOCATION_ADVERB_RE=/^(?:실제|결국|마침내|다시|직접|정말|도리어|오히려)$/u;
+  const SYS_KOREAN_SCOPE_CONNECTIVE_RE=/(?<!려)(?:지만|으나|는데|은데|ㄴ데|더라도|면서|다가|어서|아서|해서|고|며)(?=\s|$)|(?:^|\s)(?:그러나|하지만|그렇지만|반면)(?=\s|$)|[,，;；]/gu;
+  const sysKoreanLemmaCacheV10=new Map();
+
+  function sysPrimeKoreanMorphCacheV10(entries=[]){let accepted=0;for(const row of sl(entries).slice(0,4096)){const surface=sline(row?.surface,80),lemma=sline(row?.lemma,80),pos=sline(row?.pos,24);if(!surface||!lemma||!/^[가-힣A-Za-z0-9·_-]+$/u.test(lemma))continue;sysKoreanLemmaCacheV10.set(surface,{lemma,pos,source:'VALIDATED_MORPH_CACHE'});accepted++}return {accepted,size:sysKoreanLemmaCacheV10.size}}
+  function sysKoreanPredicateLemmaV10(frame){const surface=sx(frame?.predicate),cached=sysKoreanLemmaCacheV10.get(surface);if(cached)return cached.lemma;if(frame?.kind&&frame.kind!=='GENERIC_ACTION')return sx(frame.lemma||frame.kind).toLowerCase();let v=surface.replace(/[“”'‘’「」『』]/gu,'').replace(/(?:습니다|습니까|해요|했어요|한다|했다|하였다|된다|됐다|되었다|간다|갔다|왔다|온다|본다|봤다|먹는다|마신다|읽는다|잡는다|놓는다|연다|닫는다|준다|받는다|잔다|쉰다|기다린다|멈춘다|시작한다|끝낸다)$/u,'').trim();return v||sn(surface)}
+  function sysQuoteDepthAtV10(text,index){const pairs={'“':'”','「':'」','『':'』','‘':'’'},stack=[];let straight=false;for(let i=0;i<Math.min(index,sx(text).length);i++){const ch=text[i];if(ch==='"'){straight=!straight;continue}if(pairs[ch])stack.push(pairs[ch]);else if(stack.at(-1)===ch)stack.pop()}return stack.length+(straight?1:0)}
+  function sysSentenceWindowV10(text,index){const body=sx(text);let left=index,right=index;while(left>0&&!/[.!?。！？\n]/u.test(body[left-1]))left--;while(right<body.length&&!/[.!?。！？\n]/u.test(body[right]))right++;return {left,right,sentence:body.slice(left,right),relative:index-left}}
+  function sysSubjectBeforeV10(text,index){const before=sx(text).slice(Math.max(0,index-56),index),m=before.match(/([가-힣A-Za-z0-9·]{1,24})(?:은|는|이|가)(?:\s+[가-힣A-Za-z0-9·]{1,12}){0,3}\s*$/u);return sysCleanPhrase(m?.[1]||'')}
+  function sysKoreanScopeBoundsV12(text,index){const body=sx(text),matches=[...body.matchAll(SYS_KOREAN_SCOPE_CONNECTIVE_RE)].map(m=>{const surface=sx(m[0]).trim(),start=(m.index||0)+Math.max(0,m[0].indexOf(surface)),end=(m.index||0)+m[0].length,adversative=/(?:지만|으나|는데|은데|ㄴ데|더라도|그러나|하지만|그렇지만|반면)/u.test(surface);return {start,end,surface,relation:adversative?'ADVERSATIVE':'SEQUENCE'}}),before=matches.filter(m=>m.end<=index).at(-1)||null,after=matches.find(m=>m.start>=index)||null;return {left:before?.end||0,right:after?.end||body.length,before,after,segment:body.slice(before?.end||0,after?.end||body.length)}}
+  function sysKoreanLocalThemeV12(text,index){const body=sx(text),w=sysSentenceWindowV10(body,index),rel=w.relative,bounds=sysKoreanScopeBoundsV12(w.sentence,rel),before=w.sentence.slice(bounds.left,rel),m=before.match(/([가-힣A-Za-z0-9·_-]{1,24})(?:을|를|은|는|이|가)\s*$/u);return sysCleanPhrase(m?.[1]||'').replace(SYS_KOREAN_TEMPORAL_PREFIX_RE,'')}
+  function sysKoreanScopeV10(text,index,predicate=''){
+    const body=sx(text),w=sysSentenceWindowV10(body,index),rel=w.relative,pred=sx(predicate),before=w.sentence.slice(0,rel),after=w.sentence.slice(rel+pred.length),bounds=sysKoreanScopeBoundsV12(w.sentence,rel),nearBefore=w.sentence.slice(bounds.left,rel).slice(-40),nearAfter=w.sentence.slice(rel+pred.length,bounds.right).slice(0,72),localScope=`${nearBefore}${pred}${nearAfter}`,quoteDepth=sysQuoteDepthAtV10(body,index);
+    const doubleNegated=SYS_KOREAN_DOUBLE_NEG_RE.test(`${pred}${nearAfter}`),directNegated=!doubleNegated&&(SYS_KOREAN_DIRECT_NEG_RE.test(nearBefore)||SYS_KOREAN_DIRECT_NEG_RE.test(nearAfter.slice(0,30))),failed=!doubleNegated&&SYS_KOREAN_FAILURE_RE.test(nearAfter),conditional=SYS_KOREAN_CONDITION_RE.test(nearBefore)||SYS_KOREAN_CONDITION_RE.test(`${pred}${nearAfter.slice(0,20)}`),plan=SYS_KOREAN_PLAN_RE.test(`${pred}${nearAfter}`),pastForm=/(?:었|았|였|했다|됐다|갔다|왔다|이었다)/u.test(`${pred}${nearAfter.slice(0,16)}`),future=SYS_KOREAN_FUTURE_RE.test(localScope)||(SYS_KOREAN_RELATIVE_TIME_RE.test(localScope)&&!pastForm),attemptAfter=/(?:려(?:고)?|해\s*보려|려다)/u.test(`${pred}${nearAfter.slice(0,24)}`),attemptBefore=/(?:시도|다시\s*해\s*보)/u.test(nearBefore.slice(-24)),attempt=!failed&&!plan&&!SYS_KOREAN_STATE_FORM_RE.test(localScope)&&(attemptAfter||(attemptBefore&&!pastForm));
+    let evidentiality='DIRECT_NARRATION';if(quoteDepth>0)evidentiality='QUOTED_SPEECH';else if(SYS_KOREAN_REPORT_RE.test(`${pred}${nearAfter}`))evidentiality='HEARSAY';else if(SYS_KOREAN_THOUGHT_RE.test(`${pred}${nearAfter}`))evidentiality='THOUGHT_OR_MEMORY';
+    let semanticModality='ACTUAL';if(failed)semanticModality='FAILED';else if(directNegated)semanticModality='ACTUAL';else if(conditional)semanticModality='CONDITIONAL';else if(plan)semanticModality='PLAN';else if(attempt)semanticModality='ATTEMPT';else if(future)semanticModality='FUTURE';
+    const polarity=doubleNegated?'DOUBLE_NEGATED':directNegated||failed?'NEGATED':'AFFIRMED',temporality=future||plan?'FUTURE':pastForm?'PAST':'CURRENT',actuality=(SYS_KOREAN_COMMIT_MODALITIES.has(semanticModality)&&['AFFIRMED','DOUBLE_NEGATED'].includes(polarity)&&evidentiality==='DIRECT_NARRATION'&&quoteDepth===0)?'COMMITTED':'NONCOMMITTED';
+    const discourseRelation=bounds.before?.relation==='ADVERSATIVE'?'ADVERSATIVE_CONSEQUENT':bounds.after?.relation==='ADVERSATIVE'?'ADVERSATIVE_ANTECEDENT':'NONE';
+    return {polarity,semanticModality,evidentiality,temporality,quoteDepth,actuality,discourseRelation,scopeText:sline(w.sentence,320)}
+  }
+  function sysPlannedMoveFramesV10(text,sc=null){const body=sx(text),out=[],rx=/(?:갈|떠날|향할|이동할|도착할|들어갈|나갈|돌아갈)\s*(?:생각|계획|예정|작정|의도)/gu;for(const m of body.matchAll(rx)){const cases=sysCasePhrasesCharV5(body),dest=sysNearestRoleV5(cases,['에','으로','로','까지'],m.index,Math.max(0,m.index-80));if(!dest)continue;out.push({schema:SYS_ACTION_SCHEMA,kind:'MOVE',lemma:'move',predicate:m[0].match(/^[가-힣]+/u)?.[0]||m[0],source:'',destination:dest.phrase,theme:'',target:'',accompaniedEntities:[],transport:'',motionClass:'TRANSIT',completion:'TRANSIT',raw:body,position:m.index,order:0,confidence:'KOREAN_PLAN_PATTERN'})}return out}
+  function sysAbsolutePredicatePositionV10(body,frame){const clause=sx(frame?.raw),start=clause?body.indexOf(clause):0;if(start<0)return Math.max(0,+frame?.position||0);const candidates=[],pred=sx(frame?.predicate);let at=0;while(pred&&(at=clause.indexOf(pred,at))>=0){candidates.push(at);at+=Math.max(1,pred.length)}if(!candidates.length)return start;const estimate=Math.max(0,(+frame?.position||start)-start),local=candidates.sort((a,b)=>Math.abs(a-estimate)-Math.abs(b-estimate))[0];return start+local}
+  function sysEnrichKoreanFrameV10(frame,text){
+    const f={...frame};f.position=sysAbsolutePredicatePositionV10(sx(text),f);const local=sx(text).slice(Math.max(0,(+f.position||0)-28),Math.min(sx(text).length,(+f.position||0)+sx(f.predicate).length+36)),construction=CortexContract.koreanPredicateRole(f.predicate,local);
+    if(f.kind==='GENERIC_ACTION'&&/(?:연다|열었다|열었다고|열지)/u.test(f.predicate)){f.kind='OPEN';f.lemma='open'}
+    if(['WAKE','REST'].includes(construction.kind)){f.kind=construction.kind;f.lemma=construction.lemma;f.theme='';f.destination=''}
+    const scope=sysKoreanScopeV10(text,+f.position||0,f.predicate);Object.assign(f,scope);if(f.destination&&scope.semanticModality==='CONDITIONAL'&&/(?:으?면|다면|라면)\s+/u.test(f.destination))f.destination=sysCleanPhrase(f.destination.replace(/^.*?(?:으?면|다면|라면)\s+/u,''));if(f.destination){f.destination=sysCleanPhrase(f.destination.replace(SYS_KOREAN_TEMPORAL_PREFIX_RE,''));if(f.kind!=='MOVE'||construction.eParticleRole==='COMPLEMENT'||SYS_KOREAN_TEMPORAL_NOMINAL_RE.test(f.destination)||SYS_KOREAN_NONLOCATION_ADVERB_RE.test(f.destination))f.destination=''}const localTheme=['OPEN','CLOSE'].includes(f.kind)?sysKoreanLocalThemeV12(text,+f.position||0):'';if(localTheme)f.theme=localTheme;else if(f.theme)f.theme=sysCleanPhrase(f.theme.replace(SYS_KOREAN_TEMPORAL_PREFIX_RE,''));f.predicateLemma=sysKoreanPredicateLemmaV10(f);if(!f.theme&&['OPEN','CLOSE'].includes(f.kind))f.theme=sysCleanPhrase(sysSubjectBeforeV10(text,+f.position||0).replace(SYS_KOREAN_TEMPORAL_PREFIX_RE,''));f.stateEquivalent=Boolean(['WAKE','REST'].includes(f.kind)||SYS_KOREAN_STATE_FORM_RE.test(sx(text).slice(Math.max(0,(+f.position||0)-8),(+f.position||0)+36)));f.modality=scope.polarity==='NEGATED'?'NEGATED':scope.semanticModality==='ATTEMPT'||scope.semanticModality==='FAILED'||scope.semanticModality==='PLAN'||scope.semanticModality==='FUTURE'?'ATTEMPT':'ASSERTED';f.contextSchema=SYS_KOREAN_CONTEXT_SCHEMA;return f
+  }
+  function sysCompileActionFramesV10(input,sc=null){const body=CortexContract.normalizeKoreanSurface(input),base=sysCompileActionFramesV5(body,sc),supplement=sysPlannedMoveFramesV10(body,sc),seen=new Set(),out=[];for(const raw of [...base,...supplement]){const f=sysEnrichKoreanFrameV10(raw,body),key=JSON.stringify([f.kind,f.position,f.theme,f.target,f.destination,f.predicate]);if(seen.has(key))continue;seen.add(key);f.order=out.length;f.frameId=`frame-${stableHash(key)}`;out.push(f)}return out.sort((a,b)=>(a.position??0)-(b.position??0)).map((f,i)=>({...f,order:i}))}
+  function sysKoreanPropositionGraphV10(text,sc=null){const body=sx(text),frames=sysCompileActionFramesV10(body,sc),nodes=frames.map((f,i)=>({id:`prop-${stableHash(JSON.stringify([body,f.frameId,i]))}`,span:{start:+f.position||0,end:(+f.position||0)+sx(f.predicate).length},predicateSurface:f.predicate,predicateLemma:f.predicateLemma,actionKind:f.kind,actorRef:f.actorRef||'',roles:{theme:f.theme||'',target:f.target||'',source:f.source||'',destination:f.destination||'',instrument:f.transport||'',companion:sl(f.accompaniedEntities)},polarity:f.polarity,modality:f.semanticModality,evidentiality:f.evidentiality,temporality:f.temporality,quoteDepth:f.quoteDepth,actuality:f.actuality,stateEquivalent:f.stateEquivalent,confidence:f.confidence||'DETERMINISTIC_CONTEXT_V1',raw:f.raw}));return {schema:SYS_KOREAN_CONTEXT_SCHEMA,text:sline(body,1200),nodes,commitPolicy:'CANON_AND_PHYSICAL_STATE_REQUIRE_COMMITTED_DIRECT_PROPOSITION'}}
+
+  /* Korean Discourse IR v2. This layer keeps discourse worlds, reference
+     resolution and morphology uncertainty explicit. Ambiguity never becomes a
+     physical/canon commit merely because one surface pattern matched. */
+  const SYS_DISCOURSE_SCHEMA='CORTEX_KOREAN_DISCOURSE_GRAPH_V2';
+  const SYS_DISCOURSE_WORLD_SCHEMA='CORTEX_DISCOURSE_WORLD_STACK_V1';
+  const SYS_COREFERENCE_SCHEMA='CORTEX_COREFERENCE_DECISION_V1';
+  const SYS_LEMMA_SCHEMA='CORTEX_PREDICATE_LEMMA_CANDIDATES_V1';
+  const SYS_DISCOURSE_MEMORY_SCHEMA='CORTEX_DISCOURSE_MEMORY_V1';
+  const SYS_IRONY_RE=/(?:참\s+잘도|퍽이나|아주\s+잘하는\s+짓|잘도\s+그러|대단하(?:시|군|네).*정말|고맙기도\s+하)/u;
+  const SYS_INDIRECT_REQUEST_RE=/(?:좀\s+[^.!?。！？]{0,30}(?:줄래|주시겠|해\s*줄|하면\s*좋겠)|(?:어|아|여)\s*줄\s*수\s*있|해도\s*될까|주시지\s*않겠|했으면\s*하는데)/u;
+  const SYS_INDIRECT_QUESTION_RE=/(?:ㄹ까|을까|나요|는지\s*(?:알|궁금)|겠(?:니|습니까)|줄래)[?？]?$/u;
+  const SYS_REQUEST_CONTEXT_RE=/(?:같이\s*[^.!?。！？]{0,20}(?:갈래|할래)|(?:갈|할|도와줄|맡아줄|봐줄)\s*수\s*있|부탁|요청|제안|초대|어때|하지\s*않을래|하면\s*어떨까)[?？]?/u;
+  const SYS_DIRECT_REFUSAL_RE=/(?:싫(?:어|습니다|다)|거절(?:할게|합니다|했다)|하지\s*않겠|안\s*(?:갈|할|먹|받)|못\s*(?:갑|합|하겠|가겠))/u;
+  const SYS_INDIRECT_REFUSAL_RE=/(?:좀|조금)?\s*(?:어렵|힘들|곤란)(?:겠|을\s*것\s*같|네요|습니다|한데)|(?:다음에|나중에)\s*(?:보자|하자|할게)|(?:일정|약속|선약|일|수업|회의)(?:이|가|도)?\s*(?:있|잡혀)|(?:가야|해야|일어나야|끝내야)\s*(?:해서|하니|하는데)|(?:오늘|지금)은\s*좀/u;
+  const SYS_RESPONSE_CUE_RE=/(?:답(?:했|하|했다)|대답(?:했|하|했다)|말을\s*돌리|머뭇거리|난처한\s*표정|완곡하게)/u;
+  const SYS_PLURAL_ACTOR_RE=/(?:그들|그들은|그들이|두\s*사람(?:은|이|이서)?|세\s*사람(?:은|이)?|둘(?:은|이|이서)|셋(?:은|이|이서)|모두(?:는|가)?|일행(?:은|이))/u;
+  const SYS_DREAM_ENTER_RE=/(?:꿈속(?:에서|으로)?|꿈을\s*꾸|꿈이었다|악몽(?:에서|을)|꿈의\s*장면)/u;
+  const SYS_DREAM_EXIT_RE=/(?:꿈에서\s*(?:깨|깨어)|잠에서\s*(?:깨|깨어)|눈을\s*(?:뜨|떴)|악몽에서\s*벗어나)/u;
+  const SYS_DREAM_REFERENCE_RE=/(?:꿈속(?:에서|의)?|꿈에서|악몽에서)[^.!?。！？\n]{0,120}(?:뒤(?:라|라서|인지)?|후(?:라|라서|인지)?|느낌|기억|잔향|여운|것\s*같|듯(?:하|이)|떠올|회상|보았던|봤던|지냈던|겪었던)/u;
+  const SYS_MEMORY_ENTER_RE=/(?:회상(?:에|으로|이)|기억\s*속(?:에서|으로)?|그때를\s*떠올|과거를\s*떠올)/u;
+  const SYS_MEMORY_EXIT_RE=/(?:현실로\s*돌아|회상에서\s*빠져나|기억을\s*떨치|생각에서\s*깨어)/u;
+  const SYS_PRONOUN_THEME_RE=/^(?:그것|그거|그걸|이것|이거|이걸|저것|저거|저걸|이|그)$/u;
+  const SYS_PRONOUN_LOCATION_RE=/^(?:여기|거기|저기|그곳|이곳|저곳)$/u;
+  const SYS_ZERO_REFERENCE_RE=/(?:그것|그거|그걸|이것|이거|이걸|저것|저거|저걸|이를|그곳|이곳|저곳|거기|여기|저기)/u;
+  const SYS_COMMON_LEMMA_MAP=new Map(Object.entries({
+    '했다':'하다','한다':'하다','해':'하다','하였다':'하다','해요':'하다',
+    '됐다':'되다','된다':'되다','되어':'되다','돼':'되다','되었다':'되다',
+    '갔다':'가다','간다':'가다','가서':'가다','왔다':'오다','온다':'오다','와서':'오다',
+    '봤다':'보다','본다':'보다','보았다':'보다','줬다':'주다','주었다':'주다',
+    '놨다':'놓다','놓았다':'놓다','마셨다':'마시다','읽었다':'읽다','열었다':'열다','닫았다':'닫다'
+  }));
+
+  function sysHangulPartsV11(ch){const cp=sx(ch).codePointAt(0),offset=cp-0xac00;if(offset<0||offset>11171)return null;return {lead:Math.floor(offset/588),vowel:Math.floor((offset%588)/28),tail:offset%28}}
+  function sysHangulComposeV11(parts){return String.fromCodePoint(0xac00+parts.lead*588+parts.vowel*28+parts.tail)}
+  function sysHangulTailV11(ch,tail){const p=sysHangulPartsV11(ch);return p?sysHangulComposeV11({...p,tail}):ch}
+  function sysHangulDropTailV11(ch){return sysHangulTailV11(ch,0)}
+  function sysLemmaCandidatesV11(surface){
+    const raw=sx(surface).replace(/[“”'‘’「」『』,.!?。！？]/gu,''),cached=sysKoreanLemmaCacheV10.get(raw);if(cached)return {schema:SYS_LEMMA_SCHEMA,surface:raw,selected:cached.lemma,candidates:[{lemma:cached.lemma,pos:cached.pos||'',rule:'VALIDATED_MORPH_CACHE',confidence:1}],ambiguous:false,source:'VALIDATED_MORPH_CACHE'};
+    const exact=SYS_COMMON_LEMMA_MAP.get(raw);if(exact)return {schema:SYS_LEMMA_SCHEMA,surface:raw,selected:exact,candidates:[{lemma:exact,rule:'COMMON_INFLECTION',confidence:.98}],ambiguous:false,source:'LOCAL_CONSERVATIVE'};
+    const out=[],add=(lemma,rule,confidence)=>{lemma=sx(lemma);if(!lemma||out.some(x=>x.lemma===lemma))return;out.push({lemma,rule,confidence})};
+    const plain=raw.replace(/(?:습니다|습니까|ㅂ니다|나요|네요|군요|어요|아요|여요|해요|고|며|면서|지만|는데|어서|아서|여서|자|라|니|다)$/u,'');
+    if(plain&&plain!==raw)add(`${plain}다`,'ENDING_STRIP',.52);
+    const past=raw.match(/^(.+?)(?:았|었|였|했)다$/u);if(past)add(`${past[1]}다`,'PAST_ENDING_STRIP',.58);
+    const contracted=raw.match(/^(.+?)(왔|웠|랐|렀|었|았)다$/u);if(contracted){const prefix=contracted[1],ending=contracted[2],last=[...prefix].at(-1),head=[...prefix].slice(0,-1).join(''),lastParts=sysHangulPartsV11(last);if((ending==='왔'||ending==='웠')&&last&&lastParts?.lead!==11)add(`${head}${sysHangulTailV11(last,17)}다`,'BIEUP_IRREGULAR',.74);if((ending==='랐'||ending==='렀')&&last){const p=sysHangulPartsV11(last);if(p?.tail===8)add(`${head}${sysHangulDropTailV11(last)}르다`,'REU_IRREGULAR',.74)}if(ending==='었'&&last){const p=sysHangulPartsV11(last);if(p?.tail===8)add(`${head}${sysHangulTailV11(last,7)}다`,'DIGEUT_IRREGULAR',.46);add(`${prefix}다`,'REGULAR_OR_LEXICAL',.42)}if(ending==='었'&&/지$/u.test(prefix))add(`${prefix}ㅅ다`,'SIOT_IRREGULAR_AMBIGUOUS',.35)}
+    const hada=raw.match(/^(.*?)했다$/u);if(hada)add(`${hada[1]}하다`,'HADA_PAST_CONTRACTION',.97);
+    const chars=[...raw];if(chars.at(-1)==='다'&&chars.length>=2){const stemLast=chars.at(-2),parts=sysHangulPartsV11(stemLast),head=chars.slice(0,-2).join('');if(parts?.tail===20&&[1,3,5,7].includes(parts.vowel)&&!/했다$/u.test(raw))add(`${head}${sysHangulDropTailV11(stemLast)}다`,'CONTRACTED_PAST_SS',.82);if(parts?.tail===4){add(`${head}${sysHangulDropTailV11(stemLast)}다`,'PRESENT_N_CONTRACTION',.66);add(`${head}${sysHangulTailV11(stemLast,8)}다`,'RIEUL_BEFORE_N_AMBIGUOUS',.58)}}
+    out.sort((a,b)=>b.confidence-a.confidence||a.lemma.localeCompare(b.lemma,'ko'));const high=out.filter(x=>x.confidence>=.7),selected=high.length===1?high[0].lemma:(out.length===1&&out[0].confidence>=.55?out[0].lemma:'');return {schema:SYS_LEMMA_SCHEMA,surface:raw,selected,candidates:out.slice(0,6),ambiguous:!selected&&out.length>1,source:'LOCAL_CONSERVATIVE'};
+  }
+  function sysActionKindFromLemmaV11(lemma){const value=sx(lemma);if(/^(?:가다|오다|떠나다|향하다|이동하다|출발하다|도착하다|복귀하다|귀가하다|돌아가다|들어가다|나가다)$/u.test(value))return 'MOVE';for(const [kind,re] of SYS_FRAME_DEFS){re.lastIndex=0;if(re.test(value))return kind}return ''}
+
+  function sysDiscourseSegmentsV11(text){const body=sx(text),out=[],pairs={'“':'”','「':'」','『':'』','‘':'’'},stack=[];let straight=false,start=0;const push=end=>{const raw=body.slice(start,end),lead=raw.search(/\S/u),segment=raw.trim();if(segment){const offset=lead<0?0:lead;out.push({index:out.length,start:start+offset,end:start+offset+segment.length,text:segment})}start=end};for(let i=0;i<body.length;i++){const ch=body[i];if(ch==='"')straight=!straight;else if(pairs[ch])stack.push(pairs[ch]);else if(stack.at(-1)===ch)stack.pop();const depth=stack.length+(straight?1:0);if(ch==='\n'){push(i);start=i+1}else if(/[.!?。！？]/u.test(ch)&&depth===0)push(i+1)}if(start<body.length)push(body.length);return out}
+  function sysSegmentForPositionV11(segments,position){return segments.find(s=>position>=s.start&&position<=s.end)||segments.at(-1)||{index:0,start:0,end:0,text:''}}
+  function sysExplicitSubjectV11(segment,localPosition,sc){const text=sx(segment),before=text.slice(0,Math.max(0,localPosition)),targetDepth=sysQuoteDepthAtV10(text,localPosition),matches=[...before.matchAll(/(?:^|[\s“”‘’「」『』(<\[])([가-힣A-Za-z0-9·_-]{1,24})(?:은|는|이|가)(?=\s|[,，]|$)/gu)];for(let i=matches.length-1;i>=0;i--){const offset=(matches[i].index||0)+matches[i][0].indexOf(matches[i][1]);if(sysQuoteDepthAtV10(text,offset)!==targetDepth)continue;const label=sysCleanPhrase(matches[i][1]),ref=sysResolveEntityRefV11(sc,label);if(ref?.type==='CHARACTER')return label}return ''}
+  function sysExplicitActorsV12(segment,localPosition,sc){const text=sx(segment),before=text.slice(0,Math.max(0,localPosition)),depth=sysQuoteDepthAtV10(text,localPosition),mentions=[];for(const entity of sysEntityCatalog(sc).filter(e=>e.type==='CHARACTER')){for(const alias of su([entity.name,...sl(entity.aliases)]).filter(Boolean)){let at=0;while((at=before.indexOf(alias,at))>=0){if(sysQuoteDepthAtV10(text,at)===depth)mentions.push({id:entity.id,label:entity.name,start:at,end:at+alias.length});at+=Math.max(1,alias.length)}}}mentions.sort((a,b)=>a.start-b.start||b.end-a.end);const unique=[];for(const mention of mentions)if(!unique.some(x=>x.id===mention.id&&Math.abs(x.start-mention.start)<2))unique.push(mention);for(let i=unique.length-1;i>0;i--){const right=unique[i],left=unique[i-1],between=before.slice(left.end,right.start),tail=before.slice(right.end);if(/^(?:\s*(?:와|과|랑|이랑|하고|및|,|，)\s*)$/u.test(between)&&/^\s*(?:은|는|이|가)(?:\s|[,，]|$)/u.test(tail))return [left,right].map(x=>({id:x.id,label:x.label}))}const singular=sysExplicitSubjectV11(segment,localPosition,sc),ref=singular?sysResolveEntityRefV11(sc,singular):null;return ref?.type==='CHARACTER'?[{id:ref.id,label:ref.label}]:[]}
+  function sysResolveEntityRefV11(sc,label,type='CHARACTER'){const norm=sn(label);if(!norm)return null;for(const e of sysEntityCatalog(sc).filter(x=>x.type===type)){if(su([e.name,...sl(e.aliases)]).some(a=>sn(a)===norm))return {id:e.id,label:e.name,type:e.type}}return {id:`surface-${stableHash(norm)}`,label:sx(label),type:'SURFACE_REFERENCE'}}
+  function sysPresentCharacterIdsV11(sc){return new Set(su([sc?.protagonist?.id,...sl(sc?.scene?.presentCharacterIds)]).filter(Boolean))}
+  function sysRankActorV11(sc,explicit,state){const ranked=[];const add=(id,label,score,reason)=>{if(!id)return;const prior=ranked.find(x=>x.id===id);if(prior){if(score>prior.score)Object.assign(prior,{score,reason,label:label||prior.label});return}ranked.push({id,label,score,reason})};if(explicit){const ref=sysResolveEntityRefV11(sc,explicit);add(ref?.id,ref?.label,.99,'EXPLICIT_SUBJECT')}
+    if(!explicit&&state.lastActor)add(state.lastActor.id,state.lastActor.label,.84,'PREVIOUS_CLAUSE_SUBJECT');const present=sysPresentCharacterIdsV11(sc),people=[sc?.protagonist,...sl(sc?.characters)].filter(Boolean);if(!explicit&&present.size===1){const only=people.find(c=>present.has(c.id));add(only?.id,only?.name,.86,'SINGLE_PRESENT_ACTOR')}if(!explicit&&sc?.protagonist)add(sc.protagonist.id,sc.protagonist.name,.70,'DISCOURSE_PROTAGONIST');for(let i=state.actorMentions.length-1,rank=0;i>=0&&rank<4;i--,rank++){const c=state.actorMentions[i];add(c.id,c.label,.76-rank*.08,'RECENT_ENTITY_MENTION')}
+    ranked.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));const top=ranked[0],second=ranked[1],resolved=Boolean(top&&top.score>=.78&&(!second||top.score-second.score>=.1));return {schema:SYS_COREFERENCE_SCHEMA,status:resolved?'RESOLVED':ranked.length?'AMBIGUOUS':'UNRESOLVED',selectedRef:resolved?top.id:'',selectedLabel:resolved?top.label:'',score:top?.score||0,scoreGap:top?(top.score-(second?.score||0)):0,candidates:ranked.slice(0,5),reason:resolved?top.reason:ranked.length?'INSUFFICIENT_SCORE_MARGIN':'NO_CANDIDATE'}
+  }
+  function sysRankActorsV12(sc,explicitActors,pluralCue,state){const explicit=sl(explicitActors).filter(x=>x?.id);if(explicit.length>1)return {schema:SYS_COREFERENCE_SCHEMA,status:'RESOLVED',selectedRef:'',selectedLabel:explicit.map(x=>x.label).join('·'),selectedRefs:explicit.map(x=>x.id),selectedLabels:explicit.map(x=>x.label),number:'PLURAL',score:.99,scoreGap:.99,candidates:explicit.map(x=>({id:x.id,label:x.label,score:.99,reason:'EXPLICIT_COORDINATED_SUBJECT'})),reason:'EXPLICIT_COORDINATED_SUBJECT'};if(explicit.length===1){const one=sysRankActorV11(sc,explicit[0].label,state);return {...one,selectedRefs:one.selectedRef?[one.selectedRef]:[],selectedLabels:one.selectedLabel?[one.selectedLabel]:[],number:'SINGULAR'}}if(pluralCue&&sl(state.lastActorGroup).length>1){const group=state.lastActorGroup;return {schema:SYS_COREFERENCE_SCHEMA,status:'RESOLVED',selectedRef:'',selectedLabel:group.map(x=>x.label).join('·'),selectedRefs:group.map(x=>x.id),selectedLabels:group.map(x=>x.label),number:'PLURAL',score:.9,scoreGap:.2,candidates:group.map(x=>({id:x.id,label:x.label,score:.9,reason:'PREVIOUS_ACTOR_GROUP'})),reason:'PREVIOUS_ACTOR_GROUP'}}if(pluralCue){const recent=[];for(let i=state.actorMentions.length-1;i>=0;i--){const x=state.actorMentions[i];if(x?.id&&!recent.some(y=>y.id===x.id))recent.push(x);if(recent.length===3)break}return {schema:SYS_COREFERENCE_SCHEMA,status:recent.length>1?'AMBIGUOUS':'UNRESOLVED',selectedRef:'',selectedLabel:'',selectedRefs:[],selectedLabels:[],number:'PLURAL',score:recent.length>1?.7:0,scoreGap:0,candidates:recent.map(x=>({id:x.id,label:x.label,score:.7,reason:'RECENT_GROUP_CANDIDATE'})),reason:'PLURAL_ANTECEDENT_NOT_UNIQUE'}}if(sl(state.lastActorGroup).length>1&&!state.lastActor)return {schema:SYS_COREFERENCE_SCHEMA,status:'AMBIGUOUS',selectedRef:'',selectedLabel:'',selectedRefs:[],selectedLabels:[],number:'UNKNOWN',score:.76,scoreGap:0,candidates:state.lastActorGroup.map(x=>({id:x.id,label:x.label,score:.76,reason:'MEMBER_OF_PREVIOUS_GROUP'})),reason:'SINGULAR_ZERO_AFTER_GROUP'};const one=sysRankActorV11(sc,'',state);return {...one,selectedRefs:one.selectedRef?[one.selectedRef]:[],selectedLabels:one.selectedLabel?[one.selectedLabel]:[],number:'SINGULAR'}}
+  function sysPronounBeforePredicateV11(segment,localPosition){const before=sx(segment).slice(Math.max(0,localPosition-64),localPosition),matches=[...before.matchAll(/(그것|그거|그걸|이것|이거|이걸|저것|저거|저걸|이를|그곳|이곳|저곳|거기|여기|저기)(?:은|는|이|가|을|를|에|에서|으로|로|까지)?/gu)];return matches.at(-1)?.[1]||''}
+  function sysRoleAtQuoteDepthV11(segment,localPosition,particles){const text=sx(segment),depth=sysQuoteDepthAtV10(text,localPosition),tokens=sysTokenize(text),offsets=[];let cursor=0;for(const token of tokens){const at=text.indexOf(token,cursor);offsets.push(at);cursor=Math.max(cursor,at+token.length)}for(let i=tokens.length-1;i>=0;i--){const at=offsets[i]??0,raw=sx(tokens[i]),role=sysStripParticle(raw);if(!role||!particles.includes(role.particle))continue;const roleAt=at+Math.max(0,raw.indexOf(role.stem));if(roleAt>localPosition||sysQuoteDepthAtV10(text,roleAt)!==depth)continue;const parts=[role.stem];for(let j=i-1;j>=0&&parts.length<4;j--){const jt=offsets[j]??0,jraw=sx(tokens[j]),clean=jraw.replace(/[“”'‘’「」『』()[\]{},，。.!?！？;；]/gu,''),cleanAt=jt+Math.max(0,jraw.indexOf(clean));if(!clean||sysQuoteDepthAtV10(text,cleanAt)!==depth||sysStripParticle(jraw)||/(?:은|는|이|가)$/u.test(clean)||SYS_CONNECTOR_RE.test(clean)||/(?:고|며|면서|다가|지만|는데|어서|아서|해서|뒤|후|전)$/u.test(clean))break;parts.unshift(clean)}return sysCleanPhrase(parts.join(' '))}return ''}
+  function sysScopeRolesByQuoteDepthV11(frame,segment,localPosition){if(!/[“”'‘’「」『』]/u.test(segment))return;frame.theme=sysRoleAtQuoteDepthV11(segment,localPosition,['을','를']);frame.target=sysRoleAtQuoteDepthV11(segment,localPosition,['에게','한테','께']);frame.source=sysRoleAtQuoteDepthV11(segment,localPosition,['에서','부터','으로부터']);frame.destination=sysRoleAtQuoteDepthV11(segment,localPosition,['에','으로','로','까지'])}
+  function sysTrimActorPrefixV12(value,actors){const phrase=sysCleanPhrase(value),labels=sl(actors).map(x=>sx(x?.label)).filter(Boolean);if(!phrase||!labels.length)return phrase;const last=labels.at(-1);return sysCleanPhrase(phrase.replace(new RegExp(`^.*${sescape(last)}(?:은|는|이|가)\\s+`,'u'),''))}
+  function sysResolveRoleV11(surface,kind,state,actionKind=''){const value=sx(surface),pronoun=kind==='LOCATION'?SYS_PRONOUN_LOCATION_RE.test(value):SYS_PRONOUN_THEME_RE.test(value);let source=kind==='LOCATION'?state.locations:state.themes;if(kind==='THEME'&&['RELEASE','STORE','ACQUIRE','GENERIC_ACTION'].includes(actionKind)){const preferred=source.filter(x=>!['INSPECT','COMMUNICATE'].includes(x?.kind));if(preferred.length)source=preferred}if(!pronoun&&!SYS_ZERO_REFERENCE_RE.test(value))return {status:value?'EXPLICIT':'MISSING',surface:value,resolved:value,candidates:value?[{value,score:1}]:[]};const candidates=[];for(let i=source.length-1,rank=0;i>=0&&rank<5;i--){const v=sx(source[i]?.value??source[i]);if(!v||candidates.some(x=>sn(x.value)===sn(v)))continue;candidates.push({value:v,score:.9-rank*.12});rank++}const resolved=candidates.length===1||((candidates[0]?.score||0)-(candidates[1]?.score||0)>=.12);return {status:resolved?'RESOLVED':candidates.length?'AMBIGUOUS':'UNRESOLVED',surface:value,resolved:resolved?candidates[0].value:'',candidates,reason:resolved?'RECENT_COMPATIBLE_ROLE':'FAIL_CLOSED'}
+  }
+  function sysSpeechActV11(segment,previousSegment=''){const text=sx(segment),previous=sx(previousSegment),refusalContext=SYS_REQUEST_CONTEXT_RE.test(previous)||SYS_RESPONSE_CUE_RE.test(text);if(refusalContext&&SYS_DIRECT_REFUSAL_RE.test(text))return 'DIRECT_REFUSAL';if(refusalContext&&SYS_INDIRECT_REFUSAL_RE.test(text))return 'INDIRECT_REFUSAL';if(SYS_INDIRECT_REQUEST_RE.test(text))return 'INDIRECT_REQUEST';if(SYS_REQUEST_CONTEXT_RE.test(text))return 'SUGGESTION_OR_INVITATION';if(SYS_INDIRECT_QUESTION_RE.test(text))return 'INDIRECT_QUESTION';if(/[?？][”’"']?\s*$/u.test(text))return 'QUESTION';return 'ASSERTION'}
+  function sysReportedClausesV13(text){const body=sx(text),out=[];for(const m of body.matchAll(SYS_KOREAN_INDIRECT_REPORT_RE)){const contentSurface=m[1],reportSurface=m[2],contentStart=(m.index||0),reportStart=contentStart+m[0].lastIndexOf(reportSurface),groupId=`report-${stableHash(`${contentStart}|${m[0]}`)}`;out.push({groupId,contentSurface,contentStart,contentEnd:contentStart+contentSurface.length,reportSurface,reportStart,reportEnd:reportStart+reportSurface.length})}return out}
+  function sysReportedRoleV13(clauses,position){for(const row of sl(clauses)){if(position>=row.contentStart&&position<=row.contentEnd)return {...row,role:'CONTENT'};if(position>=row.reportStart&&position<=row.reportEnd)return {...row,role:'REPORT'};}return null}
+  function sysReportedContentScopeV13(segment,localPosition){const text=sx(segment),markers=[...text.matchAll(/(?:다고|라고|다는|라는)/gu)];for(const marker of markers){const tail=text.slice((marker.index||0)+marker[0].length);if(!/^(?:\s|["'”’」』])*[^.!?。！？]{0,20}(?:했|말했|전했|답했|대답했|약속했|주장했|들었)/u.test(tail))continue;return localPosition<(marker.index||0)}return false}
+  function sysReportedActionKindV13(surface){const value=sx(surface);if(/^(?:갔|왔|간|온|갈|올)/u.test(value)||/(?:가|오|떠나|향하|이동하|출발하|도착하|복귀하|귀가하|돌아가|들어가|나가|올라가|내려가|건너가|진입하|빠져나가|벗어나|도망가|달아나|피신하|걷|걸어가|달려가)(?:겠|았|었|였|했|는|ㄴ|을|ㄹ|다)/u.test(value))return 'MOVE';if(/열/u.test(value))return 'OPEN';if(/닫/u.test(value))return 'CLOSE';for(const [kind,re] of SYS_FRAME_DEFS){re.lastIndex=0;if(re.test(value))return kind}return 'GENERIC_ACTION'}
+  function sysReportedContentFramesV13(body,sc=null){const out=[];for(const row of sysReportedClausesV13(body)){const kind=sysReportedActionKindV13(row.contentSurface),cases=sysCasePhrasesCharV5(body),dest=kind==='MOVE'?sysNearestRoleV5(cases,['에','으로','로','까지'],row.contentStart,Math.max(0,row.contentStart-80)):null,theme=['OPEN','CLOSE'].includes(kind)?sysKoreanLocalThemeV12(body,row.contentStart):sysObjectBeforePredicate(body,row.contentStart),raw={schema:SYS_ACTION_SCHEMA,kind,lemma:kind.toLowerCase(),predicate:row.contentSurface,theme:theme||'',target:'',source:'',destination:dest?.phrase||'',accompaniedEntities:[],transport:'',motionClass:kind==='MOVE'?'TRANSIT':'',completion:'ACTION',modality:'ASSERTED',raw:body,position:row.contentStart,order:0,confidence:'INDIRECT_REPORT_CONTENT_V13'},frame=sysEnrichKoreanFrameV10(raw,body);frame.reportGroupId=row.groupId;frame.propositionLayer='REPORTED_CONTENT';frame.frameId=`frame-${stableHash(JSON.stringify([row.groupId,kind,row.contentStart,row.contentSurface]))}`;out.push(frame)}return out}
+  function sysDiscourseSeedV11(sc){const memory=sc?.runtime?.systemicDiscourseMemory||{},catalog=new Set(sysEntityCatalog(sc).filter(e=>e.type==='CHARACTER').map(e=>e.id)),validActor=x=>x&&catalog.has(x.id)?{id:sx(x.id),label:sx(x.label)}:null,lastActor=validActor(memory.lastActor),lastActorGroup=sl(memory.lastActorGroup).map(validActor).filter(Boolean).slice(-4),actorMentions=sl(memory.actorMentions).filter(x=>catalog.has(x?.id)).map(x=>({id:sx(x.id),label:sx(x.label)})).slice(-8),themes=sl(memory.themes).map(x=>({value:sline(x?.value??x,96),kind:sx(x?.kind||'GENERIC_ACTION')})).filter(x=>x.value).slice(-12),locations=sl(memory.locations).map(x=>sline(x,96)).filter(Boolean).slice(-8),lastMove=memory.lastMove?.destination?{actorRef:sx(memory.lastMove.actorRef),actorRefs:sl(memory.lastMove.actorRefs).map(value=>sx(value)).filter(Boolean),destination:sline(memory.lastMove.destination,96)}:null;return {lastActor,lastActorGroup,actorMentions,themes,locations,lastMove}}
+  function sysDreamReferenceSpanV15(value){const body=sx(value),match=body.match(SYS_DREAM_REFERENCE_RE);if(!match)return null;const start=match.index||0,comma=body.indexOf(',',start),end=comma>=0?comma+1:start+match[0].length;return {start,end,reason:'RETROSPECTIVE_DREAM_REFERENCE'}}
+  function sysDiscourseWorldsV11(segments){const out=[],stack=[{mode:'REALITY',id:'world-reality',enteredAt:0}];for(const seg of segments){let current=stack.at(-1),dreamReference=sysDreamReferenceSpanV15(seg.text);if(SYS_DREAM_EXIT_RE.test(seg.text)&&current?.mode==='DREAM')stack.pop();if(SYS_MEMORY_EXIT_RE.test(seg.text)&&current?.mode==='MEMORY')stack.pop();current=stack.at(-1);if(SYS_DREAM_ENTER_RE.test(seg.text)&&!dreamReference&&current?.mode!=='DREAM'){stack.push({mode:'DREAM',id:`world-dream-${seg.index}`,enteredAt:seg.index});current=stack.at(-1)}else if(SYS_MEMORY_ENTER_RE.test(seg.text)&&current?.mode!=='MEMORY'){stack.push({mode:'MEMORY',id:`world-memory-${seg.index}`,enteredAt:seg.index});current=stack.at(-1)}out.push({schema:SYS_DISCOURSE_WORLD_SCHEMA,segmentIndex:seg.index,worldId:current.id,mode:current.mode,depth:stack.length-1,reason:dreamReference&&current.mode==='REALITY'?'DREAM_REFERENCE_WITHIN_REALITY':'WORLD_STACK',dreamReference,text:seg.text})}return out}
+  function sysAnalyzeDiscourseFramesV11(input,sc=null){const body=sx(input),segments=sysDiscourseSegmentsV11(body),worlds=sysDiscourseWorldsV11(segments),reportedClauses=sysReportedClausesV13(body),reportedFrames=sysReportedContentFramesV13(body,sc),baseFrames=sysCompileActionFramesContextBaseV11(body,sc).filter(f=>!reportedFrames.some(r=>r.kind===f.kind&&Math.abs((+r.position||0)-(+f.position||0))<=1)),base=[...baseFrames,...reportedFrames].sort((a,b)=>(+a.position||0)-(+b.position||0)),state=sysDiscourseSeedV11(sc),edges=[],frames=[];for(const original of base){const f={...original},seg=sysSegmentForPositionV11(segments,+f.position||0),local=Math.max(0,(+f.position||0)-seg.start),baseWorld=worlds[seg.index]||{worldId:'world-reality',mode:'REALITY',depth:0},world=baseWorld.mode==='REALITY'&&baseWorld.dreamReference&&local>=baseWorld.dreamReference.start&&local<baseWorld.dreamReference.end?{worldId:`world-dream-reference-${seg.index}`,mode:'DREAM',depth:1,reason:'RETROSPECTIVE_DREAM_REFERENCE'}:baseWorld,reportedRole=sysReportedRoleV13(reportedClauses,+f.position||0);if(reportedRole?.role==='REPORT'){const heard=/^들/u.test(reportedRole.reportSurface);f.kind=heard?'GENERIC_ACTION':'COMMUNICATE';f.lemma=heard?'hear_report':'communicate';f.reportGroupId=reportedRole.groupId;f.propositionLayer=heard?'EVIDENTIAL_ACT':'UTTERANCE_ACT';f.theme='';f.source='';f.destination=''}else if(reportedRole?.role==='CONTENT'){f.reportGroupId=reportedRole.groupId;f.propositionLayer='REPORTED_CONTENT'}const explicitActors=sysExplicitActorsV12(seg.text,local,sc),pluralCue=SYS_PLURAL_ACTOR_RE.test(seg.text.slice(0,Math.max(local,1))),actor=sysRankActorsV12(sc,explicitActors,pluralCue,state),pronoun=sysPronounBeforePredicateV11(seg.text,local);sysScopeRolesByQuoteDepthV11(f,seg.text,local);for(const key of ['theme','target','source','destination'])if(f[key])f[key]=sysTrimActorPrefixV12(f[key],explicitActors);if(['UTTERANCE_ACT','EVIDENTIAL_ACT'].includes(f.propositionLayer)){f.theme='';f.source='';f.destination=''}if(actor.status==='RESOLVED'){f.actorRefs=sl(actor.selectedRefs);f.actorRef=f.actorRefs.length===1?f.actorRefs[0]:'';f.actorLabel=actor.selectedLabel}else{f.actorRefs=[];f.actorRef='';f.actorLabel=''}
+      const themePronoun=pronoun&&!SYS_PRONOUN_LOCATION_RE.test(pronoun),locationPronoun=pronoun&&SYS_PRONOUN_LOCATION_RE.test(pronoun);let themeSurface=themePronoun?pronoun:(f.theme||''),destinationSurface=locationPronoun?pronoun:(f.destination||'');const themeResolution=sysResolveRoleV11(themeSurface,'THEME',state,f.kind),destinationResolution=sysResolveRoleV11(destinationSurface,'LOCATION',state,f.kind);if(themeResolution.status==='RESOLVED')f.theme=themeResolution.resolved;else if(themePronoun)f.theme='';if(destinationResolution.status==='RESOLVED')f.destination=destinationResolution.resolved;else if(locationPronoun)f.destination='';if(f.kind==='MOVE'&&!f.destination&&/(?:^|\s)다시(?:\s|$)/u.test(seg.text)&&state.lastMove&&(!f.actorRef||!state.lastMove.actorRef||f.actorRef===state.lastMove.actorRef)){f.destination=state.lastMove.destination;destinationResolution.status='RESOLVED';destinationResolution.resolved=f.destination;destinationResolution.reason='REPEATED_MOTION_DESTINATION'}
+      const previousSegment=segments[seg.index-1]?.text||'',speechAct=sysSpeechActV11(seg.text,previousSegment),irony=SYS_IRONY_RE.test(seg.text),nonReality=world.mode!=='REALITY',quoteDepth=sysQuoteDepthAtV10(body,+f.position||0),communicativeAct=f.kind==='COMMUNICATE'&&quoteDepth===0,legacyReportedContent=!f.propositionLayer&&sysReportedContentScopeV13(seg.text,local),reportedContent=f.propositionLayer==='REPORTED_CONTENT'||legacyReportedContent,pragmaticContentBlocked=['INDIRECT_REQUEST','INDIRECT_QUESTION','DIRECT_REFUSAL','INDIRECT_REFUSAL','SUGGESTION_OR_INVITATION'].includes(speechAct)&&!communicativeAct,ironyContentBlocked=irony&&!communicativeAct;if(nonReality||reportedContent||quoteDepth>0||pragmaticContentBlocked||ironyContentBlocked){f.actuality='NONCOMMITTED';if(nonReality)f.evidentiality=world.mode;else if(reportedContent)f.evidentiality='REPORTED_SPEECH';else if(quoteDepth>0)f.evidentiality='QUOTED_SPEECH';f.actualityReason=ironyContentBlocked?'IRONY_SUSPECTED_FAIL_CLOSED':pragmaticContentBlocked?'INDIRECT_OR_REFUSAL_CONTENT':nonReality?`DISCOURSE_WORLD_${world.mode}`:reportedContent?'REPORTED_PROPOSITION':'QUOTED_PROPOSITION'}else f.actualityReason=f.actuality==='COMMITTED'?'DIRECT_REALITY_ASSERTION':'LOCAL_MODALITY_NONCOMMITTED';
+      const lemma=sysLemmaCandidatesV11(f.predicate);if(lemma.selected){f.predicateLemma=lemma.selected;if(f.kind==='GENERIC_ACTION'&&f.propositionLayer!=='EVIDENTIAL_ACT'){const inferredKind=sysActionKindFromLemmaV11(lemma.selected);if(inferredKind){f.kind=inferredKind;f.lemma=inferredKind.toLowerCase();f.confidence='LEMMA_CLASSIFIED_ACTION'}}}else if(f.kind==='GENERIC_ACTION')f.predicateLemma='';const pragmaticRelation=speechAct==='INDIRECT_REFUSAL'||speechAct==='DIRECT_REFUSAL'?'REFUSAL':speechAct==='INDIRECT_REQUEST'?'REQUEST':speechAct==='INDIRECT_QUESTION'?'QUESTION':speechAct==='SUGGESTION_OR_INVITATION'?'PROPOSAL':'NONE';f.lemmaAnalysis=lemma;f.discourse={segmentIndex:seg.index,worldId:world.worldId,worldMode:world.mode,worldDepth:world.depth,speechAct,pragmaticRelation,contentActuality:pragmaticRelation==='NONE'?f.actuality:'NONCOMMITTED',utteranceActCommitted:Boolean(communicativeAct&&f.actuality==='COMMITTED'),ironyStatus:irony?'SUSPECTED':'NONE',quoteDepth,actorResolution:actor,themeResolution,destinationResolution};f.contextSchema=SYS_DISCOURSE_SCHEMA;frames.push(f);if(['UTTERANCE_ACT','EVIDENTIAL_ACT'].includes(f.propositionLayer)&&f.reportGroupId){const content=frames.slice(0,-1).reverse().find(x=>x.reportGroupId===f.reportGroupId&&x.propositionLayer==='REPORTED_CONTENT');if(content)edges.push({from:f.frameId,to:content.frameId,type:'REPORTED_CONTENT',actuality:'NONCOMMITTED'})}if(f.actuality==='COMMITTED'&&world.mode==='REALITY'&&quoteDepth===0){if(actor.status==='RESOLVED'){const resolvedActors=sl(actor.selectedRefs).map((id,i)=>({id,label:sl(actor.selectedLabels)[i]||''})).filter(x=>x.id);if(resolvedActors.length===1){state.lastActor=resolvedActors[0];state.lastActorGroup=[]}else if(resolvedActors.length>1){state.lastActor=null;state.lastActorGroup=resolvedActors}state.actorMentions.push(...resolvedActors);state.actorMentions=state.actorMentions.slice(-8)}const memorableTheme=f.theme&&!SYS_PRONOUN_THEME_RE.test(f.theme)&&!SYS_BODY_RE.test(f.theme)&&!SYS_ABSTRACT_RE.test(f.theme)&&!SYS_GENERIC_NOUN_RE.test(f.theme)&&!sysCharacterByName(sc,f.theme)&&!sysKnownLocation(sc,f.theme);if(memorableTheme){state.themes.push({value:f.theme,kind:f.kind});state.themes=state.themes.slice(-12)}if(f.destination&&!SYS_PRONOUN_LOCATION_RE.test(f.destination)){state.locations.push(f.destination);state.locations=state.locations.slice(-8)}if(f.kind==='MOVE'&&f.destination)state.lastMove={actorRef:f.actorRef,actorRefs:sl(f.actorRefs),destination:f.destination}}if(frames.length>1)edges.push({from:frames.at(-2).frameId,to:f.frameId,type:'DISCOURSE_SEQUENCE'});if(actor.status==='RESOLVED'&&!['EXPLICIT_SUBJECT','EXPLICIT_COORDINATED_SUBJECT'].includes(actor.reason))for(const ref of sl(actor.selectedRefs))edges.push({from:ref,to:f.frameId,type:'COREFERENCE',role:'ACTOR'});if(themeResolution.status==='RESOLVED'&&themeResolution.surface!==themeResolution.resolved)edges.push({from:themeResolution.resolved,to:f.frameId,type:'COREFERENCE',role:'THEME'});if(destinationResolution.status==='RESOLVED'&&destinationResolution.surface!==destinationResolution.resolved)edges.push({from:destinationResolution.resolved,to:f.frameId,type:'COREFERENCE',role:'DESTINATION'})}
+    return {frames,segments,worlds,edges,state}
+  }
+  function sysCommitDiscourseMemoryV11(sc,text,turnIndex=0){if(!sc||typeof sc!=='object')return null;const analysis=sysAnalyzeDiscourseFramesV11(text,sc),state=analysis.state;sc.runtime=sc.runtime||{};const memory={schema:SYS_DISCOURSE_MEMORY_SCHEMA,updatedTurn:Math.max(0,+turnIndex||0),lastActor:state.lastActor?sclone(state.lastActor):null,lastActorGroup:sclone(sl(state.lastActorGroup).slice(-4)),actorMentions:sclone(state.actorMentions.slice(-8)),themes:sclone(state.themes.slice(-12)),locations:sclone(state.locations.slice(-8)),lastMove:state.lastMove?sclone(state.lastMove):null};sc.runtime.systemicDiscourseMemory=memory;return memory}
+  function sysSemanticCompilerOptionsV16(sc,source='UNKNOWN'){return {source,defaultActorRef:sx(sc?.protagonist?.id||'protagonist'),protagonist:sc?.protagonist||null,entities:[sc?.protagonist,...sl(sc?.characters)].filter(Boolean),presentCharacterIds:sl(sc?.scene?.presentCharacterIds),currentLocation:sx(sc?.world?.location),eventLocations:eventSequence(sc?.event||null).flatMap(event=>sysEventLocations(event)),canonLocations:sl(sc?.runtime?.sceneContinuity?.stateFacts).filter(value=>typeof value==='string')}}
+  function sysUnifiedSemanticIRV16(text,sc=null,source='UNKNOWN'){return CortexContract.compileKoreanSemanticIR(text,sysSemanticCompilerOptionsV16(sc,source))}
+  function sysKoreanDiscourseGraphV11(text,sc=null,source='SHARED_RUNTIME'){
+    const body=sx(text),semanticIR=sysUnifiedSemanticIRV16(body,sc,source),nodes=semanticIR.propositions.map((p,i)=>({id:p.id||`prop-${stableHash(JSON.stringify([body,i]))}`,span:p.span,predicateSurface:p.predicate.surface,predicateLemma:p.predicate.lemma,predicateLemmaAnalysis:{selected:p.predicate.lemma,candidates:[{lemma:p.predicate.lemma,confidence:p.confidence==='MORPHOLOGY_GROUNDED'?1:.55,source:p.predicate.source}]},actionKind:p.actionKind||CortexContract.koreanPredicateRole(p.predicate.surface,p.raw).kind||'GENERIC_ACTION',actionRef:p.actionRef||'',actionResolution:p.actionResolution||{status:'UNRESOLVED'},propositionLayer:p.propositionLayer||'ASSERTED_CONTENT',parentPropositionId:p.parentPropositionId||'',quoteScopeRef:p.quoteScopeRef||'',reportGroupId:'',actorRef:p.actorRef||'',actorRefs:p.actorRef?[p.actorRef]:[],actorResolution:p.actorResolution||{status:p.actorRef?'RESOLVED':'UNRESOLVED',selectedRefs:p.actorRef?[p.actorRef]:[],reason:p.actorRef?'UNIFIED_IR_ACTOR':'NO_ACTOR'},roles:{patient:p.roles.patient||'',patientRef:p.roles.patientRef||'',patientResolution:p.roles.patientResolution||{status:'EMPTY'},theme:p.roles.theme||'',themeRef:p.roles.themeRef||'',bodyPart:p.roles.bodyPart||null,target:p.roles.target||p.roles.patient||'',targetRef:p.roles.targetRef||'',source:p.roles.source||'',sourceRef:p.roles.sourceRef||'',sceneLocation:p.roles.sceneLocation||'',sceneLocationRef:p.roles.sceneLocationRef||'',sceneLocationScope:p.roles.sceneLocationScope||'NONE',sceneLocationResolution:p.roles.sceneLocationResolution||{status:'EMPTY'},destination:p.roles.destination||'',destinationRef:p.roles.destinationRef||'',movementScope:p.roles.movementScope||'NONE',instrument:p.roles.instrument||'',instrumentRef:p.roles.instrumentRef||'',companion:sl(p.roles.companion),companionRefs:sl(p.roles.companionRefs)},roleResolution:{theme:{status:p.roles.themeRef||p.roles.bodyPart?.bodyPartRef?'RESOLVED':p.roles.theme?'UNRESOLVED':'EMPTY'},destination:{status:p.roles.destinationRef?'RESOLVED':p.roles.destination?'UNRESOLVED':'EMPTY',selectedRef:p.roles.destinationRef||''},sceneLocation:p.roles.sceneLocationResolution||{status:'EMPTY'}},polarity:p.execution.status==='NEGATED'?'NEGATIVE':'AFFIRMED',modality:p.execution.status,evidentiality:p.world.mode,temporality:p.temporal,quoteDepth:Math.max(0,+p.quoteDepth||0),discourseWorld:{id:`world-${p.world.mode.toLowerCase()}`,mode:p.world.mode,depth:p.world.mode==='REALITY'?0:1},speechAct:'ASSERTION',pragmaticRelation:'NONE',clauseRelation:p.clauseRelation,contentActuality:p.actuality,utteranceActCommitted:false,ironyStatus:'NONE',actuality:p.actuality,actualityReason:p.world.reason,stateEquivalent:false,execution:p.execution,confidence:p.confidence,provenance:p.provenance,raw:p.raw}));
+    return {schema:'CORTEX_KOREAN_DISCOURSE_GRAPH_V3_UNIFIED_IR',text:sline(body,2400),nodes,edges:nodes.slice(1).map((node,index)=>({from:nodes[index].id,to:node.id,type:node.clauseRelation||'DISCOURSE_SEQUENCE'})),worlds:su(nodes.map(node=>node.discourseWorld.mode)),semanticIR,unresolved:semanticIR.unresolved,analysisStatus:semanticIR.analysisStatus,authority:semanticIR.authority,commitPolicy:'ONLY_UNAMBIGUOUS_DIRECT_REALITY_PROPOSITIONS_MAY_REACH_CANON_OR_PHYSICAL_STATE',ambiguityPolicy:'UNRESOLVED_SEMANTICS_TRIGGER_REANALYSIS_OR_LOCAL_JUDGEMENT_NEVER_RAW_REGEX_REJECTION'}
+  }
+  function sysFramesFromUnifiedIRV16(input,sc=null,source='UNKNOWN'){
+    const graph=sysKoreanDiscourseGraphV11(input,sc,source),actionable=graph.nodes.filter(node=>node?.discourseWorld?.mode==='REALITY'&&!['HYPOTHETICAL','NONCOMMITTED','NONCOMMITTED_REFERENCE','TEMPORAL_REFERENCE','NOMINALIZED_CONTENT'].includes(sx(node?.execution?.status)));return actionable.map(node=>({schema:SYS_ACTION_SCHEMA,frameId:node.id,kind:node.actionKind||'GENERIC_ACTION',actionRef:node.actionRef||'',lemma:sx(node.actionKind||'GENERIC_ACTION').toLowerCase(),predicate:node.predicateSurface,predicateLemma:node.predicateLemma,lemmaAnalysis:node.predicateLemmaAnalysis,actorRef:node.actorRef||'',theme:node.roles.bodyPart?.surface||node.roles.theme||'',themeRef:node.roles.themeRef||node.roles.bodyPart?.bodyPartRef||'',bodyPart:node.roles.bodyPart||null,target:node.roles.patient||node.roles.target||'',targetRef:node.roles.patientRef||node.roles.targetRef||'',source:node.roles.source||'',sourceRef:node.roles.sourceRef||'',destination:node.roles.destination||'',destinationRef:node.roles.destinationRef||'',movementScope:node.roles.movementScope||'NONE',accompaniedEntities:sl(node.roles.companion),accompaniedEntityRefs:sl(node.roles.companionRefs),transport:node.roles.instrument||'',transportRef:node.roles.instrumentRef||'',motionClass:node.actionKind==='MOVE'?'TRANSIT':'',completion:node.execution?.status==='COMPLETED'?'ACTION':node.execution?.status||'ACTION',modality:node.actuality!=='COMMITTED'?'NONCOMMITTED':node.execution?.status==='NEGATED'?'NEGATED':node.execution?.status==='ATTEMPTED'?'ATTEMPT':'ASSERTED',execution:node.execution,temporality:node.temporality,actuality:node.actuality,position:+node.span?.start||0,scopeText:node.raw,raw:node.raw,confidence:node.confidence,provenance:node.provenance,discourse:{worldMode:node.discourseWorld.mode,worldId:node.discourseWorld.id,worldDepth:node.discourseWorld.depth,actorResolution:node.actorResolution,themeResolution:node.roleResolution.theme,destinationResolution:node.roleResolution.destination,quoteDepth:node.quoteDepth,speechAct:node.speechAct,pragmaticRelation:node.pragmaticRelation,contentActuality:node.contentActuality}}))
+  }
+  const sysCompileActionFramesContextBaseV11=sysCompileActionFramesV10;
+  sysCompileActionFramesV10=function(input,sc=null){return sysFramesFromUnifiedIRV16(input,sc,'ACTION_FRAME')};
+  sysKoreanPropositionGraphV10=sysKoreanDiscourseGraphV11;
+  function sysKoreanRoleMatchV10(required,evidence){for(const key of ['theme','target','destination']){const want=sx(required?.[key]);if(!want)continue;const got=sx(evidence?.[key]),raw=sx(evidence?.raw);if(got&&sysContentTokens(want).some(w=>sysContentTokens(got).some(g=>sysTokenMatch(w,g))))continue;if(raw&&sysContentTokens(want).every(w=>sysContentTokens(raw).some(g=>sysTokenMatch(w,g))))continue;return false}return true}
+  function sysLemmaOverlapV11(required,evidence){const a=su([required?.predicateLemma,...sl(required?.lemmaAnalysis?.candidates).filter(x=>(+x.confidence||0)>=.5).map(x=>x.lemma)]).map(value=>sx(value)).filter(Boolean),b=su([evidence?.predicateLemma,...sl(evidence?.lemmaAnalysis?.candidates).filter(x=>(+x.confidence||0)>=.5).map(x=>x.lemma)]).map(value=>sx(value)).filter(Boolean);return a.some(x=>b.some(y=>x===y||(x.length>=3&&y.length>=3&&(x.startsWith(y)||y.startsWith(x)))))}
+  function sysKoreanFrameEntailsV10(required,evidence,requirementType='PHYSICAL_FACT'){if(evidence?.actuality!=='COMMITTED')return false;if(evidence?.stateEquivalent&&requirementType!=='WORLD_STATE')return false;if(required?.kind!=='GENERIC_ACTION'&&evidence?.kind!==required?.kind)return false;if(required?.kind==='GENERIC_ACTION'&&!sysLemmaOverlapV11(required,evidence))return false;if(required?.actorRef&&required.actorRef!==evidence?.actorRef)return false;return sysKoreanRoleMatchV10(required,evidence)}
+  const sysPrevAffirmedCoverageV10=sysAffirmedCoverage;
+  sysAffirmedCoverage=function(requirement,evidence,requirementType='PHYSICAL_FACT'){const reqFrames=sysCompileActionFramesV10(requirement,scenario),evFrames=sysCompileActionFramesV10(evidence,scenario);for(const rf of reqFrames){const hit=evFrames.find(ef=>sysKoreanFrameEntailsV10(rf,ef,requirementType));if(hit)return {ok:true,affirmed:true,ratio:1,hits:sysContentTokens(requirement),required:sysContentTokens(requirement),clause:sline(hit.scopeText||hit.raw,320),propositionId:hit.frameId,contextSchema:SYS_KOREAN_CONTEXT_SCHEMA}}const fallback=sysPrevAffirmedCoverageV10(requirement,evidence);if(reqFrames.length)return {...fallback,affirmed:false,contextSchema:SYS_KOREAN_CONTEXT_SCHEMA,failClosed:true,reason:'NO_MATCHING_COMMITTED_DISCOURSE_PROPOSITION'};if(!fallback.ok)return fallback;const clause=fallback.clause||evidence,graph=sysKoreanPropositionGraphV10(clause,scenario),surfaceBlocked=SYS_KOREAN_REPORT_RE.test(clause)||SYS_KOREAN_THOUGHT_RE.test(clause)||SYS_KOREAN_PLAN_RE.test(clause)||SYS_KOREAN_CONDITION_RE.test(clause),committed=!surfaceBlocked&&graph.nodes.some(n=>n.actuality==='COMMITTED');return {...fallback,affirmed:Boolean(fallback.affirmed&&committed),contextSchema:SYS_KOREAN_CONTEXT_SCHEMA,failClosed:!committed}}
+  sysAliasAffirmed=function(aliases,evidence){for(const clause of sysEvidenceClauses(evidence)){if(!sl(aliases).map(value=>sx(value)).filter(Boolean).some(alias=>clause.includes(alias)))continue;const graph=sysKoreanPropositionGraphV10(clause,scenario);if(graph.nodes.some(n=>n.actuality==='COMMITTED'))return true}return false};
+
+  sysCompileActionFrames=sysCompileActionFramesV10;
+  sysMoveFrame=function(clause,sc=null){return sysCompileActionFramesV10(clause,sc).find(f=>f.kind==='MOVE')||null};
+  sysOtherFrames=function(clause){return sysCompileActionFramesV10(clause,scenario).filter(f=>f.kind!=='MOVE')};
+  sysPrimaryFrame=function(frames){const arr=sl(frames),committed=arr.filter(f=>f.actuality==='COMMITTED');return committed[0]||arr.find(f=>f.modality!=='NEGATED')||arr[0]||null};
+  sysPrimaryMove=function(input,sc=null){const arr=sysCompileActionFramesV10(input,sc).filter(f=>f.kind==='MOVE');return arr.filter(f=>f.actuality==='COMMITTED').at(-1)||arr.find(f=>f.modality!=='NEGATED')||null};
+
+  /* v1.13.0 — 증거 범위에 시작문을 항상 포함한다.
+     연출형 요건은 "장면이 이러이러하게 시작하고 끝난다"를 요구하므로 패키지 시작문이 곧 증거다.
+     기존에는 봉인된 사건이 하나라도 있으면 시작문을 통째로 제외해 판정이 부당하게 좁아졌다.
+
+     사용자 입력은 넣지 않는다. 한때 넣었다가 되돌렸다.
+     입력은 '하려는 것'이지 '일어난 것'이 아니다. "찻잔을 본다"고 써도 본문이 그것을 쓰지 않으면
+     요건은 실제로 미충족인데 증거에는 남는다. 부정·가정 표현을 걸러도 이 구멍은 남는다.
+     본문에 실현된 것만 증거로 삼는다는 원칙이 우선이다. */
+  function sysEventEvidenceV5(sc,current=''){const pieces=[];if(sc?.runtime?.openingCommit?.text)pieces.push(sc.runtime.openingCommit.text);pieces.push(...sl(sc?.event?.runtimeEvidence),current);return pieces.map(value=>sx(value)).filter(Boolean).join(' ')}
+  sysEvidenceText=sysEventEvidenceV5;
+  const sysRequirementSatisfiedV4=sysRequirementSatisfied;
+  /* v1.12.1 — 상태 요건은 상태 객체를 직접 비교한다.
+     v1.12.0 까지는 storyState·world·canonLedger 를 JSON 문자열로 만들어
+     본문 증거와 같은 자리에 섞었다. 그러면 필드 이름·따옴표·중괄호까지 토큰으로 잡혀
+     아직 일어나지 않은 일이 문자열 일치만으로 충족 처리될 수 있었다.
+     이제 타입별로 의미 있는 값만 뽑아 요건 문장과 대조하고,
+     의미 판정에는 본문 증거만 넘긴다. JSON 직렬화 경로는 완전히 제거한다. */
+  function sysStateValuesV121(type,sc){
+    const out=[];
+    if(type==='INVENTORY_STATE'){
+      const destroyed=su(sl(sc?.runtime?.canonLedger?.entries).filter(e=>e?.active!==false&&sx(e?.kind)==='destruction').map(e=>sn(sx(e?.targetName||e?.value))).filter(Boolean));
+      const push=v=>{const value=sx(v);if(value&&!destroyed.includes(sn(value)))out.push(value)};
+      for(const item of sl(sc?.runtime?.storyState?.inventory||sc?.storyState?.inventory))push(item?.name||item?.title||
+item?.label||item?.id||item);
+      for(const e of sl(sc?.runtime?.canonLedger?.entries)){if(e?.active===false||sx(e?.kind)!=='inventory_add')continue;push(e?.targetName||e?.value)}
+    }else if(type==='RELATIONSHIP_STATE'){
+      for(const r of sl(sc?.runtime?.storyState?.relationships||sc?.storyState?.relationships))out.push(sx(r?.summary||r?.status||r?.label||r?.value||r));
+      for(const r of sl(sc?.relationships))out.push(sx(r?.publicSummary||r?.publicStatus||r?.status));
+    }else if(type==='WORLD_STATE'){
+      out.push(sx(sc?.world?.location));
+      for(const f of sl(sc?.runtime?.sceneContinuity?.stateFacts))out.push(sx(f));
+      for(const s of sl(sc?.runtime?.eventLedger?.sealed))if(sx(s?.outcome)!=='FAILURE')out.push(sx(s?.title));
+    }
+    return su(out.filter(Boolean));
+  }
+  function sysStateDirectMatchV121(type,text,sc){
+    const needle=sn(text);if(!needle)return null;
+    for(const value of sysStateValuesV121(type,sc)){const key=sn(value);if(key&&key.length>=2&&needle.includes(key))return value}
+    return null;
+  }
+  /* v1.13.0 hotfix — 연출형 완료조건.
+     실제 패키지의 완료조건이 "일어날 일"이 아니라 "어떻게 보여야 하는가"로 쓰여 있다.
+       "…환경으로 보여 준다. 현관의 낡은 우산 두 개, …찻잔, …달력 중 1~2개만 사용한다."
+       "…한시우가 무엇을 먹고 언제 나갈지 선택할 수 있게 끝낸다."
+     이런 문장은 Action Frame 으로 컴파일되고, 본문의 "찻잔이 놓여 있었다"는 그 프레임과
+     entail 되지 않는다. 게다가 프레임이 잡히면 failClosed 로 fallback 까지 막혀
+     본문에 우산과 찻잔이 다 나왔는데도 영원히 미충족으로 남았다.
+     연출형은 '무엇이 실행됐는가'가 아니라 '요구된 소재가 실제로 장면에 들어왔는가'로 판정한다. */
+  /* 표지를 두 등급으로 나눈다.
+     강한 표지는 문장이 명백히 연출 지시임을 말한다. "보여 준다", "끝낸다", "첫 장면은".
+     약한 표지는 상태 조건에도 붙는 말이다. "유지한다", "사용한다", "남긴다".
+     상태 요건(INVENTORY/WORLD/RELATIONSHIP)은 강한 표지가 있을 때만 연출형으로 넘긴다.
+     그러지 않으면 "열쇠를 소지한 상태를 유지한다" 같은 진짜 상태 조건이 연출형으로 새어 나간다. */
+  const SYS_DIRECTIVE_STRONG_RE_V13=/(?:보여\s*준다|보여준다|드러낸다|암시한다|체감(?:한다|하게)|느끼게|끝낸다|끝맺는다|연출한다|묘사한다|첫\s*장면|장면은|장면을)/u;

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <title>단청 연화문 · 녹청</title>
+  <defs>
+    <path id="petal" d="M160 154C124 130 116 91 160 39C204 91 196 130 160 154Z"/>
+    <path id="inner" d="M160 151C143 131 143 108 160 87C177 108 177 131 160 151Z"/>
+  </defs>
+  <g fill="none" stroke="#80aabd" stroke-width="2" opacity=".65">
+    <path d="M160 7 313 160 160 313 7 160Z"/><path d="M160 21 299 160 160 299 21 160Z"/>
+  </g>
+  <g stroke="#c5d6a2" stroke-width="2.5" stroke-linejoin="round">
+    <g fill="#397864"><use href="#petal"/><use href="#petal" transform="rotate(90 160 160)"/><use href="#petal" transform="rotate(180 160 160)"/><use href="#petal" transform="rotate(270 160 160)"/></g>
+    <g fill="#467d99"><use href="#petal" transform="rotate(45 160 160)"/><use href="#petal" transform="rotate(135 160 160)"/><use href="#petal" transform="rotate(225 160 160)"/><use href="#petal" transform="rotate(315 160 160)"/></g>
+  </g>
+  <g fill="#a7c785" stroke="#dbe5c4" stroke-width="1.5">
+    <use href="#inner"/><use href="#inner" transform="rotate(90 160 160)"/><use href="#inner" transform="rotate(180 160 160)"/><use href="#inner" transform="rotate(270 160 160)"/>
+  </g>
+  <g fill="#94c6d5" stroke="#c4ddd9" stroke-width="1.5">
+    <use href="#inner" transform="rotate(45 160 160)"/><use href="#inner" transform="rotate(135 160 160)"/><use href="#inner" transform="rotate(225 160 160)"/><use href="#inner" transform="rotate(315 160 160)"/>
+  </g>
+  <path d="M160 125Q175 143 195 160Q175 177 160 195Q145 177 125 160Q145 143 160 125Z" fill="#256754" stroke="#c7d69e" stroke-width="3"/>
+  <circle cx="160" cy="160" r="15" fill="#84bdd0" stroke="#d0dfa8" stroke-width="3"/>
+  <circle cx="160" cy="160" r="5" fill="#dae7c6"/>
+  <g fill="none" stroke-width="2" opacity=".75">
+    <path d="M0 52Q25 27 52 0M0 66Q33 33 66 0M268 0Q295 27 320 52M254 0Q287 33 320 66M0 268Q25 293 52 320M0 254Q33 287 66 320M268 320Q295 293 320 268M254 320Q287 287 320 254" stroke="#82b2bc"/>
+    <path d="M0 40Q19 21 40 0M280 0Q301 21 320 40M0 280Q19 301 40 320M280 320Q301 301 320 280" stroke="#aac98b"/>
+  </g>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>단청 · 연화</title>
+  <desc>녹색과 먹색 위에 회백색 연화문, 석간주와 청색의 꽃심을 놓은 단청 앱 아이콘</desc>
+  <defs>
+    <linearGradient id="ground" x2="1" y2="1"><stop stop-color="#163f35"/><stop offset="1" stop-color="#102b25"/></linearGradient>
+    <path id="petal" d="M256 247C213 218 205 170 256 107C307 170 299 218 256 247Z"/>
+    <path id="inner" d="M256 240C235 219 235 188 256 161C277 188 277 219 256 240Z"/>
+  </defs>
+  <path fill="url(#ground)" d="M0 0H512V512H0Z"/>
+  <path fill="#0b1210" d="M360 0H512V512H83Z"/>
+  <g fill="none" stroke="#ded8c6" stroke-width="3" opacity=".18">
+    <path d="M256 49 463 256 256 463 49 256Z"/>
+    <path d="M256 66 446 256 256 446 66 256Z"/>
+  </g>
+  <g fill="#bac4b6" fill-opacity=".06" stroke="#d6d8c9" stroke-width="6" stroke-linejoin="round">
+    <use href="#petal"/><use href="#petal" transform="rotate(45 256 256)"/>
+    <use href="#petal" transform="rotate(90 256 256)"/><use href="#petal" transform="rotate(135 256 256)"/>
+    <use href="#petal" transform="rotate(180 256 256)"/><use href="#petal" transform="rotate(225 256 256)"/>
+    <use href="#petal" transform="rotate(270 256 256)"/><use href="#petal" transform="rotate(315 256 256)"/>
+  </g>
+  <g fill="none" stroke="#9aa99c" stroke-width="3">
+    <use href="#inner"/><use href="#inner" transform="rotate(90 256 256)"/>
+    <use href="#inner" transform="rotate(180 256 256)"/><use href="#inner" transform="rotate(270 256 256)"/>
+  </g>
+  <path d="M256 204C274 222 290 225 308 256C290 287 274 290 256 308C238 290 222 287 204 256C222 225 238 222 256 204Z" fill="#954739" stroke="#e0d6bb" stroke-width="5"/>
+  <circle cx="256" cy="256" r="25" fill="#42687b" stroke="#b49a57" stroke-width="6"/>
+  <circle cx="256" cy="256" r="8" fill="#ded8c6"/>
+</svg>

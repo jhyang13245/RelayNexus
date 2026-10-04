@@ -1,0 +1,2 @@
+ALTER TABLE `multiplayer_rooms` ADD `visibility` text DEFAULT 'PRIVATE' NOT NULL;--> statement-breakpoint
+CREATE INDEX `multiplayer_rooms_visibility_updated_idx` ON `multiplayer_rooms` (`visibility`,`updated_at`);

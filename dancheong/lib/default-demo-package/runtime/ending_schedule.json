@@ -1,0 +1,11 @@
+{
+  "format": "RELAY_NOVEL_INSTANT_ENDING_SCHEDULE_V1",
+  "minimumTurn": 20,
+  "checkInterval": 5,
+  "endingIds": [],
+  "loopEnabled": false,
+  "schemaVersion": "2.0",
+  "compilerVersion": "1.8.0",
+  "sourcePackageSha256": "59891d0ba12201c1750792a350598132d5d2217967245ee82c5a2b3ce2e0c87b",
+  "generatedAt": "2026-08-23T12:24:21.205Z"
+}

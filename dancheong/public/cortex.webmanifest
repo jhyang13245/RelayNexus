@@ -1,0 +1,36 @@
+{
+  "id": "/cortex.html",
+  "name": "단청 Cortex",
+  "short_name": "Cortex",
+  "description": "선형·멀티루트 패키지를 같은 서사 철학으로 집필하는 단청 Cortex 1.8.5 소설 엔진",
+  "lang": "ko-KR",
+  "start_url": "/cortex.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#09130f",
+  "theme_color": "#0a1512",
+  "categories": ["entertainment", "games", "books"],
+  "icons": [
+    {
+      "src": "/icons/dancheong-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/dancheong-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cortex 시작",
+      "short_name": "시작",
+      "url": "/cortex.html"
+    }
+  ]
+}

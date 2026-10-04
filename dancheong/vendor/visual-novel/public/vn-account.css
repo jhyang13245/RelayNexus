@@ -1,0 +1,21 @@
+/* Account controls belong to the catalog and work title, outside the play area. */
+#vn-root .vn-account { position:relative; flex:0 0 auto; margin-left:auto; pointer-events:auto; }
+#vn-root .vn-account-toggle { display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:8px 13px; color:#f4f2ed; background:#0c1523d9; border:1px solid #c4d6e64a; border-radius:4px; font-size:13px; white-space:nowrap; }
+.vn-account-dot { width:6px; height:6px; border-radius:50%; background:#8997a6; }
+.vn-account[data-authenticated="true"] .vn-account-dot { background:#a8d9bc; box-shadow:0 0 8px #a8d9bc38; }
+#vn-root .vn-account-panel { position:absolute; top:calc(100% + 10px); right:0; width:min(310px,calc(100vw - 32px)); max-height:calc(100dvh - 85px); overflow:auto; padding:20px; background:#0c1421fa; border:1px solid #c4d6e64a; border-radius:6px; box-shadow:0 16px 50px #0009; text-align:left; }
+.vn-account-heading { display:block; font-size:15px; font-weight:600; }
+.vn-account-status { margin:12px 0 16px; color:#d4dfe9; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+#vn-root .vn-account-action, #vn-root .vn-account-retry { display:flex; align-items:center; justify-content:center; min-height:44px; width:100%; padding:10px 14px; border:1px solid #c4d6e670; border-radius:3px; background:#dce6ef; color:#152130; text-decoration:none; font-family:inherit; font-size:13px; font-weight:500; line-height:1.5; }
+.vn-account-note { margin:16px 0 0; padding-top:13px; border-top:1px solid #c4d6e626; color:#9caebb; font-size:12px; line-height:1.65; }
+#vn-root .vn-account button:focus-visible, #vn-root .vn-account a:focus-visible { outline:2px solid #bcdcec; outline-offset:3px; }
+#vn-root .vn-account-toggle:hover { border-color:#c4d6e6aa; background:#1a2a3d; }
+#vn-root.is-title .vn-menu-toggle { margin-left:0; }
+@media(max-width:760px) {
+  #vn-root:not(.is-playing) .vn-menu-toggle { display:flex; flex:0 0 44px; width:44px; height:44px; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:5px; border:0; background:transparent; }
+  #vn-root:not(.is-playing) .vn-topbar nav { display:none; position:absolute; top:54px; right:15px; min-width:185px; padding:9px; flex-direction:column; gap:0; background:#080d17fa; border:1px solid #e9edf35c; box-shadow:0 14px 45px #000b; }
+  #vn-root:not(.is-playing).vn-menu-open .vn-topbar nav { display:flex; }
+  #vn-root:not(.is-playing) .vn-topbar nav > * { display:flex; align-items:center; min-height:44px; width:100%; padding:11px 14px; border:0; font-size:13px; text-align:left; }
+  #vn-root .vn-account-panel { right:-44px; }
+  #vn-root .vn-account-toggle { padding:8px 11px; }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-novel-studio.juno12345.chatgpt.site/schemas/cortex_native_manifest_v1.json",
+  "title": "Cortex Native Pack V1 Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "packageFormat",
+    "packageVersion",
+    "projectId",
+    "title",
+    "runtimeProfile",
+    "runtimeEngine",
+    "requiredFeatures",
+    "unsupportedBehavior"
+  ],
+  "properties": {
+    "packageFormat": {
+      "const": "RELAY_CORTEX_NATIVE_PACK_V1"
+    },
+    "packageVersion": {
+      "const": "1.0"
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runtimeProfile": {
+      "enum": ["canonical_story", "instant_story"]
+    },
+    "runtimeEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "minimumVersion"],
+      "properties": {
+        "id": {
+          "const": "cortex"
+        },
+        "minimumVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "requiredFeatures": {
+      "type": "array",
+      "uniqueItems": true,
+      "allOf": [
+        {"contains": {"const": "cortex_native_runtime_v1"}},
+        {"contains": {"const": "cortex_canon_memory_v1"}},
+        {"contains": {"const": "cortex_chronology_v1"}},
+        {"contains": {"const": "cortex_disclosure_guard_v1"}},
+        {"contains": {"const": "asset_once_storage"}}
+      ],
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "optionalFeatures": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "unsupportedBehavior": {
+      "const": "reject_package"
+    }
+  }
+}

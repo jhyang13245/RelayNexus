@@ -1,0 +1,1 @@
+CREATE INDEX `multiplayer_members_owner_idx` ON `multiplayer_members` (`owner_key`);

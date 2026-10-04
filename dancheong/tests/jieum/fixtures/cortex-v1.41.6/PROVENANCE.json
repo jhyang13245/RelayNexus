@@ -1,0 +1,12 @@
+{
+  "source": "Dancheong_Cortex_v1.41.6_Source.zip",
+  "sourceSha256": "4ab0605ba6ccff7faa2a7ba8cf9f851c4a06c10c28c108be29b635b80a265701",
+  "files": {
+    "prose-memory.js": "a27a4aaa1b336629b00d7afc9c3d7e179972ae8ed5ffb3a01e4b16d17071508e",
+    "event-judge-request.js": "f618d8ae7c00be20798b261c66741cfb70b10a375d15563b19f57df16e23eb04",
+    "quality-runtime.js": "1b9e8fa4698cc62f2f5c9b187fdb1dc4f42b35eda7ca0ba97657405a954ac5a2",
+    "nexus-bridge.js": "4b8e7c5c67698d72eaa436661480f908dc250a9d664163c5451209bde25d83c9",
+    "systemic-contract.js": "550d675a80ad332fc423d705ced5aeea33babb6bf32511427659dd98ca4ecabc"
+  },
+  "notes": "Four complete original src modules; event-judge-request.js is the exact requestUnifiedAdjudicationV1360 function extracted from src/cortex.html. Tests intercept HTTP; no model calls."
+}

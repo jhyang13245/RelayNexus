@@ -1,0 +1,762 @@
+.neoreum-site {
+  --neoreum-ink: #071510;
+  --neoreum-panel: rgba(16, 34, 27, .9);
+  --neoreum-panel-soft: rgba(24, 49, 39, .72);
+  --neoreum-line: rgba(145, 205, 177, .22);
+  --neoreum-line-strong: rgba(145, 225, 187, .5);
+  --neoreum-mint: #82e7ba;
+  --neoreum-mint-deep: #2d8e69;
+  --neoreum-sky: #79c8df;
+  --neoreum-paper: #f2f5ee;
+  --neoreum-muted: #a8bbb0;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  color: var(--neoreum-paper);
+  background:
+    radial-gradient(circle at 12% 2%, rgba(36, 119, 85, .34), transparent 28rem),
+    radial-gradient(circle at 94% 8%, rgba(49, 121, 149, .23), transparent 34rem),
+    #07130e;
+}
+
+.neoreum-site::before {
+  position: fixed;
+  inset: 0 0 auto auto;
+  width: min(52vw, 760px);
+  height: min(72vw, 900px);
+  content: "";
+  pointer-events: none;
+  opacity: .13;
+  background: url("/dancheong-jade-pattern.svg") top right / 540px auto repeat-y;
+  mask-image: linear-gradient(135deg, transparent 4%, #000 45%, transparent 92%);
+}
+
+.neoreum-site .library-nav {
+  background: rgba(6, 20, 15, .9);
+  border-color: var(--neoreum-line);
+  backdrop-filter: blur(20px);
+}
+
+.neoreum-subnav {
+  position: sticky;
+  top: 76px;
+  z-index: 48;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px clamp(18px, 7vw, 112px);
+  border-bottom: 1px solid var(--neoreum-line);
+  background: rgba(7, 21, 16, .88);
+  backdrop-filter: blur(18px);
+}
+
+.neoreum-subnav a {
+  min-width: 116px;
+  padding: 11px 18px;
+  color: #8fa69a;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 650;
+  transition: .2s ease;
+}
+
+.neoreum-subnav a:hover,
+.neoreum-subnav a.active {
+  color: #edfff5;
+  border-color: var(--neoreum-line);
+  background: rgba(97, 210, 157, .1);
+}
+
+.neoreum-main {
+  position: relative;
+  z-index: 1;
+  width: min(1440px, 100%);
+  min-width: 0;
+  max-width: 100%;
+  min-height: calc(100vh - 130px);
+  margin: 0 auto;
+  padding: clamp(54px, 7vw, 104px) clamp(20px, 7vw, 112px) 120px;
+}
+
+.neoreum-heading {
+  display: grid;
+  grid-template-columns: minmax(280px, .85fr) minmax(320px, 1.15fr);
+  align-items: end;
+  gap: 36px;
+  margin-bottom: 48px;
+}
+
+.neoreum-heading p {
+  margin: 0;
+  color: var(--neoreum-muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.neoreum-heading > div > p,
+.neoreum-catalog header small,
+.neoreum-ledger header small,
+.neoreum-revisions header small {
+  color: var(--neoreum-mint);
+  font: 600 12px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.neoreum-heading h1 {
+  margin: 9px 0 0;
+  font: 400 clamp(54px, 8vw, 104px)/.92 Georgia, "Noto Serif KR", serif;
+  letter-spacing: -.06em;
+}
+
+.neoreum-tools {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 18px;
+  background: rgba(17, 36, 28, .7);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, .25);
+}
+
+.neoreum-tools label,
+.neoreum-site .publisher label,
+.neoreum-site .work-info-form label,
+.neoreum-site .cover-controls label,
+.neoreum-site .revision-publisher label {
+  display: grid;
+  gap: 8px;
+  color: #b8c9bf;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.neoreum-tools input,
+.neoreum-site .publisher input,
+.neoreum-site .publisher textarea,
+.neoreum-site .publisher select,
+.neoreum-site .work-info-form input,
+.neoreum-site .work-info-form textarea,
+.neoreum-site .work-info-form select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  color: var(--neoreum-paper);
+  border: 1px solid var(--neoreum-line);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(5, 17, 12, .72);
+  font: inherit;
+}
+
+.neoreum-tools input:focus,
+.neoreum-site input:focus,
+.neoreum-site textarea:focus,
+.neoreum-site select:focus {
+  border-color: var(--neoreum-mint);
+  box-shadow: 0 0 0 3px rgba(94, 221, 160, .12);
+}
+
+.neoreum-engine-filter {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 12px;
+  background: rgba(2, 12, 8, .5);
+}
+
+.neoreum-engine-filter button,
+.neoreum-refresh {
+  min-height: 42px;
+  padding: 0 15px;
+  color: #9eb2a7;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.neoreum-engine-filter button.active {
+  color: #061710;
+  background: var(--neoreum-mint);
+}
+
+.neoreum-refresh {
+  border: 1px solid var(--neoreum-line);
+}
+
+.neoreum-message {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  min-height: 280px;
+  margin-top: 24px;
+  padding: 60px 24px;
+  place-content: center;
+  color: var(--neoreum-muted);
+  border: 1px solid var(--neoreum-line);
+  border-radius: 20px;
+  background: var(--neoreum-panel);
+  font-size: 16px;
+  text-align: center;
+}
+
+.neoreum-message.error { color: #efb3a3; }
+.neoreum-message button,
+.neoreum-message a { color: var(--neoreum-mint); }
+
+.neoreum-featured {
+  display: grid;
+  grid-template-columns: minmax(260px, .72fr) minmax(340px, 1.28fr);
+  gap: clamp(34px, 6vw, 92px);
+  align-items: center;
+  margin-top: 28px;
+  padding: clamp(26px, 4vw, 56px);
+  overflow: hidden;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 26px;
+  background:
+    linear-gradient(120deg, rgba(22, 58, 43, .94), rgba(8, 27, 22, .84)),
+    url("/dancheong-jade-pattern.svg") right center / 500px auto no-repeat;
+  box-shadow: 0 34px 110px rgba(0, 0, 0, .32);
+}
+
+.neoreum-featured-cover,
+.neoreum-detail-cover {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+  border: 1px solid rgba(200, 241, 220, .26);
+  border-radius: 8px 16px 16px 8px;
+  background: #0b1712;
+  box-shadow: -10px 10px 0 rgba(1, 7, 4, .7), 0 30px 80px rgba(0, 0, 0, .42);
+}
+
+.neoreum-featured-cover img,
+.neoreum-detail-cover img,
+.neoreum-card-cover img,
+.cover-preview-card img,
+.work-picker-list img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.neoreum-featured-cover > span,
+.neoreum-detail-cover > span {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  padding: 8px 11px;
+  color: #081710;
+  border-radius: 999px;
+  background: var(--neoreum-mint);
+  font: 700 11px/1 ui-monospace, monospace;
+}
+
+.neoreum-featured > div:last-child > small,
+.neoreum-detail-copy > small {
+  color: var(--neoreum-sky);
+  font: 700 12px/1.4 ui-monospace, monospace;
+  letter-spacing: .14em;
+}
+
+.neoreum-featured h2,
+.neoreum-detail-copy h1 {
+  margin: 13px 0 4px;
+  font: 400 clamp(42px, 6vw, 78px)/1 Georgia, "Noto Serif KR", serif;
+  letter-spacing: -.055em;
+}
+
+.neoreum-featured h3,
+.neoreum-detail-copy h2 {
+  margin: 0 0 24px;
+  color: #b4c9be;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.neoreum-featured p,
+.neoreum-detail-copy > p {
+  max-width: 760px;
+  color: #cedbd4;
+  font-size: 17px;
+  line-height: 1.85;
+}
+
+.neoreum-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 28px;
+}
+
+.neoreum-tags span {
+  padding: 7px 10px;
+  color: #a9c7b7;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 999px;
+  background: rgba(104, 218, 164, .06);
+  font-size: 13px;
+}
+
+.neoreum-featured footer,
+.neoreum-detail-actions,
+.neoreum-grid article footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.neoreum-featured footer a,
+.neoreum-detail-actions a,
+.neoreum-grid article footer a {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  color: #d7e8de;
+  border: 1px solid var(--neoreum-line-strong);
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.neoreum-site a.primary {
+  color: #06150f;
+  border-color: var(--neoreum-mint);
+  background: var(--neoreum-mint);
+}
+
+.neoreum-catalog,
+.neoreum-ledger,
+.neoreum-revisions {
+  margin-top: 64px;
+}
+
+.neoreum-catalog > header,
+.neoreum-ledger > header,
+.neoreum-revisions > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--neoreum-line);
+}
+
+.neoreum-catalog h2,
+.neoreum-ledger h2,
+.neoreum-revisions h2 {
+  margin: 4px 0 0;
+  font: 400 34px/1.1 Georgia, "Noto Serif KR", serif;
+}
+
+.neoreum-catalog > header > span,
+.neoreum-ledger > header > span,
+.neoreum-revisions > header > span {
+  color: var(--neoreum-muted);
+  font-size: 14px;
+}
+
+.neoreum-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.neoreum-grid > article {
+  overflow: hidden;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 18px;
+  background: var(--neoreum-panel);
+  transition: transform .2s ease, border-color .2s ease;
+}
+
+.neoreum-grid > article:hover {
+  transform: translateY(-4px);
+  border-color: var(--neoreum-line-strong);
+}
+
+.neoreum-card-cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #0a1711;
+}
+
+.neoreum-card-cover > span {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 8px;
+  color: #07140f;
+  border-radius: 6px;
+  background: var(--neoreum-mint);
+  font: 750 10px/1 ui-monospace, monospace;
+}
+
+.neoreum-grid article > div {
+  padding: 20px;
+}
+
+.neoreum-grid article > div > small { color: var(--neoreum-sky); font-size: 13px; }
+.neoreum-grid h3 { margin: 9px 0 4px; font: 400 25px/1.18 Georgia, "Noto Serif KR", serif; }
+.neoreum-grid h3 a { color: var(--neoreum-paper); }
+.neoreum-grid article > div > p { min-height: 24px; margin: 0 0 19px; color: var(--neoreum-muted); font-size: 14px; }
+.neoreum-grid dl { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 0 18px; padding: 13px 0; border-block: 1px solid var(--neoreum-line); }
+.neoreum-grid dl div { display: grid; gap: 4px; }
+.neoreum-grid dt { color: #789186; font-size: 11px; }
+.neoreum-grid dd { margin: 0; color: #dbe9e1; font-size: 13px; }
+.neoreum-grid article footer a { min-height: 40px; flex: 1; padding-inline: 10px; }
+
+.neoreum-back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--neoreum-mint);
+  font-size: 14px;
+}
+
+.neoreum-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(250px, 390px) minmax(360px, 1fr);
+  gap: clamp(40px, 7vw, 104px);
+  align-items: center;
+}
+
+.neoreum-compatibility {
+  display: flex;
+  gap: 13px;
+  max-width: 680px;
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 12px;
+  background: rgba(95, 218, 160, .07);
+}
+
+.neoreum-compatibility > i {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--neoreum-mint);
+  box-shadow: 0 0 18px var(--neoreum-mint);
+}
+
+.neoreum-compatibility > div { display: grid; gap: 4px; }
+.neoreum-compatibility span,
+.neoreum-compatibility small { color: var(--neoreum-muted); font-size: 13px; }
+
+.neoreum-ledger > dl {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--neoreum-line);
+  border-radius: 16px;
+  background: var(--neoreum-panel);
+}
+
+.neoreum-ledger > dl > div { padding: 20px; border-right: 1px solid var(--neoreum-line); }
+.neoreum-ledger > dl > div:last-child { border-right: 0; }
+.neoreum-ledger dt { color: #799084; font-size: 12px; }
+.neoreum-ledger dd { margin: 8px 0 0; color: #e4eee8; font-size: 15px; }
+
+.neoreum-revisions > div { display: grid; gap: 10px; }
+.neoreum-revisions article {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 17px;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 12px;
+  background: var(--neoreum-panel);
+}
+.neoreum-revisions article.current { border-color: var(--neoreum-line-strong); }
+.neoreum-revisions article > span { color: var(--neoreum-mint); font: 700 18px/1 ui-monospace, monospace; }
+.neoreum-revisions article > div { display: grid; gap: 4px; }
+.neoreum-revisions article small { color: var(--neoreum-muted); font-size: 13px; }
+.neoreum-revisions article a { color: var(--neoreum-sky); font-weight: 700; }
+
+.neoreum-console { max-width: 1220px; }
+.neoreum-site .publisher,
+.neoreum-site .cover-publisher,
+.neoreum-site .editor-source-panel,
+.neoreum-site .revision-publisher,
+.neoreum-site .work-danger-zone {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--neoreum-line);
+  border-radius: 18px;
+  background: var(--neoreum-panel);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .18);
+}
+
+.neoreum-site .publisher-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.neoreum-site fieldset {
+  display: grid;
+  min-width: 0;
+  gap: 17px;
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 14px;
+}
+
+.neoreum-site legend {
+  padding: 0 8px;
+  color: var(--neoreum-mint);
+  font: 700 13px/1 ui-monospace, monospace;
+}
+
+.neoreum-site textarea { min-height: 130px; resize: vertical; }
+.neoreum-site select { color-scheme: dark; }
+.neoreum-site .file-drop {
+  padding: 16px;
+  border: 1px dashed var(--neoreum-line-strong);
+  border-radius: 12px;
+  background: rgba(79, 199, 143, .05);
+}
+.neoreum-site .file-drop input { min-height: auto; padding: 4px 0; border: 0; background: transparent; }
+.neoreum-site .file-drop span { color: var(--neoreum-muted); font-size: 12px; line-height: 1.5; }
+
+.neoreum-site .publish-status {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.neoreum-site .publish-status > div { display: flex; justify-content: space-between; color: var(--neoreum-muted); font-size: 13px; }
+.neoreum-site progress { width: 100%; height: 8px; accent-color: var(--neoreum-mint); }
+.neoreum-site .status-error,
+.neoreum-site .status-success,
+.neoreum-site .cover-status,
+.neoreum-site .info-status,
+.neoreum-site .editor-handoff-status { padding: 12px 14px; border-radius: 9px; background: rgba(80, 207, 148, .08); color: #b9e8d1; font-size: 14px; }
+.neoreum-site .status-error { color: #f0b5a7; background: rgba(211, 75, 52, .1); }
+
+.neoreum-site .button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 17px;
+  color: #d8e7df;
+  border: 1px solid var(--neoreum-line-strong);
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.neoreum-site .button-primary { color: #07150f; border-color: var(--neoreum-mint); background: var(--neoreum-mint); }
+.neoreum-site .danger-button { color: #f1b3a3; border-color: rgba(235, 109, 79, .5); }
+.neoreum-site .button:disabled { cursor: not-allowed; opacity: .45; }
+.neoreum-site .publish-button { width: 100%; margin-top: 16px; min-height: 52px; }
+
+.neoreum-site .cover-manager { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 22px; }
+.neoreum-site .cover-manager-heading { align-self: center; }
+.neoreum-site .cover-manager-heading > p,
+.neoreum-site .revision-heading > p { margin: 0 0 8px; color: var(--neoreum-mint); font: 700 11px/1.3 ui-monospace, monospace; letter-spacing: .12em; }
+.neoreum-site .cover-manager-heading h2,
+.neoreum-site .revision-heading h2 { margin: 0 0 10px; font: 400 30px/1.1 Georgia, "Noto Serif KR", serif; }
+.neoreum-site .cover-manager-heading > span,
+.neoreum-site .revision-heading > span { color: var(--neoreum-muted); font-size: 14px; line-height: 1.6; }
+.neoreum-site .master-badge,
+.neoreum-site .engine-scope-badge { display: inline-flex; width: fit-content; margin-top: 12px; padding: 6px 8px; color: var(--neoreum-sky); border: 1px solid rgba(103, 190, 218, .35); border-radius: 999px; font: 700 11px/1 ui-monospace, monospace; }
+
+.neoreum-site .cover-preview-card {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 17px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--neoreum-line);
+  border-radius: 13px;
+  background: rgba(4, 16, 11, .5);
+}
+.neoreum-site .cover-preview-card img { aspect-ratio: 2/3; border-radius: 7px; }
+.neoreum-site .cover-preview-card > div { display: grid; align-content: center; gap: 6px; min-width: 0; }
+.neoreum-site .cover-preview-card strong { font: 400 23px/1.2 Georgia, "Noto Serif KR", serif; }
+.neoreum-site .cover-preview-card span,
+.neoreum-site .cover-preview-card em,
+.neoreum-site .cover-preview-card small { color: var(--neoreum-muted); font-size: 12px; overflow-wrap: anywhere; }
+.neoreum-site .cover-empty { display: grid; min-height: 170px; place-items: center; padding: 24px; color: var(--neoreum-muted); border: 1px dashed var(--neoreum-line); border-radius: 12px; text-align: center; }
+
+.neoreum-site .work-selector,
+.neoreum-site .work-info-form,
+.neoreum-site .cover-controls {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+}
+.neoreum-site .work-selector { min-width: 0; max-width: 100%; }
+.neoreum-site .work-selector-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: var(--neoreum-muted); font-size: 13px; }
+.neoreum-site .work-picker-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; min-width: 0; }
+.neoreum-site .work-picker-list button { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 11px; min-width: 0; align-items: center; padding: 8px; color: var(--neoreum-paper); border: 1px solid var(--neoreum-line); border-radius: 10px; background: rgba(5, 17, 12, .55); text-align: left; }
+.neoreum-site .work-picker-list button.active { border-color: var(--neoreum-mint); background: rgba(87, 202, 147, .1); }
+.neoreum-site .work-picker-list img { aspect-ratio: 2/3; border-radius: 5px; }
+.neoreum-site .work-picker-list span { display: grid; min-width: 0; gap: 4px; }
+.neoreum-site .work-picker-list strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.neoreum-site .work-picker-list small { color: var(--neoreum-muted); font-size: 11px; }
+
+.neoreum-site .work-info-form,
+.neoreum-site .cover-controls,
+.neoreum-site .editor-source-panel,
+.neoreum-site .revision-publisher,
+.neoreum-site .work-danger-zone { margin-top: 18px; }
+/* A grid item's automatic minimum must never become the form's viewport. */
+.neoreum-site .cover-manager > *,
+.neoreum-site .work-info-form,
+.neoreum-site form label,
+.neoreum-site .publisher-grid > *,
+.neoreum-site .work-info-grid > *,
+.neoreum-site .editor-source-panel > *,
+.neoreum-site .revision-publisher > * { min-width: 0; max-width: 100%; }
+.neoreum-site .editor-source-status,
+.neoreum-site .revision-current,
+.neoreum-site .package-status { min-width: 0; overflow-wrap: anywhere; }
+.neoreum-site input,
+.neoreum-site textarea,
+.neoreum-site select { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; }
+.neoreum-site .work-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; }
+.neoreum-site .work-info-grid .wide-field { grid-column: 1 / -1; }
+.neoreum-site .manager-section-title { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.neoreum-site .manager-section-title > span { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; color: var(--neoreum-mint); border: 1px solid var(--neoreum-line-strong); border-radius: 9px; font: 700 11px/1 ui-monospace, monospace; }
+.neoreum-site .manager-section-title > div { display: grid; gap: 3px; }
+.neoreum-site .manager-section-title strong { font-size: 18px; }
+.neoreum-site .manager-section-title small { color: var(--neoreum-muted); font-size: 12px; }
+.neoreum-site .editor-source-status { margin: 14px 0; padding: 15px; color: #d6e6dd; border: 1px solid var(--neoreum-line); border-radius: 10px; background: rgba(4, 15, 10, .48); }
+.neoreum-site .editor-source-status p { color: var(--neoreum-muted); font-size: 14px; line-height: 1.6; }
+.neoreum-site .editor-source-status code { display: block; overflow-wrap: anywhere; color: #82bdd0; font-size: 11px; }
+.neoreum-site .info-save-button { margin-top: 14px; }
+.neoreum-site .cover-controls { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; }
+.neoreum-site .cover-controls .manager-section-title { grid-column: 1 / -1; }
+.neoreum-site .cover-buttons,
+.neoreum-site .editor-source-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
+.neoreum-site .editor-source-panel,
+.neoreum-site .revision-publisher {
+  display: grid;
+  grid-template-columns: minmax(0, .65fr) minmax(0, 1.35fr);
+  gap: 18px;
+}
+.neoreum-site .editor-source-panel .manager-section-title { grid-column: 1 / -1; }
+.neoreum-site .editor-source-actions { grid-column: 1 / -1; }
+.neoreum-site .revision-current { display: grid; align-content: center; gap: 5px; padding: 16px; border: 1px solid var(--neoreum-line); border-radius: 11px; }
+.neoreum-site .revision-current small,
+.neoreum-site .revision-current span { color: var(--neoreum-muted); font-size: 12px; }
+.neoreum-site .revision-fields,
+.neoreum-site .revision-action { grid-column: 1 / -1; }
+.neoreum-site .revision-action { display: grid; gap: 10px; }
+.neoreum-site .revision-action p { color: var(--neoreum-muted); font-size: 14px; }
+.neoreum-site .work-danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-color: rgba(225, 108, 78, .27); }
+.neoreum-site .work-danger-zone > div { display: grid; gap: 5px; }
+.neoreum-site .work-danger-zone span { color: var(--neoreum-muted); font-size: 13px; }
+.neoreum-site .manager-loading { display: grid; min-height: 280px; place-items: center; color: var(--neoreum-muted); border: 1px solid var(--neoreum-line); border-radius: 18px; background: var(--neoreum-panel); }
+
+@media (max-width: 980px) {
+  .neoreum-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .neoreum-site .cover-manager,
+  .neoreum-site .editor-source-panel,
+  .neoreum-site .revision-publisher { grid-template-columns: minmax(0, 1fr); }
+  .neoreum-site .editor-source-panel .manager-section-title,
+  .neoreum-site .revision-fields,
+  .neoreum-site .revision-action { grid-column: 1; }
+  .neoreum-site .work-picker-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .neoreum-site { max-width: 100vw; padding-bottom: 58px; }
+  .neoreum-site::before { width: 100%; opacity: .1; }
+  .neoreum-subnav { top: 66px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible; padding: 6px 12px; }
+  .neoreum-subnav a { min-width: 0; padding: 10px 8px; font-size: 13px; }
+  .neoreum-main { width: 100%; padding: 30px 14px calc(84px + env(safe-area-inset-bottom)); }
+  .neoreum-heading { grid-template-columns: 1fr; gap: 10px; margin-bottom: 22px; }
+  .neoreum-heading h1 { margin-top: 6px; font-size: clamp(40px, 13vw, 56px); line-height: 1; }
+  .neoreum-heading p { font-size: 14px; line-height: 1.65; }
+  .neoreum-tools { grid-template-columns: 1fr; }
+  .neoreum-engine-filter { overflow-x: auto; }
+  .neoreum-engine-filter button { flex: 1; }
+  .neoreum-featured,
+  .neoreum-detail-hero { grid-template-columns: 1fr; padding: 20px; }
+  .neoreum-featured-cover,
+  .neoreum-detail-cover { width: min(72vw, 320px); margin-inline: auto; }
+  .neoreum-featured h2,
+  .neoreum-detail-copy h1 { font-size: clamp(40px, 13vw, 58px); }
+  .neoreum-grid { grid-template-columns: 1fr; }
+  .neoreum-card-cover { aspect-ratio: 2 / 1; }
+  .neoreum-ledger > dl { grid-template-columns: 1fr 1fr; }
+  .neoreum-ledger > dl > div { border-bottom: 1px solid var(--neoreum-line); }
+  .neoreum-ledger > dl > div:nth-child(2) { border-right: 0; }
+  .neoreum-ledger > dl > div:nth-last-child(-n+2) { border-bottom: 0; }
+  .neoreum-revisions article { grid-template-columns: 45px 1fr; }
+  .neoreum-revisions article a { grid-column: 2; }
+  .neoreum-site .publisher-grid,
+  .neoreum-site .work-info-grid { grid-template-columns: minmax(0, 1fr); }
+  .neoreum-site input, .neoreum-site textarea, .neoreum-site select { font-size: 16px; }
+  .neoreum-site .publisher,
+  .neoreum-site .cover-publisher,
+  .neoreum-site .work-info-form,
+  .neoreum-site .cover-controls,
+  .neoreum-site .editor-source-panel,
+  .neoreum-site .revision-publisher,
+  .neoreum-site .work-danger-zone { padding: 18px 14px; border-radius: 14px; }
+  .neoreum-site fieldset { padding: 18px 14px; }
+  .neoreum-site .work-info-grid .wide-field { grid-column: 1; }
+  .neoreum-site .cover-manager-heading h2,
+  .neoreum-site .revision-heading h2 { font-size: 25px; }
+  .neoreum-site .cover-preview-card { grid-template-columns: 78px minmax(0, 1fr); gap: 13px; padding: 10px; }
+  .neoreum-site .cover-preview-card strong { font-size: 20px; }
+  .neoreum-site .work-selector-heading { align-items: baseline; }
+  .neoreum-site .work-selector-heading span { font-size: 11px; }
+  .neoreum-site .work-picker-list { display: flex; gap: 9px; margin-inline: -14px; padding: 0 14px 5px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+  .neoreum-site .work-picker-list button { flex: 0 0 min(76vw, 270px); grid-template-columns: 50px minmax(0, 1fr); scroll-snap-align: start; }
+  .neoreum-site .work-picker-list img { width: 50px; height: 64px; object-fit: cover; }
+  .neoreum-site .manager-section-title { align-items: flex-start; }
+  .neoreum-site .manager-section-title > div { min-width: 0; }
+  .neoreum-site .manager-section-title small { line-height: 1.5; overflow-wrap: anywhere; }
+  .neoreum-site .cover-controls { grid-template-columns: 1fr; }
+  .neoreum-site .cover-controls .manager-section-title { grid-column: 1; }
+  .neoreum-site .cover-buttons,
+  .neoreum-site .editor-source-actions { display: grid; grid-template-columns: 1fr; }
+  .neoreum-site .cover-buttons .button,
+  .neoreum-site .editor-source-actions .button,
+  .neoreum-site .info-save-button { width: 100%; }
+  .neoreum-site .work-danger-zone { align-items: stretch; flex-direction: column; }
+  .neoreum-site .button { min-height: 48px; }
+}
+
+@media (max-width: 560px) {
+  .neoreum-subnav { top: 112px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neoreum-site *,
+  .neoreum-site *::before,
+  .neoreum-site *::after { scroll-behavior: auto !important; transition: none !important; }
+}

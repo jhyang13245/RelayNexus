@@ -1,0 +1,14 @@
+{
+  "version": "1.42.0",
+  "extensionRevision": "1.3.0",
+  "assembly": "scripts/vendor-cortex.mjs",
+  "extensions": [
+    "instant-runtime.js",
+    "occurrence-runtime.js",
+    "jieum-runtime.js"
+  ],
+  "upstreamSha256": "6dfbd01ae4f7774ac06cb3c6960b3e419526b28ba2f673ab5d87dfb99386da84",
+  "sha256": "9fc6fec785509bd677d0efa86a19e4898fa760ae337c27007abf2a1ad5ddbfc5",
+  "bundledStory": false,
+  "policy": "Cortex 1.42.0 with explicit Dancheong Instant V2 occurrence-selection and opt-in Jieum canon extensions; unchanged canon execution parity tested against the official standalone engine"
+}

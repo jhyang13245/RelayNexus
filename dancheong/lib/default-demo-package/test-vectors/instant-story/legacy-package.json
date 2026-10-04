@@ -1,0 +1,7 @@
+{
+  "packageVersion": "1.5",
+  "requiredFeatures": [
+    "instant_story_runtime_v2"
+  ],
+  "expectedResult": "reject_if_instant_runtime_unsupported"
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `cortex_session_leases` ADD `epoch` text DEFAULT '' NOT NULL;

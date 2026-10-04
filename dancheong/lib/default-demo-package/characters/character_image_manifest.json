@@ -1,0 +1,45 @@
+{
+  "format": "RELAY_NOVEL_CHARACTER_VISUAL_BIBLE_V1",
+  "enabled": true,
+  "globalStyle": "현대 한국 초능력 학원 애니메이션. 짙은 남색 교복, 청록 포인트의 학교 시설, 일상 장면은 맑고 공명 장면은 자색·적색·백색 대비.",
+  "consistencyRules": "윤지훈은 검은 단정한 머리와 짙은 눈, 레나는 긴 은빛 머리와 자색 눈, 릴리아는 붉은 머리와 금색 눈을 유지한다. 같은 인물의 얼굴·나이·교복 문양·신체 비율을 바꾸지 않는다.",
+  "introductionRule": "첫 등장 자동 이미지는 사용하지 않는다. A205호·첫 실기·첫 공명의 명시적 이미지 트리거에서만 장면 이미지를 생성한다.",
+  "priorityOrder": [
+    "package_primary_reference",
+    "package_secondary_reference",
+    "first_ai_generated_reference",
+    "text_visual_anchor"
+  ],
+  "characters": [
+    {
+      "id": "PLAYER_YJH",
+      "name": "윤지훈",
+      "importance": "protagonist",
+      "imageOnFirstAppearance": false,
+      "visualLock": true,
+      "visualAnchor": "검은 단정한 머리, 짙은 눈, 남색 기성학원 교복",
+      "imageFallback": "generate_anime",
+      "images": []
+    },
+    {
+      "id": "NPC_LENA",
+      "name": "레나",
+      "importance": "major",
+      "imageOnFirstAppearance": false,
+      "visualLock": true,
+      "visualAnchor": "긴 은빛 머리, 자색 눈동자, 차가운 인상, 기성학원 교복",
+      "imageFallback": "generate_anime",
+      "images": []
+    },
+    {
+      "id": "NPC_LILIA",
+      "name": "릴리아 발렌하르트",
+      "importance": "major",
+      "imageOnFirstAppearance": false,
+      "visualLock": true,
+      "visualAnchor": "붉은 머리, 금색 눈동자, 건강한 체형, 활기찬 표정, 기성학원 교복",
+      "imageFallback": "generate_anime",
+      "images": []
+    }
+  ]
+}

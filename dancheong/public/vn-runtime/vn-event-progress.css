@@ -1,0 +1,54 @@
+#vn-root dialog.vn-event-progress{box-sizing:border-box;width:min(880px,calc(100vw - 2rem));max-width:880px;max-height:90vh;max-height:90dvh;margin:auto;padding:1rem 1.1rem 1.25rem;overflow-y:auto;background:#0c1420;color:#e8edf4;border:1px solid #33404f;border-radius:.75rem;font-size:.95rem;line-height:1.55}
+#vn-root dialog.vn-event-progress::backdrop{background:rgba(4,8,14,.72);backdrop-filter:none}
+#vn-root .vn-event-progress[hidden],#vn-root .vn-event-progress [hidden]{display:none!important}
+#vn-root .vn-event-progress *{box-sizing:border-box}
+#vn-root .vn-event-progress header{display:flex;gap:.75rem;align-items:flex-start;justify-content:space-between;margin:0 0 .35rem}
+#vn-root .vn-progress-kicker{display:block;margin:0 0 .15rem;color:#dfbd80;font-size:.72rem;font-weight:700;letter-spacing:.12em}
+#vn-root .vn-event-progress h2,#vn-root .vn-event-progress h3,#vn-root .vn-event-progress h4{margin:0;color:#e8edf4;line-height:1.35}
+#vn-root .vn-event-progress h2{font-size:1.2rem}
+#vn-root .vn-progress-close{flex:none;min-width:44px;min-height:44px;padding:.4rem .7rem;background:transparent;color:#e8edf4;border:1px solid #5a6a7e;border-radius:.5rem;font-size:.9rem;line-height:1;cursor:pointer}
+#vn-root .vn-progress-note{margin:.25rem 0 .8rem;color:#a7b4c5;font-size:.82rem}
+#vn-root .vn-progress-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin:0 0 .9rem}
+#vn-root .vn-progress-tabs [role="tab"]{min-height:44px;padding:.55rem .3rem;background:transparent;color:#a7b4c5;border:1px solid #33404f;border-radius:.5rem;font-size:.85rem;line-height:1.25;white-space:nowrap;cursor:pointer}
+#vn-root .vn-progress-tabs [role="tab"][aria-selected="true"]{background:#dfbd80;color:#0c1420;border-color:#dfbd80;font-weight:700}
+#vn-root .vn-progress-panel{margin:0;padding:0;border:0}
+#vn-root .vn-progress-card{margin:0 0 .9rem;padding:.8rem .85rem;background:#111d2e;color:#e8edf4;border:1px solid #33404f;border-radius:.6rem}
+#vn-root .vn-progress-heading{display:flex;gap:.6rem;align-items:center;justify-content:space-between;margin:0 0 .35rem}
+#vn-root .vn-progress-heading h3{font-size:1rem}
+#vn-root .vn-progress-heading h4{font-size:.9rem}
+#vn-root .vn-progress-badge{flex:none;padding:.2rem .55rem;border:1px solid #5a6a7e;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap}
+#vn-root .vn-progress-badge[data-tone="active"]{background:#dfbd80;color:#0c1420;border-color:#dfbd80}
+#vn-root .vn-progress-badge[data-tone="met"]{background:#e8edf4;color:#0c1420;border-color:#e8edf4}
+#vn-root .vn-progress-badge[data-tone="allowed"]{background:transparent;color:#dfbd80;border-color:#dfbd80}
+#vn-root .vn-progress-badge[data-tone="unmet"]{background:transparent;color:#a7b4c5;border-color:#5a6a7e}
+#vn-root .vn-progress-badge[data-tone="pending"]{background:#2a3648;color:#e8edf4;border-color:#5a6a7e}
+#vn-root .vn-progress-badge[data-tone="error"]{background:#4a1f1f;color:#ffd7d7;border-color:#8a3b3b}
+#vn-root .vn-progress-badge[data-tone="closed"]{background:transparent;color:#8b98aa;border-color:#33404f}
+#vn-root .vn-progress-muted{margin:.2rem 0 .6rem;color:#a7b4c5;font-size:.82rem}
+#vn-root .vn-progress-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:0 0 .6rem;padding:0}
+#vn-root .vn-progress-stats>div{padding:.45rem .5rem;background:#0c1420;border:1px solid #33404f;border-radius:.5rem}
+#vn-root .vn-progress-stats dt{margin:0;color:#a7b4c5;font-size:.72rem}
+#vn-root .vn-progress-stats dd{margin:.1rem 0 0;color:#e8edf4;font-size:.88rem;font-weight:700}
+#vn-root .vn-progress-panel progress{display:block;width:100%;height:.7rem;margin:.2rem 0 .4rem;accent-color:#dfbd80}
+#vn-root .vn-progress-reason{margin:.35rem 0 0;color:#e8edf4;font-size:.85rem}
+#vn-root .vn-progress-section-title{margin:1rem 0 .5rem;color:#dfbd80;font-size:.85rem;font-weight:700;letter-spacing:.04em}
+#vn-root .vn-progress-list{margin:0 0 .6rem;padding:0;list-style:none}
+#vn-root .vn-progress-list>li{margin:0 0 .5rem;padding:.65rem .75rem;background:#111d2e;color:#e8edf4;border:1px solid #33404f;border-radius:.6rem}
+#vn-root .vn-progress-empty{padding:.9rem .75rem;color:#a7b4c5;border:1px dashed #5a6a7e;border-radius:.6rem;font-size:.85rem;text-align:center}
+#vn-root .vn-progress-details{margin:.6rem 0;padding:.1rem .75rem .6rem;background:#111d2e;border:1px solid #33404f;border-radius:.6rem}
+#vn-root .vn-progress-details summary{min-height:44px;padding:.65rem 0;color:#dfbd80;font-size:.88rem;font-weight:700;cursor:pointer}
+#vn-root .vn-progress-details p{margin:.35rem 0;color:#e8edf4;font-size:.85rem}
+#vn-root .vn-progress-steps{margin:.4rem 0;padding-left:1.4rem;color:#e8edf4;font-size:.85rem}
+#vn-root .vn-progress-steps>li{margin:.3rem 0;padding:.3rem .35rem;border-radius:.35rem}
+#vn-root .vn-progress-steps>li[data-current="true"]{background:#2a3648;outline:1px solid #dfbd80}
+#vn-root .vn-event-progress :focus-visible{outline:3px solid #dfbd80;outline-offset:2px}
+@media (max-width:480px){#vn-root dialog.vn-event-progress{padding:.85rem .8rem 1rem;font-size:.9rem}#vn-root .vn-event-progress h2{font-size:1.05rem}#vn-root .vn-progress-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-height:500px){#vn-root dialog.vn-event-progress{max-height:96vh;max-height:96dvh;padding:.7rem .8rem .9rem}}
+/* Recovery only occupies space after the reader deliberately opens this dialog. */
+#vn-root .vn-event-progress .vn-engine-recovery{position:static;width:100%;max-height:none;overflow:visible;margin:0 0 1rem;padding:.75rem;box-shadow:none;font-size:.85rem}
+#vn-root .vn-event-progress .vn-engine-recovery button{min-height:44px}
+#vn-root dialog.vn-event-progress{position:fixed;inset:0;overflow-wrap:anywhere;font-family:system-ui,sans-serif}
+#vn-root .vn-event-progress header{position:sticky;top:-1rem;padding:.3rem 0;z-index:1;background:#0c1420}
+#vn-root .vn-event-progress .vn-progress-heading h3,#vn-root .vn-event-progress .vn-progress-heading h4{min-width:0}
+#vn-root #vn-reader-progress[data-attention="true"],#vn-root #vn-menu-progress[data-attention="true"]{color:#ffe0a3;text-decoration:underline;text-underline-offset:4px}
+#vn-root #vn-reader-progress{white-space:nowrap}

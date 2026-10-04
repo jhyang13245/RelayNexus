@@ -1,0 +1,612 @@
+  const SYS_DIRECTIVE_REQ_RE_V13=/(?:보여\s*준다|보여준다|드러낸다|암시한다|체감(?:한다|하게)|느끼게|끝낸다|끝맺는다|유지한다|사용한다|만든다|연출한다|묘사한다|남긴다|첫\s*장면|장면은|장면을)/u;
+  /* 연출형 문장은 한 덩어리가 아니라 세 겹으로 쓰여 있다.
+       ① 반드시 성립해야 하는 사실   ② 소재를 몇 개까지 쓸지의 제약   ③ 장면을 어떻게 닫을지
+     ②를 단순 커버리지로 처리하면 많이 쓸수록 점수가 올라 제약과 정반대로 작동한다.
+     실제 패키지가 "우산·찻잔·달력 중 1~2개만 사용한다"인데 본문이 셋을 다 쓰면 위반이다.
+     그래서 개수 제약을 따로 떼어 상한을 넘기면 미충족으로 돌린다. */
+  const SYS_PICK_LIMIT_RE_V13=/([^.。\n]{4,160}?)\s*중\s*(\d+)\s*(?:~|-|～)?\s*(\d+)?\s*개만/u;
+  /* v1.14.0 — 요건 문자열을 한 번만 절로 나누고 그 자리에서 타입을 붙인다.
+     이 분류가 요건 해석의 유일한 출처다. 아래 사실 판정과 개수 제약 판정은
+     같은 결과를 읽기만 한다. 소비하는 쪽마다 따로 나누고 따로 걸러내면
+     한쪽 규칙만 고쳐졌을 때 같은 문장이 두 경로에서 다르게 해석된다.
+     실제로 개수 제약이 sysPickConstraintV13 에서 검사되면서 동시에
+     필수 사실로도 남아, 제약을 정확히 지킨 본문이 미충족으로 떨어졌다. */
+  function sysRequirementParseV14(text){
+    return CortexContract.splitRequirementClauses(sx(text))
+      .map(s=>sx(s))
+      .filter(s=>s.length>=4)
+      .map(clause=>{
+        const kind=SYS_PICK_LIMIT_RE_V13.test(clause)||SYS_CONSTRAINT_CLAUSE_RE_V14.test(clause)?'CONSTRAINT'
+          :SYS_PROHIBITION_CLAUSE_RE_V14.test(clause)?'PROHIBITION'
+          :'FACT';
+        return {clause,kind};
+      });
+  }
+  function sysPickConstraintV13(text,evidence){
+    /* 제약으로 분류된 절에서 먼저 찾는다. 절 분할이 표현을 잘라 놓았을 때만 전체 문장으로 물러난다. */
+    const scoped=sysRequirementParseV14(text).filter(c=>c.kind==='CONSTRAINT').map(c=>c.clause).join(' ');
+    const m=(scoped&&scoped.match(SYS_PICK_LIMIT_RE_V13))||sx(text).match(SYS_PICK_LIMIT_RE_V13);if(!m)return null;
+    const min=Math.max(1,+m[2]||1),max=Math.max(min,+(m[3]||m[2])||min);
+    /* 열거는 쉼표로 나뉜다. 각 구의 마지막 명사를 대표어로 본다. */
+    const candidates=su(sx(m[1]).split(/[,、·]/u).map(part=>sysContentTokens(part).at(-1)).filter(Boolean));
+    if(candidates.length<2)return null;
+    const have=new Set(sysContentTokens(evidence)),used=candidates.filter(c=>have.has(c));
+    return {min,max,candidates,used,ok:used.length>=min&&used.length<=max};
+  }
+  /* 요건은 "무엇을 독자에게 알려야 하는가"를 말한다.
+     "한명진이 1년 전 실종된 외할머니이며…"는 한명진과 외할머니라는 관계가
+     본문에서 실제로 이어져야 성립한다. 두 낱말이 본문 여기저기 흩어져 있는 것으로는 안 된다.
+
+     그래서 문서 전체 어휘 비율이 아니라 문장 단위 공기를 본다.
+     요건의 한 문장이 담은 핵심 낱말들이 본문의 어느 한 문장 안에 충분히 모여 있으면
+     그 사실은 전달된 것으로 본다. 흩어져 있으면 전달되지 않은 것이다. */
+  /* v1.14.0 — 연출형 요건 한 문장에는 성격이 다른 세 가지가 섞여 있다.
+       ① 사실   본문이 독자에게 전달해야 하는 것        → 충족 판정 대상
+       ② 개수   "우산·찻잔·달력 중 1~2개만 사용한다"    → sysPickConstraintV13 이 따로 검사
+       ③ 금지   "초자연 현상은 없다"                    → 없어야 성립. 진술하면 오히려 위반
+     ②와 ③을 사실 목록에 남겨 두면, 제약을 정확히 지킨 본문이 미충족으로 떨어진다.
+     본문에 "우산·찻잔·달력 중 1~2개만 사용한다"라고 쓸 리가 없기 때문이다.
+     실제로 핵심 사실 둘과 우산 하나를 제대로 보여 준 본문이 이 이유로 계속 실패했다.
+     절을 나눌 때 ②·③에 해당하는 조각은 사실 목록에서 제외한다. */
+  const SYS_CONSTRAINT_CLAUSE_RE_V14=/(?:개만|개 이하|이내로|만 사용|중 하나|중 1|중 한)/u;
+  const SYS_PROHIBITION_CLAUSE_RE_V14=/(?:없다|없음|않는다|않아야|말아야|금지|배제한다|쓰지 않)\s*[.。]?\s*$/u;
+  function sysFactClausesV13(text){
+    return sysRequirementParseV14(text).filter(c=>c.kind==='FACT'&&c.clause.length>=6).map(c=>c.clause);
+  }
+  /* v1.14.0 — 요건 문장에는 전달할 내용과 전달 방식이 섞여 있다.
+     "…환경으로 보여 준다"에서 '환경'·'보여'·'준다'는 작가에게 하는 말이지 본문에 나올 낱말이 아니다.
+     그것을 요건 어휘로 세면 본문이 아무리 정확해도 비율이 떨어진다.
+     실측에서 "한시우가 그 집에서 계속 생활해 왔음을 환경으로 보여 준다"의 요건 어휘가
+     [한시우, 계속, 생활해, 왔음, 환경, 보여, 준다] 일곱 개로 잡혔고,
+     본문이 "시우는 그 집에서 계속 살면서도"로 그 사실을 그대로 썼는데도 0.14 로 미충족이 됐다. */
+  const SYS_META_DIRECTIVE_TOKENS_V14=new Set('보여 준다 보여준다 드러낸다 드러난다 드러낸 암시한다 암시 체감한다 체감 체감하게 느끼게 느낀다 연출한다 연출 묘사한다 묘사 환경 장면 독자 표현한다 전달한다 알린다 보인다 보이게 끝낸다 끝맺는다 남긴다 만든다 사용한다 유지한다 진행한다 확인한다'.split(' '));
+  /* 한국어 서사는 인물을 처음에만 성까지 부르고 이후에는 이름만 쓴다.
+     요건이 "한시우"라고 적어 두었는데 본문이 "시우"라고 쓰는 것은 같은 사람을 가리킨 것이다.
+     접미만 본다. 접두까지 열면 "한시우"가 "한시"에 걸려 엉뚱한 낱말과 이어진다. */
+  function sysTokenHitV14(want,have){
+    if(have.has(want))return true;
+    for(const token of have){
+      if(token.length<2)continue;
+      if(want.length>=3&&want.endsWith(token))return true;
+      if(token.length>=3&&want.length>=2&&token.endsWith(want))return true;
+    }
+    return false;
+  }
+  function sysFactAssertedV13(clause,evidence){
+    const want=su(sysContentTokens(clause)).filter(t=>sx(t).length>=2&&!SYS_META_DIRECTIVE_TOKENS_V14.has(t));
+    if(want.length<2)return {ok:true,ratio:1,best:''};
+    let best=0,bestLine='';
+    for(const line of sysClauses(sx(evidence))){
+      const have=new Set(sysContentTokens(line));
+      const hit=want.filter(t=>sysTokenHitV14(t,have)).length,ratio=hit/want.length;
+      if(ratio>best){best=ratio;bestLine=line}
+    }
+    return {ok:best>=.4,ratio:best,best:sline(bestLine,120),required:want};
+  }
+  function sysDirectiveCoverageV13(text,evidence,sc){
+    const pick=sysPickConstraintV13(text,evidence);
+    const want=su(sysContentTokens(text)).filter(t=>sx(t).length>=2);
+    if(!want.length)return {ok:false,ratio:0,hits:[],pick};
+    const have=new Set(sysContentTokens(evidence));
+    const hits=want.filter(t=>have.has(t)),ratio=hits.length/want.length;
+    /* ① 요건이 진술한 사실이 본문의 어느 한 문장 안에서 실제로 이어졌는가.
+       ② 개수 제약이 있으면 그 범위 안인가.
+       v1.13.0 초판은 ②만 보고 판정해, 본문에 우산 하나만 나와도 충족으로 봤다.
+       요건이 요구한 '한명진 = 외할머니'라는 사실은 전혀 확인하지 않았다. */
+    /* v1.13.0 — 요건 한 문장에 성격이 다른 둘이 섞여 있다.
+         ① 반드시 전달돼야 하는 사실  ② 소품을 몇 개까지 쓸지의 연출 제약
+       실제 로그에서 본문이 "한명진은 정확히 일 년 전 사라졌다"로 ①을 완벽히 전달하면서
+       우산·찻잔·달력을 셋 다 써서 ②를 어겼다.
+       이 둘을 한 판정으로 묶으면 어느 쪽으로 묶어도 틀린다.
+       ①만 붙들면 제약 위반을 놓치고, ②를 종결 조건에 넣으면 사실이 전달됐는데도 사건이 안 닫힌다.
+
+       그래서 종결은 ①로만 결정하고, ②는 별도 신호로 내보내 같은 턴 재작성에 맡긴다.
+       사건 진행은 막지 않되 그 장면 안에서 고친다. */
+    const facts=sysFactClausesV13(text).map(c=>({clause:sline(c,90),...sysFactAssertedV13(c,evidence)}));
+    const unmet=facts.filter(f=>!f.ok);
+    const factsOk=facts.length?unmet.length===0:ratio>=.3;
+    const pickViolated=Boolean(pick&&!pick.ok);
+    return {ok:factsOk,ratio,hits,required:want,pick,pickViolated,facts,unmetFacts:unmet.map(f=>f.clause)};
+  }
+  sysRequirementSatisfied=function(req,evidence,txn,sc){const type=sysClassifyRequirement(req),text=sx(req?.description||req?.goal||req?.title||req),aliases=sl(req?.aliases).map(value=>sx(value)).filter(Boolean);if(type==='PLAYER_AGENCY')return {ok:sysAgencySatisfied(txn),type,reason:'DETERMINISTIC_PLAYER_AGENCY'};
+    /* 연출형 판정은 부정 제약만 비켜 간다.
+       상태 요건이라도 문장이 "…끝낸다" 같은 연출 지시면 상태 비교로는 절대 성립하지 않는다.
+       실제 로그의 세 번째 요건이 WORLD_STATE 로 분류되어 이 갈래에서 빠지는 바람에
+       핫픽스를 넣고도 계속 failClosed 에 걸렸다. 상태 직접 비교를 먼저 시도하고,
+       그것이 실패했을 때 연출형으로 받는다. */
+    /* 패키지가 유형을 직접 선언했으면 동사 추측을 하지 않는다.
+       semanticRole 에 SCENE/DIRECTIVE/PRESENTATION 이 들어 있으면 그대로 연출형으로 받는다.
+       동사 목록은 표현 변형에 취약하므로, 선언이 있는 패키지는 그 경로를 아예 타지 않게 한다.
+       기존 패키지는 선언이 없으니 종전대로 휴리스틱으로 떨어진다. */
+    const declaredDirectiveV13=/SCENE|DIRECTIVE|PRESENTATION|STAGING/.test(sx(req?.semanticRole||req?.type).toUpperCase());
+    const stateTypeV13=['INVENTORY_STATE','RELATIONSHIP_STATE','WORLD_STATE'].includes(type);
+    const directiveV13=type!=='NEGATIVE_CONSTRAINT'&&(declaredDirectiveV13||(stateTypeV13?SYS_DIRECTIVE_STRONG_RE_V13.test(text):SYS_DIRECTIVE_REQ_RE_V13.test(text)));
+    if(directiveV13&&stateTypeV13){
+      const matched=sysStateDirectMatchV121(type,text,sc);
+      if(matched)return {ok:true,type,reason:'DETERMINISTIC_STATE_OBJECT_MATCH',matched};
+    }
+    if(directiveV13){
+      const coverage=sysDirectiveCoverageV13(text,evidence);
+      return {ok:coverage.ok,type,reason:coverage.ok?'DIRECTIVE_SCENE_COVERAGE':'DIRECTIVE_SCENE_INCOMPLETE',coverage,directive:true};
+    }if(type==='NEGATIVE_CONSTRAINT')return {ok:sysNegativeSatisfied(req,evidence),type,reason:'DETERMINISTIC_NEGATIVE_CONSTRAINT'};if(['INVENTORY_STATE','RELATIONSHIP_STATE','WORLD_STATE'].includes(type)){const matched=sysStateDirectMatchV121(type,text,sc);if(matched)return {ok:true,type,reason:'DETERMINISTIC_STATE_OBJECT_MATCH',matched}}const propositionGraph=sysKoreanDiscourseGraphV11(evidence,sc),typedSet=CortexContract.buildTypedEvidence(evidence,{sourceTurn:(+sc?.runtime?.systemicEventState?.eventTurns||0)+1,propositionGraph}),typed=CortexContract.typedRequirementResult(req,typedSet.records);return {ok:typed.ok,type,reason:typed.ok?'V17_REFERENCE_GRAPH_AUTHORITY':typed.status==='REANALYZE'?'V17_SEMANTIC_REANALYZE':'V17_VERIFIED_MISSING',typed,propositionGraph,coverage:{ok:typed.ok,affirmed:typed.ok,ratio:typed.facts?.length?Math.min(...typed.facts.map(row=>+row.ratio||0)):0}}}
+  /* v1.12.0 — Requirement Evidence Ledger.
+     v1.11.1 은 매 턴 요건 전체를 다시 판정했다. 증거 창이 event.runtimeEvidence 12개뿐이라
+     사건 초반에 성립한 요건이 창 밖으로 밀리면 종결 시점에 다시 미충족으로 뒤집혔다.
+     비가역 요건(일어난 사건)은 성립 시점에 확정하고, 현재 상태를 묻는 가역 요건만 재검사한다.
+     장부는 사건 단위다. 사건이 바뀌면 새로 만들어지므로 이전 사건의 증거는 넘어오지 않는다. */
+  const SYS_REVOCABLE_TYPES_V12=new Set(['INVENTORY_STATE','WORLD_STATE','RELATIONSHIP_STATE','NEGATIVE_CONSTRAINT']);
+  function sysRequirementLedgerV12(sc){
+    const eventId=sx(sc?.event?.id);sc.runtime=sc.runtime||{};
+    let ledger=sc.runtime.requirementLedger;
+    if(!ledger||ledger.schema!=='CORTEX_REQUIREMENT_LEDGER_V12'||sx(ledger.eventId)!==eventId)ledger=sc.runtime.requirementLedger={schema:'CORTEX_REQUIREMENT_LEDGER_V12',eventId,entries:{}};
+    return ledger;
+  }
+  sysAuditRequirements=function(sc,text,txn){
+    const evidence=sysEventEvidenceV5(sc,text),items=sysRequirementList(sc?.event),ledger=sysRequirementLedgerV12(sc),turnNo=(+sc?.runtime?.systemicEventState?.eventTurns||0)+1;
+    /* 장부는 실제 본문이 있는 커밋 경로에서만 갱신한다.
+       브리핑·비트 계약은 text='' 로 감사를 호출하므로 그 호출이 장부를 뒤집으면 안 된다. */
+    const mutate=Boolean(sx(text));
+    const rows=items.map(r=>{
+      const requirement=sx(r?.description||r?.goal||r?.title||r),key=sx(r?.id)||stableHash(requirement);
+      /* v1.13.0 — 모델 판정이 있으면 그것을 규칙 판정보다 우선한다.
+         규칙은 어휘를 세고 모델은 의미를 본다. 둘이 어긋나면 의미 쪽이 맞다.
+         판정이 없는 요건이나 모델 판정을 끈 경우에는 종전대로 규칙이 결정한다. */
+      const savedVerdictV210=sc?.runtime?.requirementVerdicts||sc?.runtime?.systemicEventState?.requirementVerdicts,verdictV13=sx(savedVerdictV210?.eventId)===sx(sc?.event?.id)?savedVerdictV210?.verdicts?.[requirement]:undefined;
+      const ruled=sysRequirementSatisfied(r,evidence,txn,sc);
+      const live=typeof verdictV13==='boolean'?{...ruled,ok:verdictV13,reason:verdictV13?'MODEL_JUDGED_MET':'MODEL_JUDGED_UNMET',ruledOk:ruled.ok}:ruled;
+      const revocable=SYS_REVOCABLE_TYPES_V12.has(sx(live?.type)),prior=ledger.entries[key];
+      if(mutate){
+        if(live.ok&&!prior?.satisfied)ledger.entries[key]={satisfied:true,revocable,type:sx(live.type),reason:sx(live.reason),atTurn:turnNo};
+        else if(!live.ok&&prior?.satisfied&&revocable)ledger.entries[key]={...prior,satisfied:false,revokedAtTurn:turnNo};
+      }
+      /* v1.13.0 — 모델이 판정한 요건에는 latch 를 적용하지 않는다.
+         latch 는 증거 창이 좁아 이전에 성립한 사실이 뒤집히는 것을 막으려고 넣은 장치인데,
+         모델 판정까지 덮어써 버렸다. 실제 로그에 ok:true / reason:MODEL_JUDGED_UNMET 이라는
+         모순된 행이 남았다. 규칙이 한 번 거짓 통과시키면 그 뒤로는 모델이 아니라고 해도
+         영원히 충족으로 고정되는 구조였다.
+         모델 판정은 본문 전체를 보고 매 턴 새로 내리므로 창이 좁아 뒤집힐 염려가 없다.
+         그쪽이 있으면 그것이 최종이다. */
+      const latched=!live.ok&&prior?.satisfied===true&&!revocable&&typeof verdictV13!=='boolean';
+      return {requirement,...live,ok:live.ok||latched,latched,revocable};
+    });
+    const missing=rows.filter(r=>!r.ok).map(r=>r.requirement);
+    return {ok:missing.length===0,missing,evidence:rows,typedSemanticGate:true,evidenceScope:'CURRENT_EVENT_LEDGER',ledger:{eventId:sx(ledger.eventId),satisfiedCount:Object.values(ledger.entries).filter(e=>e?.satisfied).length,total:items.length}};
+  };
+
+  function sysSpeakerPresent(sc,presentIds,speakerId){const speaker=sx(speakerId);if(!speaker)return true;for(const raw of presentIds){if(sx(raw)===speaker)return true;try{if(typeof publicEntityRef==='function'&&(publicEntityRef(sc,raw,'actor')===speaker||publicEntityRef(sc,raw,'character')===speaker))return true}catch{}}return false}
+  const sysLicensedPresenceGraphV171=sysPresenceGraph;
+  function sysSequentialPresenceAuditV5(sc,blocks=[],options={}){const body=sl(blocks).map(block=>sx(block?.text)).join('\n\n'),graph=sysLicensedPresenceGraphV171(sc,body,blocks,options),present=new Set(graph.presentCharacterIds),issues=[];for(const block of sl(blocks))if(block?.kind==='dialogue'&&block?.speakerId&&!sysSpeakerPresent(sc,present,block.speakerId))issues.push(`OUT_OF_SCENE_DIALOGUE:${block.speakerId}`);return {...graph,issues:su(issues),timeline:[]}}
+  sysPresenceGraph=function(sc,text='',blocks=[],options={}){return sysLicensedPresenceGraphV171(sc,text,blocks,options)};
+  try{imageCast=function(sc,turn,visible=''){const graph=sysPresenceGraph(sc,visible,turn?.blocks||[],{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,turn?.txn)}),ids=new Set(graph.presentCharacterIds);return [sc?.protagonist,...sl(sc?.characters)].filter(Boolean).filter(c=>ids.has(c.id)).slice(0,4)}}catch{}
+
+  function sysTransitionNegatedV5(sentence,index,len){const around=sx(sentence).slice(Math.max(0,index-10),Math.min(sx(sentence).length,index+len+52));return SYS_NEG_LOCAL_RE.test(around)||SYS_HYPOTHETICAL_LOCAL_RE.test(around)}
+  function sysPhysicalTransitionsV5(sentence){const specs=[['alive','DEAD',/(?:사망했|죽었다|숨이\s*멎|목숨을\s*잃|생명이\s*끊)/u],['consciousness','UNCONSCIOUS',/(?:의식을\s*잃|정신을\s*잃|기절|실신|의식이\s*끊|혼절)/u],['consciousness','SLEEPING',/(?:잠들|잠에\s*들|수면에\s*빠)/u],['consciousness','AWAKE',/(?:의식을\s*되찾|정신을\s*차리|눈을\s*떴|깨어났|잠에서\s*깼)/u],['mobility','LOWER_BODY_IMMOBILE',/(?:다리|하반신|허리\s*아래|아랫부분|하체)[^.!?。！？]{0,100}(?:움직일\s*수\s*없|감각(?:이|은|이)\s*돌아오지|기능(?:을|이)[^.!?。！？]{0,24}잃|마비|힘이\s*들어오지|불구(?:가|로)?\s*(?:되|됐|된다|되었다)?)/u],['mobility','IMMOBILE',/(?:전신\s*마비|온몸(?:이|을)?\s*움직일\s*수\s*없|몸\s*전체가\s*움직이지|사지가\s*움직이지|움직일\s*수\s*없)/u],['mobility','LIMITED',/(?:절뚝|비틀거리|부축|기어가|심한\s*통증|다리를\s*끌)/u],['restrained',true,/(?:묶였|결박|구속|수갑|포박)/u],['restrained',false,/(?:풀려났|결박을\s*풀|수갑을\s*풀|구속에서\s*벗)/u],['vision','LOST',/(?:시력을\s*잃|보이지\s*않)/u],['vision','AVAILABLE',/(?:시야가\s*돌아|다시\s*보이)/u],['speech','LOST',/(?:말할\s*수\s*없|목소리가\s*나오지)/u],['speech','AVAILABLE',/(?:다시\s*말할\s*수|목소리가\s*돌아)/u],['handUse','LOST',/(?:손을\s*쓸\s*수\s*없|손가락을\s*움직일\s*수\s*없)/u],['handUse','AVAILABLE',/(?:손을\s*다시\s*움직|손가락에\s*감각이\s*돌아)/u]];const out=[];for(const [key,value,re] of specs)for(const m of sysRegexMatchesV5(sentence,re)){const local=sx(sentence).slice(m.index,Math.min(sx(sentence).length,m.index+m.text.length+60)),negated=value==='LOWER_BODY_IMMOBILE'?/(?:아니(?:었다|라|다)|회복|다시\s*(?:돌아|움직))/u.test(local):sysTransitionNegatedV5(sentence,m.index,m.text.length);if(!negated)out.push({index:m.index,key,value,raw:m.text})}return out.sort((a,b)=>a.index-b.index)}
+  const sysTransitionNegatedBeforeContextV10=sysTransitionNegatedV5;
+  sysTransitionNegatedV5=function(sentence,index,len){const scope=sysKoreanScopeV10(sentence,index,sx(sentence).slice(index,index+len));return scope.actuality!=='COMMITTED'||scope.polarity==='DOUBLE_NEGATED'};
+  const sysPhysicalTransitionsBeforeContextV10=sysPhysicalTransitionsV5;
+  sysPhysicalTransitionsV5=function(sentence){return sysPhysicalTransitionsBeforeContextV10(sentence).filter(e=>{const scope=sysKoreanScopeV10(sentence,e.index,e.raw);return scope.actuality==='COMMITTED'&&scope.polarity!=='DOUBLE_NEGATED'})};
+  const sysFrameCapabilityIssueBeforeContextV10=sysFrameCapabilityIssue;
+  sysFrameCapabilityIssue=function(frame,p){if(frame?.actuality&&frame.actuality!=='COMMITTED')return '';if(frame?.kind==='WAKE')return '';return sysFrameCapabilityIssueBeforeContextV10(frame,p)};
+  sysExtractPhysical=function(sc,text,turnNo=0){const p=sysPhysicalState(sc);for(const sentence of sysClauses(text))for(const e of sysPhysicalTransitionsV5(sentence)){if(e.key==='mobility'&&p.mobility==='IMMOBILE'&&e.value!=='IMMOBILE')continue;if(e.key==='mobility'&&p.mobility==='LOWER_BODY_IMMOBILE'&&e.value==='LIMITED')continue;p[e.key]=e.value}p.updatedTurn=turnNo;return p};
+  sysStateIssue=function(text,txn,sc){const p=sclone(sysPhysicalState(sc));for(const sentence of sysClauses(text)){const events=[...sysPhysicalTransitionsV5(sentence).map(e=>({...e,type:'STATE'})),...sysCompileActionFrames(sentence,sc).filter(f=>f.modality!=='NEGATED').map(f=>({index:f.position??0,type:'ACTION',frame:f}))].sort((a,b)=>a.index-b.index||(a.type==='STATE'?-1:1));for(const e of events){if(e.type==='STATE'){if(e.key==='mobility'&&p.mobility==='IMMOBILE'&&e.value!=='IMMOBILE')continue;if(e.key==='mobility'&&p.mobility==='LOWER_BODY_IMMOBILE'&&e.value==='LIMITED')continue;p[e.key]=e.value;continue}const issue=sysFrameCapabilityIssue(e.frame,p);if(issue)return issue}const cue=/(?:일어나|걷|걸어|달리|뛰|이동|나가|들어가|기어)/u.exec(sentence);if(cue&&!sysTransitionNegatedV5(sentence,cue.index,cue[0].length)){if(p.restrained)return 'RESTRAINED_MOVEMENT';if(p.mobility==='IMMOBILE')return 'IMMOBILE_MOVEMENT';if(p.mobility==='LOWER_BODY_IMMOBILE'&&!/(?:기어|끌고|몸을\s*끌|구르)/u.test(sentence))return 'LOWER_BODY_MOVEMENT_UNAVAILABLE'}const voluntary=SYS_VOLUNTARY_ACTION_RE.exec(sentence);if(voluntary&&!sysTransitionNegatedV5(sentence,voluntary.index,voluntary[0].length)){const before=sysPhysicalTransitionsV5(sentence).filter(e=>e.index<=voluntary.index);const q={...p};for(const e of before){if(e.key==='mobility'&&q.mobility==='IMMOBILE'&&e.value!=='IMMOBILE')continue;if(e.key==='mobility'&&q.mobility==='LOWER_BODY_IMMOBILE'&&e.value==='LIMITED')continue;q[e.key]=e.value}if(q.alive==='DEAD')return 'DEAD_VOLUNTARY_ACTION';if(['UNCONSCIOUS','SLEEPING'].includes(q.consciousness))return 'UNCONSCIOUS_VOLUNTARY_ACTION'}}return ''};
+
+  function sysClockMentionsV5(text){const body=sx(text),out=[],rx=/(?:(오전|오후)\s*)?(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?|\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/gu;let m;while((m=rx.exec(body))){let h,mi,se=0;if(m[4]!=null){h=+m[4];mi=+m[5];se=+(m[6]||0)}else{h=+m[2];mi=+(m[3]||0);if(m[1]==='오후'&&h<12)h+=12;if(m[1]==='오전'&&h===12)h=0}if(h>23||mi>59||se>59)continue;const local=body.slice(Math.max(0,m.index-42),Math.min(body.length,rx.lastIndex+54)),reference=/(?:예정|예약|마감|알림|일정|도착\s*예정|수업\s*시작|출발\s*예정|까지|전에|이후|기록|송장|표시된|적혀|메시지)/u.test(local),asserted=/(?:현재|지금|시각|시계|가리키|되었|됐다|이었다|때였다|무렵이었다|정각|문을\s*나선\s*건)/u.test(local)||/^[\s“”'「『(]*\d{1,2}(?::\d{2}|\s*시)/u.test(body.slice(Math.max(0,m.index-2),Math.min(body.length,m.index+12)));out.push({seconds:h*3600+mi*60+se,index:m.index,raw:m[0],reference,asserted:asserted&&!reference})}return out}
+  const sysChronologyIssueV4=sysChronologyIssue;
+  sysChronologyIssue=function(text,txn){const base=sysChronologyIssueV4(text,txn);if(base)return base;const startDay=txn?.start?.day||0,start=sclock(startDay,txn?.start?.time),endDay=txn?.endStatePatch?.worldDay??txn?.corridor?.endDay??startDay,end=sclock(endDay,txn?.guards?.forbidTimeAfter||txn?.endStatePatch?.worldTime||txn?.start?.time),resetAuthorized=Boolean(txn?.eventPatch?.loopResetAuthorized||txn?.temporalContract?.loopResetAuthorized||txn?.runtimeSystemic?.authorizedLoopReset);for(const c of sysClockMentionsV5(text).filter(x=>x.asserted)){let tick=startDay*86400+c.seconds;if(endDay>startDay&&c.seconds<parseClock(txn?.start?.time))tick+=86400;if(tick>end+120)return `NARRATED_CLOCK_AHEAD:${c.raw}`;if(tick<start-120&&!resetAuthorized)return `NARRATED_CLOCK_BEHIND:${c.raw}`}return ''};
+
+  function sysRoleVerbCompatibleV14(frame,kind){return Boolean(frame?.actuality==='COMMITTED'&&CortexContract.verbRoleCompatible(kind,frame))}
+  sysFrameForEvidence=function(text,kind,sc=scenario){const frames=sysCompileActionFrames(text,sc),map={inventory_add:['ACQUIRE','STORE'],inventory_remove:['RELEASE'],destruction:['DESTROY'],injury:['ATTACK']};return frames.find(f=>sl(map[kind]).includes(f.kind)&&(!/^inventory_/u.test(kind)||sysRoleVerbCompatibleV14(f,kind))&&f.actuality==='COMMITTED')||null};
+  const sysCanonSanitizeV4=sysCanonSanitize;
+  sysCanonSanitize=function(sc,candidate,context={}){if(!candidate)return null;const c=sclone(candidate),kind=sx(c.kind),evidence=sx(c?.evidence?.text||c?.evidence||c?.evidenceText||c?.publicStatement||c?.statement),frame=sysFrameForEvidence(evidence,kind,sc);if(['inventory_add','inventory_remove'].includes(kind)){if(!frame||!frame.theme)return null;const obj=frame.theme;if(c.targetName&&sn(c.targetName)!==sn(obj))return null;const discourseGrounded=Boolean(frame.actuality==='COMMITTED'&&frame?.discourse?.actorResolution?.status==='RESOLVED'&&frame?.discourse?.themeResolution?.status==='RESOLVED'&&!SYS_BODY_RE.test(obj)&&!SYS_ABSTRACT_RE.test(obj)&&!SYS_GENERIC_NOUN_RE.test(obj)&&!sysCharacterByName(sc,obj)&&!sysKnownLocation(sc,obj));if(!sysConcreteObject(sc,obj,evidence)&&!discourseGrounded)return null;c.targetName=obj;c.targetRef=c.targetRef||CortexContract.entityRefFor(sc?.runtime?.canonLedger,obj,evidence);c.confidence=discourseGrounded?'HIGH_DISCOURSE_ROLE_GROUNDED_V4':'HIGH_ROLE_GROUNDED_V3';return c}if(kind==='destruction'){const obj=frame?.theme||c.targetName;if(!obj)return null;c.targetName=obj;c.targetRef=CortexContract.entityRefFor(sc?.runtime?.canonLedger,obj,evidence);c.confidence='HIGH_ROLE_GROUNDED_V4_ENTITY_LINKED';return c}return sysCanonSanitizeV4(sc,c,context)};
+
+  const sysGroundingV4=sysGrounding;
+  sysGrounding=function(sc,closure){const safe=v=>sx(v)&&!containsProtected(sc,sx(v));const anchors=sl(sc?.event?.absorptionAnchors).filter(a=>!/(?:secret|hidden|gm|private|비공개)/iu.test(sx(a?.visibility||a?.disclosure||''))).map(a=>({evidence:sx(a?.fact||a?.evidence||a?.description),strength:sclamp(+a?.strength||4,1,5),sourceId:sx(a?.sourceId||a?.characterId||'event')})).filter(a=>safe(a.evidence));if(anchors.length)return anchors.slice(0,2);const missing=sl(closure?.audit?.missing).filter(safe);if(missing.length)return missing.slice(0,2).map(evidence=>({evidence,strength:3,sourceId:'event-contract-public'}));const next=sx(sc?.event?.nextBeat);return safe(next)?[{evidence:next,strength:2,sourceId:'event'}]:[]};
+  function sysGoalReadinessAnchorsV15(sc){const event=sc?.event||{},current=sn(sc?.world?.location);return su([sx(event.canonLocation),...sl(event.locations).map(value=>sx(value?.name||value)),...sl(event.beats).flatMap(beat=>[sx(beat?.startLocation),sx(beat?.endLocation),sx(beat?.location)]),...sl(event?.packageMeta?.locations).map(value=>sx(value?.name||value))].filter(value=>value&&sn(value)!==current))}
+  function sysGoalReadyV15(txn,sc){
+    /* FREE는 작품 정답을 절대로 공개하지 않는다. 그 이후에도 원문 포함 여부나
+       현재 장소의 자기 일치가 아니라, 단일 IR이 확정한 실제 MOVE 목적지만 사용한다. */
+    const phase=sx(txn?.beatPhase).toUpperCase();if(!phase||phase===SYS_BEAT_PHASE_V13.FREE)return false;const anchors=sysGoalReadinessAnchorsV15(sc).map(sn).filter(value=>value.length>=2);if(!anchors.length)return false;const destinations=sl(txn?.intent?.semanticIR?.propositions).filter(p=>p?.actionKind==='MOVE'&&p?.actuality==='COMMITTED'&&p?.world?.mode==='REALITY').map(p=>sn(p?.roles?.destination)).filter(value=>value.length>=2);return anchors.some(anchor=>destinations.some(destination=>destination===anchor||destination.includes(anchor)||anchor.includes(destination)))
+  }
+  function sysAbsorptionModeV15(txn,sc,closure){
+    const phase=sx(closure?.beatPhase||sysBeatPhaseV13(sc,closure)),hasGoals=sysRequirementList(sc?.event).length>0,boundary=sysShouldAbsorb(txn,sc,closure);
+    if(phase===SYS_BEAT_PHASE_V13.HARD)return 'MANDATORY_REALIZATION';
+    if(phase===SYS_BEAT_PHASE_V13.RECOVERY)return 'ALTERNATE_REALIZATION';
+    if(phase===SYS_BEAT_PHASE_V13.CLOSURE)return hasGoals?'REQUIRED_REALIZATION':boundary?'BOUNDARY_ONLY':'NONE';
+    if(phase===SYS_BEAT_PHASE_V13.GUIDED){const beats=sl(sc?.event?.beats).filter(b=>b?.runtimeExtension!==true),index=sclamp(+sc?.event?.activeBeatIndex||0,0,Math.max(0,beats.length-1)),guided=beats.slice(0,index+1).filter(b=>sx(b?.phase).toUpperCase()==='GUIDED').length,total=beats.filter(b=>sx(b?.phase).toUpperCase()==='GUIDED').length;return guided>=Math.max(1,total)?'CANON_ALIGNMENT':'CAUSAL_NUDGE'}
+    return sysGoalReadyV15(txn,sc)?'CAUSAL_NUDGE':boundary?'BOUNDARY_ONLY':'NONE';
+  }
+  function sysGuidedGroundingV15(sc){const safe=v=>sx(v)&&!containsProtected(sc,sx(v)),values=[sx(sc?.event?.summary),sx(sc?.runtime?.packageContract?.openingContract?.firstGoal),...sl(sc?.event?.absorptionAnchors).map(a=>sx(a?.fact||a?.description))].filter(safe);return su(values).slice(0,2).map(evidence=>({evidence,strength:2,sourceId:'public-causal-context'}))}
+  function sysCanonLocationCandidatesV172(sc,closure){
+    const explicit=sysGoalReadinessAnchorsV15(sc),surface=[sx(sc?.event?.summary),sx(sc?.event?.description),...sl(closure?.audit?.missing).map(value=>sx(value))].join(' '),tokens=surface.match(/[가-힣A-Za-z0-9]+/gu)||[],derived=[];
+    for(const token of tokens){const parsed=CortexContract.stripParticle(token),stem=sx(parsed?.stem||token);if(/(?:고등학교|학교|교실|복도|도서관|체육관|병원|공원|역|사무실|연구실|집|주택|방)$/u.test(stem))derived.push(stem)}
+    return su([...explicit,...derived]).filter(label=>sn(label)!==sn(sc?.world?.location));
+  }
+  function sysCanonTransitionForV172(sc,closure,mode,availableSec=0){
+    const candidates=sysCanonLocationCandidatesV172(sc,closure),target=candidates[0]||'';if(!target)return null;return CortexContract.createCanonTransitionContract({sourceLocation:sc?.world?.location,targetLocation:target,canonLocations:candidates,availableSec,minimumTravelSec:900});
+  }
+  sysAbsorptionPlan=function(txn,sc,closure){const mode=sysAbsorptionModeV15(txn,sc,closure);if(mode==='NONE')return {required:false,mode,strategy:'none',agencyRisk:'LOW',grounding:[],agencyFactsToPreserve:[],beats:[],rules:[],semanticMandate:[],progressMandate:[],canonProgressRequired:false,canonTransitionContract:null,deferredGoal:txn?.intent?.deferredGoal||null,deferredFrameIds:[],deferredDestinations:[],deferredDestinationRefs:[],resumePolicy:'NONE',lastResortUsed:false};const frames=sl(txn?.intent?.actionFrames).filter(f=>f.modality!=='NEGATED'),moves=frames.filter(f=>f.kind==='MOVE'&&f.destination),strong=['REQUIRED_REALIZATION','ALTERNATE_REALIZATION','MANDATORY_REALIZATION'].includes(mode),alignment=mode==='CANON_ALIGNMENT',grounding=strong?sysGrounding(sc,closure):sysGuidedGroundingV15(sc),deferred=strong&&frames.length?frames.map(sysDeferredFrameStatementV151).filter(Boolean).join(' → '):moves.length?`${moves.map(f=>f.destination).join(' → ')} 이동을 포함한 원래 행동 순서`:(txn?.intent?.deferredGoal||'사용자가 선택한 원래 행동 순서'),resumePolicy=strong?'DEFER_AFTER_CANON':'RESUME_ALLOWED',semanticMandate=strong?sl(closure?.audit?.missing).map(value=>sx(value)).filter(Boolean):[],progressMandate=alignment?sl(closure?.audit?.missing).map(value=>sx(value)).filter(Boolean).slice(0,1):[],canonTransitionContract=mode!=='BOUNDARY_ONLY'?sysCanonTransitionForV172(sc,closure,mode,0):null;return {required:true,mode,strategy:'staged_causal_absorption_v172',agencyRisk:frames.some(f=>f.motionClass==='ESCAPE')||txn?.intent?.escape?'HIGH':strong?'MEDIUM':'LOW',grounding,agencyFactsToPreserve:[`ACTION_SEQUENCE ${JSON.stringify(frames)}`,`INPUT ${sline(txn?.intent?.raw,240)}`],beats:mode==='BOUNDARY_ONLY'?['REALIZE_USER_ACTION_SEQUENCE','ENFORCE_TIME_LOCATION_STATE_BOUNDARY']:mode==='CAUSAL_NUDGE'?['REALIZE_USER_ACTION_SEQUENCE','CREATE_CANON_CONTACT']:alignment?['REALIZE_USER_ACTION_SEQUENCE','MOTIVATE_ROUTE','DEPART','TRAVEL','ARRIVE_OR_DEFER']:['BEGIN_USER_ACTION_SEQUENCE','MOTIVATE_ROUTE','DEPART','TRAVEL','ARRIVE','REALIZE_REQUIRED_CAUSAL_RESULT','DEFER_REMAINDER_AFTER_CANON'],rules:['사용자의 복합 행동에서 정사 개입 전까지 실제로 가능한 시작 부분은 보존한다.','주체·대상·목적지·동반자·수단을 바꾸거나 삭제하지 않는다.',mode==='BOUNDARY_ONLY'?'시간·장소·물리 경계만 교정하고 종결조건을 강제로 꺼내지 않는다.':mode==='CAUSAL_NUDGE'?'사용자 행동의 결과가 사건 전제조건 하나와 접점을 만들게 하되 종결을 강제하지 않는다.':alignment?'단순한 생각·예감·준비물 접촉으로 비트를 끝내지 않는다. 다음 정사 장소로 갈 동기를 현재 사실에서 만들고 출발·이동·도착 중 검증 가능한 진전을 실제로 성립시킨다.':'현재 시간·장소의 인과를 지키며 남은 종결조건을 실제 장면으로 성립시킨다.',strong?'필수 정사 장면이 성립한 뒤에는 이번 턴을 그 장소와 결과에서 끝낸다. 원래 목적지와 후속 행동은 실행하지 말고 보류 장부로 넘긴다.':'성립하고 남은 사용자 행동은 같은 턴에 자연스럽게 이어도 된다.','모든 정사 흡수는 현재 사실에서 동기와 원인을 먼저 만들고 결과를 뒤에 둔다. 다른 장소라면 동기→출발→이동(또는 시간 몽타주)→도착→목표 성립 순서를 지키고 실제 소요시간만큼 세계 시각을 전진시킨다.','작품의 세계 규칙으로 허가되지 않은 장면 전환·뜬금없는 연락·새 인물·근거 없는 심경 변화로 해결하지 않는다.'],semanticMandate,progressMandate,canonProgressRequired:alignment,canonTransitionContract,deferredGoal:deferred,deferredFrameIds:strong?frames.map(f=>f.frameId).filter(Boolean):[],deferredDestinations:strong?moves.map(f=>f.destination).filter(Boolean):[],deferredDestinationRefs:strong?moves.map(f=>f.destinationRef).filter(Boolean):[],resumePolicy,lastResortUsed:mode==='MANDATORY_REALIZATION',lastResortDevice:''}}
+
+  const sysApplyEventStartGateV4=sysApplyEventStartGateCompatV4;
+
+  sysEventPhase=function(sc){if(!sc?.event)return 'NONE';const status=sx(sc.event.status).toUpperCase();if(status==='SEALED')return 'SEALED';if(status==='BRANCH_PENDING')return 'BRANCH_PENDING';const p=sx(sc?.runtime?.systemicEventState?.phase).toUpperCase();if(p==='BRANCH_PENDING'&&sx(sc?.runtime?.systemicEventState?.activeEventId)===sx(sc?.event?.id))return 'BRANCH_PENDING';const now=sysWorldTick(sc),b=sysEventBounds(sc.event,sc.world);if(now>=b.end)return 'OVERDUE';return 'ACTIVE'};
+  sysSelectNext=function(sc,event){const branches=sl(event?.branchCandidates);if(branches.length){try{if(typeof selectPackageBranch==='function'&&typeof packageState==='function'){const picked=selectPackageBranch(event,packageState(sc));if(picked)return picked}}catch{}if(event?.nextEvent)return event.nextEvent;return null}return event?.nextEvent||null};
+  const sysDirectAdvanceV4=sysDirectAdvance;
+  sysDirectAdvance=function(sc,txn,ending,visible=''){const event=sc?.event;if(!event)return {status:'NO_EVENT'};const branches=sl(event?.branchCandidates),hasBranches=branches.length>0;/* replicate normal path via v4 unless the only missing decision is an unresolved branch. */if(/^PASS_/u.test(sx(ending?.status))&&hasBranches&&!event?.nextEvent){/* v1.12.0 — selectPackageBranch 는 조건 일치가 정확히 1개일 때만 고른다.
+   먼저 폴백을 갖춘 sysResolveBranchV9 로 해소하고, 그것이 실패할 때만 구 경로를 본다. */
+let picked=null,branchInfo=null;try{branchInfo=sysResolveBranchV9(sc,event);picked=branchInfo?.candidate||null}catch{}try{if(!picked&&typeof selectPackageBranch==='function'&&typeof packageState==='function')picked=selectPackageBranch(event,packageState(sc))||null}catch{}if(!picked){sc.runtime=sc.runtime||{};event.runtimeEvidence=su([...sl(event.runtimeEvidence),sx(visible)].filter(Boolean)).slice(-12);const p=sysEnsureRuntime(sc),turnNo=p.eventTurns+1;p.eventTurns=turnNo;p.lastAudit={status:sx(ending?.status),branchPending:true};sc.runtime.eventLedger=sc.runtime.eventLedger||{sealed:[],activeEventId:event.id};const committed={day:+txn?.endStatePatch?.worldDay||+sc?.world?.day||0,time:sx(txn?.endStatePatch?.worldTime||sc?.world?.time),location:sx(txn?.endStatePatch?.location||sc?.world?.location)};sc.runtime.eventLedger.sealed=[...sl(sc.runtime.eventLedger.sealed).filter(x=>(x?.id||x?.eventId)!==event.id),{id:event.id,title:event.title,status:'SEALED',startTime:event.startTime,endTime:event.endTime,sealedAt:committed.time,sealReason:sysSealReason(ending),endingStatus:ending.status,beatCount:sl(event.beats).length}].slice(-256);event.status='BRANCH_PENDING';for(const b of sl(event.beats))b.status='COMPLETED';p.phase='BRANCH_PENDING';/* v1.12.0 — activeEventId 를 비우면 재접속 시 활성 사건을 잃는다. 유지한다. */sc.runtime.eventLedger.activeEventId=event.id;sc.runtime.branchDecision={schema:'CORTEX_BRANCH_DECISION_V1',eventId:event.id,status:sx(branchInfo?.status)||'NONE_AVAILABLE',candidates:branches.map(b=>sx(b?.id)).filter(Boolean),exhausted:true};sysUpdateMotifs(sc,visible,turnNo);return {status:'BRANCH_PENDING',eventId:event.id,nextEventId:null,candidates:branches.map(b=>sx(b?.id)).filter(Boolean)}}}return sysDirectAdvanceV4(sc,txn,ending,visible)};
+
+  function sysDeferredDestinationIssuesV151(txn,graph){if(txn?.absorptionPlan?.resumePolicy!=='DEFER_AFTER_CANON')return [];const deferredRefs=new Set(sl(txn.absorptionPlan.deferredDestinationRefs).map(value=>sx(value)).filter(Boolean)),issues=[];for(const node of sl(graph?.nodes).filter(item=>item?.actionKind==='MOVE'&&item?.actuality==='COMMITTED'&&item?.discourseWorld?.mode==='REALITY')){const destinationRef=sx(node?.roles?.destinationRef);if(destinationRef&&deferredRefs.has(destinationRef))issues.push(`DEFERRED_DESTINATION_COMPLETED:${destinationRef}`)}return su(issues)}
+  sysInvariantAudit=function(sc,txn,text,blocks=[]){const issues=[],phase=sysEventPhase(sc),propositionGraph=sysKoreanDiscourseGraphV11(text,sc),chrono=sysChronologyIssue(text,txn),state=sysStateIssue(text,txn,sc),future=sysFutureLeak(text,txn,sc),motif=sysMotifIssue(sc,text,txn?.intent?.raw);if(chrono)issues.push(`TIME_CONTINUITY:${chrono}`);if(state)issues.push(`STATE_CONTINUITY:${state}`);if(future)issues.push(future);if(motif)issues.push(motif);issues.push(...sysRealizationIssues(txn?.intent?.raw,txn,text),...sysDeferredDestinationIssuesV151(txn,propositionGraph));const locationAudit=CortexContract.auditLocationLicense(text,txn?.locationLicense||CortexContract.createLocationLicense({currentLocation:sc?.world?.location,eventLocations:[sc?.event?.canonLocation]}),{propositionGraph});issues.push(...locationAudit.issues);const presence=sl(blocks).length?sysSequentialPresenceAuditV5(sc,blocks):sysPresenceGraph(sc,text,blocks);issues.push(...sl(presence.issues));if(phase==='WAITING_FOR_START'&&txn?.eventPatch?.advanceAtCommit)issues.push('EVENT_FSM:WAITING_CANNOT_ADVANCE');if(['SEALED','BRANCH_PENDING'].includes(phase)&&txn?.eventPatch?.advanceAtCommit)issues.push(`EVENT_FSM:${phase}_CANNOT_ADVANCE`);const timelineEnd=blocks?.at(-1)?.sceneEnd;if(timelineEnd&&txn?.guards?.forbidTimeAfter&&parseClock(timelineEnd)>parseClock(txn.guards.forbidTimeAfter)&&(((txn?.corridor?.endDay??txn?.start?.day??0))===(txn?.start?.day||0)))issues.push('TIME_CONTINUITY:BLOCK_AFTER_CORRIDOR');return {schema:SYS_INVARIANT_SCHEMA,phase,issues:su(issues),locationAudit,propositionGraph,presence,actionFrames:sclone(txn?.intent?.actionFrames||[]),motif:sysMotifDirective(sc,txn?.intent?.raw),evidenceScope:'CURRENT_EVENT_ONLY'}};
+  sysBlockSafetyIssue=function(sc,txn,text,blocks=[]){const audit=sysInvariantAudit(sc,txn,text,blocks);return audit.issues[0]||''};
+  sysSafePrefixRepair=function(turn,txn,sc){if(!turn||!sl(turn.blocks).length)return {changed:false,visible:''};const original=[...turn.blocks],safe=[],local=sclone(sc);let reason='';for(const b of original){const candidate=[...safe,b],text=candidate.map(x=>sx(x?.text)).join('\n\n'),issue=sysBlockSafetyIssue(local,txn,text,candidate);if(issue){reason=issue;break}safe.push(b);sysExtractPhysical(local,sx(b?.text),+local?.runtime?.systemicPhysicalState?.updatedTurn||0);const g=sysPresenceGraph(local,sx(b?.text),[b]);local.scene=local.scene||{};local.scene.presentCharacterIds=g.presentCharacterIds}if(!reason)return {changed:false,visible:original.map(b=>sx(b?.text)).join('\n\n')};turn.blocks=safe;turn.paragraphs=safe.map(b=>b?.kind==='dialogue'?`“${sx(b?.text)}”`:sx(b?.text));turn.charCount=turn.paragraphs.join('\n\n').length;turn.systemicTailCorrection={mode:'SAFE_PREFIX_REWIND',reason,removedBlocks:original.length-safe.length,keptBlocks:safe.length};if(safe.length)turn.endTime=sx(safe.at(-1)?.sceneEnd||turn.endTime);return {changed:true,reason,visible:turn.paragraphs.join('\n\n'),empty:!safe.length}};
+
+  const sysReconcileCarryoverV4=sysReconcileCarryover;
+  sysReconcileCarryover=function(sc,txn={},ending={},visible=''){sc.runtime=sc.runtime||{};const turnNo=(typeof turns!=='undefined'&&Array.isArray(turns)?turns.length:0)+1,eventRef=sx(sc?.event?.id),evidence=sysEventEvidenceV5(sc,visible);let ledger=CortexContract.dedupeCarryover(sl(sc.runtime.carryoverLedger).map(x=>({...x})).filter(Boolean));for(const x of ledger){if(x.status==='RESOLVED'||!x.statement)continue;if(x.kind!=='PLAYER_INTENT'&&x.eventRef&&x.eventRef!==eventRef)continue;const r=sysRequirementSatisfied({description:x.statement},evidence,txn,sc);if(r.ok){x.status='RESOLVED';x.resolvedAt=new Date().toISOString();x.resolvedAtTurn=turnNo}}const known=new Set(ledger.map(x=>x.id)),add=(kind,statement,opt={})=>{statement=sx(statement);if(!statement)return;const scopedEventRef=Object.prototype.hasOwnProperty.call(opt,'eventRef')?sx(opt.eventRef):eventRef,x={id:`syscarry-${stableHash(`${kind}|${scopedEventRef}|${statement}`)}`,kind,statement,eventRef:scopedEventRef,beatRef:sx(opt.beatRef),sourceTurn:turnNo,status:'OPEN',openedAt:new Date().toISOString(),priority:+opt.priority||2};if(!known.has(x.id)){known.add(x.id);ledger.push(x)}};if(txn?.deferredGoal)add('PLAYER_INTENT',txn.deferredGoal,{priority:4,eventRef:''});for(const m of sl(ending?.missing))add('EVENT_OBLIGATION',m,{priority:4});for(const b of sl(sc?.event?.beats)){if(/^(?:DONE|COMPLETE|COMPLETED|SATISFIED|SEALED|RESOLVED)$/u.test(sx(b?.status).toUpperCase()))continue;const statement=sx(b?.goal||b?.description);if(statement&&!sysSyntheticBeats({beats:[b]}))add('BEAT_OBLIGATION',statement,{beatRef:b?.id,priority:3})}sc.runtime.carryoverLedger=CortexContract.dedupeCarryover(ledger).slice(-64);return sc.runtime.carryoverLedger};
+
+  sysNarrativePlan=function(sc,txn){const phase=sysEventPhase(sc),frames=sl(txn?.intent?.actionFrames).filter(f=>f.modality!=='NEGATED').sort((a,b)=>(a.order??0)-(b.order??0)),presence=sysPresenceGraph(sc),presentNpc=presence.presentCharacterIds.filter(id=>id&&id!==sc?.protagonist?.id),closure=sysClosureState(sc,'',txn),motif=sysMotifDirective(sc,txn?.intent?.raw),plan={schema:'CORTEX_NARRATIVE_PLAN_V3',phase,mode:sysSceneMode(sc,txn),literaryPolicy:sysLiteraryPolicy(sc,txn),sceneMoves:[]};if(frames.length)plan.sceneMoves.push({role:'PLAYER_ACTION',instruction:'복합 사용자 행동을 입력 순서대로 실제로 시작하고 각 행동의 대상·목적지·동반자·수단을 서로 섞지 않는다.',frames:sclone(frames)});plan.sceneMoves.push({role:'DIRECT_CONSEQUENCE',instruction:'방금 행동이 물리 상태·관계·환경 중 적어도 하나에 남기는 직접 결과를 보여 준다.'});if(presentNpc.length)plan.sceneMoves.push({role:'CHARACTER_RESPONSE',instruction:'현재 실제로 존재하는 인물만 반응시키고, 대사는 정보 전달보다 성격·관계·이해 차이를 드러낼 때 사용한다.',eligibleCharacterIds:presentNpc});if(txn?.absorptionPlan?.required)plan.sceneMoves.push({role:'CANON_ABSORPTION',instruction:'사용자 행동 순서를 삭제하지 않고 공개된 grounding에서 현재 필수 인과가 실제 동선에 개입하게 한다.',grounding:sclone(txn.absorptionPlan.grounding||[])});else if(closure.pressure)plan.sceneMoves.push({role:'EVENT_CLOSURE',instruction:'새 갈등을 늘리지 말고 현재 사건 내부의 증거만으로 열린 인과와 미충족 완료조건을 수렴시킨다.',missing:sclone(closure.audit.missing||[])});else if(phase==='WAITING_FOR_START')plan.sceneMoves.push({role:'INTERLUDE',instruction:'예약 사건의 내용을 선취하지 말고 현재 행동·관계·환경의 자유 장면으로 진행한다.'});plan.sceneMoves.push({role:'SCENE_DELTA',instruction:'직전 턴과 다른 상태·관계·위치·정보·결정 중 최소 하나의 실제 변화를 남긴다.'});plan.sceneMoves.push({role:'CLOSING_IMAGE',instruction:'최근 반복한 상징·문장 이미지를 피하고 이번 턴에서 새로 생긴 변화 하나로 끝낸다.',avoid:sclone(motif.avoid||[])});return plan};
+
+
+  /* ===== Systemic v6 final authority isolation =====
+     Legacy generations remain load/storage host bridge only. They cannot mutate
+     narrative policy, event chronology, action realization, presence, or quality verdicts. */
+  const SYS_POLICY_AUTHORITY_V6='SYSTEMIC_V7_ONLY';
+
+  function sysExplicitDayV6(event,rawDays){
+    const candidates=[rawDays?.get?.(safeId(event?.id,'event')),event?.storyDay,event?.scheduleDay,event?.absoluteDay,event?.dayIndex,event?.sourceContract?.storyDay,event?.sourceContract?.scheduleDay,event?.sourceContract?.absoluteDay,event?.sourceContract?.dayIndex,event?.packageMeta?.storyDay,event?.packageMeta?.scheduleDay,event?.packageMeta?.dayIndex];
+    for(const v of candidates){const n=Number(v);if(Number.isFinite(n)&&n>=0)return Math.floor(n)}return null;
+  }
+  function sysAnnotateEventDaysV6(sc,rawEvent=null){
+    if(!sc?.event||!sc?.world)return sc;
+    const rawDays=typeof rawEventDayMap==='function'?rawEventDayMap(rawEvent):new Map(),events=typeof eventSequence==='function'?eventSequence(sc.event):[];
+    let day=Math.max(0,Number(sc.world.day)||0),previousClock=null;
+    for(let i=0;i<events.length;i++){
+      const event=events[i],explicit=sysExplicitDayV6(event,rawDays),startClock=parseClock(event?.startTime||'00:00:00');
+      if(explicit!=null)day=explicit;else if(i>0&&previousClock!=null&&startClock<previousClock)day+=1;
+      event.storyDay=day;event.scheduleDay=day;event.startTick=day*86400+startClock;
+      let endClock=parseClock(event?.endTime||event?.startTime||'00:00:00'),endTick=day*86400+endClock;if(endTick<=event.startTick)endTick+=86400;event.endTick=endTick;
+      let beatClock=parseClock(event?.nextBeatAt||event?.endTime||event?.startTime||'00:00:00'),beatTick=day*86400+beatClock;if(beatTick<event.startTick)beatTick+=86400;event.nextBeatTick=beatTick;
+      previousClock=endClock;
+    }
+    return sc;
+  }
+  try{annotateEventDays=sysAnnotateEventDaysV6}catch{}
+
+  function sysFrameDescriptionV6(frame){
+    if(!frame)return '';
+    const args=[];if(frame.theme)args.push(`대상=${frame.theme}`);if(frame.target)args.push(`상대=${frame.target}`);if(frame.source)args.push(`출발/출처=${frame.source}`);if(frame.destination)args.push(`목적지=${frame.destination}`);if(frame.manner)args.push(`방식=${frame.manner}`);if(frame.transport)args.push(`수단=${frame.transport}`);if(sl(frame.accompaniedEntities).length)args.push(`동반=${sl(frame.accompaniedEntities).join(',')}`);
+    return `${frame.kind}${args.length?`(${args.join(' · ')})`:''}`;
+  }
+  function sysDeferredFrameStatementV151(frame){if(!frame)return '';if(frame.kind==='MOVE'&&frame.destination)return `${frame.destination}으로 이동`;const predicate=sx(frame.predicateLemma||frame.predicate||frame.kind),role=sx(frame.theme||frame.target);return `${role?`${role}을 `:''}${predicate}`.trim()}
+  function sysOutcomeEnvelopeV6(txn,sc=scenario){
+    const frames=sl(txn?.intent?.actionFrames).filter(f=>f?.modality!=='NEGATED').sort((a,b)=>(a?.order??0)-(b?.order??0)),bounded=Boolean(txn?.absorptionPlan?.required||sysEventPhase(sc)==='WAITING_FOR_START'||txn?.intent?.requestedUntilSec!=null||txn?.intent?.requestedDurationSec!=null);
+    txn.outcomeEnvelope={schema:'CORTEX_OUTCOME_ENVELOPE_V2',policyAuthority:SYS_POLICY_AUTHORITY_V6,inputAcceptance:'ACCEPTED',execution:'REALIZE_FRAMES_IN_ORDER',resultAuthority:bounded?'BOUNDED_BY_STATE_CANON_TIME':'OPEN',actionFrames:sclone(frames),mayShow:frames.map(f=>`사용자가 요청한 ${sysFrameDescriptionV6(f)}를 입력 순서대로 실제 장면에서 시작한다.`),mustShow:frames.length?['각 긍정 행동 프레임의 실제 시작','각 프레임이 만든 직접 반응 또는 물리적 결과']:['사용자가 선택한 현재 행동의 실제 시작'],mustNot:['행동 프레임의 주체·대상·출발지·목적지·동반자·수단 역할을 서로 바꾸기','사용자 행동을 생략한 채 세계 규칙으로 허가되지 않은 정사 결과 위치로 장면 전환하기','현재 상태·시간·공개 정사보다 강한 성공 결과를 임의 확정하기','정사 흡수를 위해 설명 없는 심경 변화로 사용자의 원래 계획을 취소하기'],redirectRequired:Boolean(txn?.absorptionPlan?.required),redirectTarget:txn?.absorptionPlan?.required?sl(txn.absorptionPlan.grounding).map(g=>sx(g?.evidence)).filter(Boolean).slice(0,2):[],deferredGoal:sx(txn?.intent?.deferredGoal||txn?.deferredGoal)};return txn;
+  }
+  try{applyOutcomeEnvelope=function(txn){return sysOutcomeEnvelopeV6(txn,scenario)}}catch{}
+  try{explicitOutcomeClaims=function(input){return {schema:'SYSTEMIC_ACTION_FRAME_CLAIMS_V1',frames:sysCompileActionFrames(input,scenario)}}}catch{}
+  try{explicitOutcomeIssues=function(txn,text){return sysRealizationIssues(txn?.intent?.raw||'',txn,text)}}catch{}
+  try{reconcileExplicitOutcomes=function(){return 0}}catch{}
+
+  function sysDropRepeatedBlocksV6(turn){
+    if(!turn||!Array.isArray(turn.blocks))return 0;const kept=[],seenBlocks=[],seenSentences=new Set();let removed=0;
+    for(const raw of turn.blocks){const block={...raw},key=sn(block?.text);if(!key){removed++;continue}const duplicate=key.length>28&&seenBlocks.some(old=>old===key||(Math.min(old.length,key.length)>72&&(old.includes(key)||key.includes(old))));if(duplicate){removed++;continue}seenBlocks.push(key);
+      const pieces=sx(block.text).match(/[^.!?。！？]+[.!?。！？]+|[^.!?。！？]+$/gu)||[],unique=[];for(const piece of pieces){const sk=sn(piece);if(sk.length>14&&seenSentences.has(sk)){removed++;continue}if(sk.length>14)seenSentences.add(sk);unique.push(sx(piece).trim())}block.text=unique.join(' ').replace(/\s+/gu,' ').trim();if(block.text)kept.push(block);else removed++;
+    }turn.blocks=kept;return removed;
+  }
+  try{dropRepeatedBlocks=sysDropRepeatedBlocksV6}catch{}
+
+  function sysActionPatchSentenceV6(txn,issue){
+    const frames=sl(txn?.intent?.actionFrames).filter(f=>f?.modality!=='NEGATED').sort((a,b)=>(a?.order??0)-(b?.order??0)),subject=sx(txn?.writerContext?.protagonist?.name||scenario?.protagonist?.name||'주인공');
+    let f=null;if(/DESTINATION/u.test(issue))f=frames.find(x=>x.kind==='MOVE'&&x.destination);else if(/ACCOMPANIED_ENTITY/u.test(issue))f=frames.find(x=>sl(x.accompaniedEntities).length);else if(/TRANSPORT/u.test(issue))f=frames.find(x=>x.transport);else {const kind=sx(issue).split(':').at(-1);f=frames.find(x=>x.kind===kind)||frames[0]}
+    if(!f)return '';
+    if(f.kind==='MOVE'){const companion=sl(f.accompaniedEntities).length?`${sl(f.accompaniedEntities).join('와 ')}와 함께 `:'',means=f.transport?`${f.transport}을 이용해 `:'',dest=f.destination?`${f.destination}을 향해 `:'';return `${subject}는 ${companion}${means}${dest}실제로 이동을 시작했다.`}
+    if(f.kind==='ACQUIRE'&&f.theme)return `${subject}는 ${f.theme}을 실제로 손에 넣었다.`;
+    if(f.kind==='STORE'&&f.theme)return `${subject}는 ${f.theme}을 실제로 챙겨 보관했다.`;
+    if(f.kind==='RELEASE'&&f.theme)return `${subject}는 ${f.theme}을 실제로 손에서 놓아 보냈다.`;
+    if(f.kind==='DESTROY'&&f.theme)return `${subject}는 ${f.theme}을 향한 파괴 행동을 실제로 실행했고, 그 물체에는 눈에 보이는 물리적 변화가 남았다.`;
+    if(f.kind==='OPEN'&&f.theme)return `${subject}는 ${f.theme}을 실제로 열었다.`;
+    if(f.kind==='CLOSE'&&f.theme)return `${subject}는 ${f.theme}을 실제로 닫았다.`;
+    if(f.kind==='ATTACK'){const target=f.target||f.theme||'상대';return `${subject}는 ${target}을 향한 공격 동작을 실제로 실행했고, 즉각적인 물리적 반응이 뒤따랐다.`}
+    if(f.kind==='INSPECT'&&f.theme)return `${subject}는 ${f.theme}을 직접 살펴보며 확인 가능한 단서를 점검했다.`;
+    if(f.kind==='COMMUNICATE'){const target=f.target?`${f.target}에게 `:'';return `${subject}는 ${target}의사를 직접 전달하고 상대의 반응을 기다렸다.`}
+    if(f.kind==='WAIT'||f.kind==='REST')return `${subject}는 선택한 대로 그 자리에서 행동을 멈추고 시간을 보냈다.`;
+    return '';
+  }
+  try{actionRealizationPatch=function(txn,issues=[]){for(const issue of sl(issues)){const s=sysActionPatchSentenceV6(txn,issue);if(s)return s}return ''}}catch{}
+
+  function sysGenericFormatIssuesV6(text,txn,blocks=[]){
+    const issues=[],body=sx(text),p=txn?.prosePolicy||{},/* v1.12.2 — 호출부가 narration 블록 하나만 넘기므로 blocks 길이는 항상 1이었다.
+       그 탓에 문단 검사가 사실상 죽어 있었다(실제 4문단인 본문이 SOFT_PARAGRAPHS_LOW:1<3 로 잡힘).
+       블록이 실제로 여러 개일 때만 블록 수를 쓰고, 그렇지 않으면 본문을 직접 나눈다. */
+    paragraphs=(sl(blocks).length>1?sl(blocks).length:0)||body.split(/\n\s*\n/u).filter(Boolean).length;
+    if(Number.isFinite(+p.minChars)&&body.length<+p.minChars)issues.push(`SOFT_LENGTH_SHORT:${body.length}<${+p.minChars}`);if(Number.isFinite(+p.maxChars)&&body.length>+p.maxChars)issues.push(`SOFT_LENGTH_LONG:${body.length}>${+p.maxChars}`);if(Number.isFinite(+p.minParagraphs)&&paragraphs<+p.minParagraphs)issues.push(`SOFT_PARAGRAPHS_LOW:${paragraphs}<${+p.minParagraphs}`);if(Number.isFinite(+p.maxParagraphs)&&paragraphs>+p.maxParagraphs)issues.push(`SOFT_PARAGRAPHS_HIGH:${paragraphs}>${+p.maxParagraphs}`);
+    try{if(typeof incompleteSentence==='function'&&incompleteSentence(body))issues.push('INCOMPLETE_SENTENCE')}catch{}
+    try{if(typeof CONTROL_TOKEN!=='undefined'&&CONTROL_TOKEN.test(body))issues.push('PRIVATE_LEAK:INTERNAL_CONTROL_TOKEN')}catch{}
+    try{if(typeof PRIVATE_WORD!=='undefined'&&PRIVATE_WORD.test(body))issues.push('PRIVATE_LEAK:HIDDEN_POLICY_TEXT')}catch{}
+    try{if(typeof META_RE!=='undefined'&&META_RE.test(body))issues.push('MODEL_META')}catch{}
+    issues.push(...CortexContract.analyzeNarrativeLanguage(body,{allowedLatinTerms:narrativeLatinAllowlist(txn)}).issues);
+    const normalized=sysClauses(body).map(sn).filter(x=>x.length>14);if(new Set(normalized).size<normalized.length)issues.push('SOFT_EXACT_REPETITION');
+    if(txn?.dialoguePlan?.required&&sl(blocks).filter(b=>b?.kind==='dialogue').length<Math.max(1,+txn.dialoguePlan.minBlocks||1))issues.push('SOFT_DIALOGUE_DENSITY_LOW');
+    if(txn?.absorptionPlan?.required&&sysClauses(body).length<5)issues.push('SOFT_ABSORPTION_CHAIN_THIN');return su(issues);
+  }
+  /* v1.19.0 — legacy 이름은 외부 호환용 표면 검사만 제공한다. 인물·행동·장소·시간·정사의
+     의미 판정과 상태 변경 권한은 오직 출력당 하나의 Commit Graph V1에 있다. */
+  try{qualityAudit=function(text,txn){return su(CortexContract.analyzeNarrativeLanguage(sx(text),{allowedLatinTerms:narrativeLatinAllowlist(txn)}).issues)}}catch{}
+  try{hardQualityIssues=function(issues){return su(sl(issues)).filter(i=>/^(?:PRIVATE_LEAK|LANGUAGE_LEAK|MODEL_META|INTERNAL_COMMIT_GRAPH_LEAK)/u.test(sx(i)))}}catch{}
+  try{scanGuard=function(text,txn){const issues=[];try{if(typeof CONTROL_TOKEN!=='undefined'&&CONTROL_TOKEN.test(sx(text)))issues.push('PRIVATE_LEAK:INTERNAL_CONTROL_TOKEN')}catch{}try{if(typeof PRIVATE_WORD!=='undefined'&&PRIVATE_WORD.test(sx(text)))issues.push('PRIVATE_LEAK:HIDDEN_POLICY_TEXT')}catch{}try{if(typeof META_RE!=='undefined'&&META_RE.test(sx(text)))issues.push('MODEL_META')}catch{}issues.push(...CortexContract.analyzeNarrativeLanguage(sx(text),{allowedLatinTerms:narrativeLatinAllowlist(txn)}).issues);return su(issues)}}catch{}
+
+  try{imageCast=function(sc,turn,visible=''){const graph=sysPresenceGraph(sc,visible,turn?.blocks||[],{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,turn?.txn)}),ids=new Set(graph.presentCharacterIds);return [sc?.protagonist,...sl(sc?.characters)].filter(Boolean).filter(c=>ids.has(c.id)).slice(0,4)}}catch{}
+
+  /* Core canon facts are compiled from systemic role frames only. Legacy extractors may
+     propose non-core semantic facts, but are never allowed to establish core physical truth. */
+  const sysCompatCollectCanonV6=typeof collectCanonCandidates==='function'?collectCanonCandidates:null;
+  try{collectCanonCandidates=function(sc,transportRaw,context={}){const text=sx(context.publicText),clean=[];for(const f of sysCompileActionFrames(text,sc)){let kind=null;if(['ACQUIRE','STORE'].includes(f.kind))kind='inventory_add';else if(f.kind==='RELEASE')kind='inventory_remove';else if(f.kind==='DESTROY')kind='destruction';if(!kind||!f.theme||f.actuality!=='COMMITTED'||f.discourse?.actorResolution?.status!=='RESOLVED'||!f.actorRef)continue;const statement=sline(f.scopeText||f.raw,360);const v=sysCanonSanitize(sc,{kind,statement,evidence:text,subjectIds:[f.actorRef],targetName:f.theme,visibility:'PUBLIC_CONFIRMED'},context);if(v)clean.push(v)}
+      /* Compatibility candidates are restricted to semantic/non-core facts and still need
+         the systemic kind/evidence gate. */
+      const compat=sysCompatCollectCanonV6?sl(sysCompatCollectCanonV6(sc,transportRaw,context)):[];for(const c of compat){const kind=sx(c?.kind);if(/^(?:inventory_add|inventory_remove|destruction)$/u.test(kind))continue;const ev=sx(c?.evidence?.text||c?.evidence||c?.evidenceText||c?.statement||c?.publicStatement);if(!sysCanonKindSupported(kind,ev,c))continue;const v=sysCanonSanitize(sc,c,context);if(v)clean.push({...v,compatibilityCandidate:true})}
+      const seen=new Set();return clean.filter(c=>{const k=`${c.kind}|${sn(c.targetName||c.value)}|${stableHash(sx(c.statement||c.publicStatement))}`;if(seen.has(k))return false;seen.add(k);return true}).slice(0,36)}}catch{}
+
+
+  /* ===== Systemic v7 audited execution path =====
+     All writer-facing transaction policy is compiled here without calling legacy
+     buildTxn/applyBeat/applyEventStart policy generations. Legacy code remains only
+     as data normalization/storage compatibility. */
+  const SYS_EXECUTION_AUTHORITY_V7='SYSTEMIC_V14_NATIVE_PACKAGE_FIDELITY_ONLY';
+
+  function sysCanonCapsuleV7(sc,input){
+    try{if(typeof selectCanonCapsule==='function'){const c=selectCanonCapsule(sc,input);if(c&&typeof c==='object')return c}}catch{}
+    return {schema:typeof MEMORY_SCHEMA!=='undefined'?MEMORY_SCHEMA:'CORTEX_CANON_LEDGER_V1',revision:+sc?.runtime?.canonLedger?.revision||0,selected:0,total:sl(sc?.runtime?.canonLedger?.entries).length,chars:2,compileMs:0,entries:[]};
+  }
+  function sysProseBandV7(sc,absorption=false,micro=false){
+    /* v1.13.0 hotfix — normal 밴드를 600~1200 으로 되돌린다.
+       v1.12.x 에서는 pressure 가 항상 켜져 absorption 밴드(600~1250)가 적용됐고,
+       그 비정상 동작이 우연히 분량을 받쳐 주고 있었다. pressure 를 정상화하자
+       normal(500~1100)과 micro(80~600)가 드러나면서 실제 출력이 절반으로 줄었다.
+       micro 는 짧은 반응용이므로 과하게 올리지 않고 하한만 손본다. */
+    const defaults={normal:{minChars:600,maxChars:1200,minParagraphs:3,maxParagraphs:6,hard:false},absorption:{minChars:600,maxChars:1250,minParagraphs:3,maxParagraphs:7,hard:false},micro:{minChars:200,maxChars:700,minParagraphs:1,maxParagraphs:4,hard:false}},custom=sc?.runtime?.prosePolicy||{},key=absorption?'absorption':micro?'micro':'normal';return {...defaults[key],...(custom[key]||{}),hard:false};
+  }
+  /* v1.13.0 hotfix — micro 판정이 지나치게 넓었다.
+     STATE_ASSERTION 은 "~했다" 로 끝나는 평범한 서술형 입력을 전부 포함하고,
+     길이 상한 120자도 사실상 모든 입력을 통과시킨다. 실제 로그에서 세 턴 모두 micro 로 떨어졌다.
+     micro 는 "응", "고개를 끄덕인다" 같은 한 마디짜리 반응에만 쓴다. */
+  function sysMicroTurnV14(frames,input){const act=CortexContract.classifyTurnAct(input),active=sl(frames).filter(frame=>frame.modality!=='NEGATED');return sx(input).length<=40&&(['SPEECH','REACTION'].includes(act.primary)||active.length===1&&['COMMUNICATE','REST','WAKE'].includes(active[0].kind))}
+  function sysDialoguePlanV7(sc,txn=null){
+    const graph=sysPresenceGraph(sc,'',[]),rawIds=new Set(graph.presentCharacterIds),cast=[sc?.protagonist,...sl(sc?.characters)].filter(Boolean).filter(c=>rawIds.has(c.id)),allowed=cast.map(c=>{const pub=sysPublicCharacterV8(sc,c)||{};return {id:pub.id||sysPublicIdV8(sc,c.id,'actor'),surfaceName:pub.name||'',voice:pub.voice||'',relationship:pub.relationshipToProtagonist||''}}),protagonistPublic=sysPublicIdV8(sc,sc?.protagonist?.id,'actor'),npc=allowed.filter(x=>x.id!==protagonistPublic),policy=sx(sc?.runtime?.dialoguePolicy?.whenPresent||'natural'),mode=txn?sysSceneMode(sc,txn):'';/* v1.13.0 — 대사 계약. v1.7.8 의 dialoguePolicy.maxLinesPerSpeaker 를 되살린다.
+       한 인물이 연달아 길게 말하면 대화가 아니라 연설이 된다. 화자 구별도 함께 요구한다.
+       required 는 현장에 NPC 가 있고 장면 모드가 대화형일 때만 켜지므로 억지 대사는 생기지 않는다. */
+    const maxLinesPerSpeaker=sclamp(+sc?.runtime?.dialoguePolicy?.maxLinesPerSpeaker||3,1,6);
+    const required=Boolean(npc.length&&(policy==='required'||mode==='DIALOGUE'||mode==='RELATIONSHIP'));return {required,minBlocks:required?1:0,maxLinesPerSpeaker,preferredSpeakerId:required?npc[0]?.id||null:null,allowedSpeakers:allowed,serverResolvesSurfaceName:true,idDomain:'actor'};
+  }
+  function sysRequestedDurationV7(txn,sc,phase){
+    const now=sclock(txn?.start?.day??sc?.world?.day,txn?.start?.time||sc?.world?.time),intent=txn?.intent||{},frame=sysPrimaryFrame(intent.actionFrames),explicitDur=Number.isFinite(+intent.requestedDurationSec)&&+intent.requestedDurationSec>0?+intent.requestedDurationSec:null;let untilDur=null;if(intent.requestedUntilSec!=null){let target=Math.floor(now/86400)*86400+(+intent.requestedUntilSec||0);if(target<=now)target+=86400;untilDur=Math.max(1,target-now)}const duration=explicitDur??untilDur??sysEstimateFrameDuration(frame,intent);return Math.max(5,duration);
+  }
+  function sysActionEffectV7(frame){
+    if(!frame)return '사용자가 고른 현재 행동을 실제 장면에서 시작한다.';const args=[];if(frame.theme)args.push(`대상 ${frame.theme}`);if(frame.target)args.push(`상대 ${frame.target}`);if(frame.source)args.push(`출발/출처 ${frame.source}`);if(frame.destination)args.push(`목적지 ${frame.destination}`);if(frame.manner)args.push(`방식 ${frame.manner}`);if(frame.transport)args.push(`수단 ${frame.transport}`);if(sl(frame.accompaniedEntities).length)args.push(`동반 ${sl(frame.accompaniedEntities).join(', ')}`);return `사용자 ${frame.kind} 프레임을 입력 순서대로 실제 수행한다${args.length?`: ${args.join(' · ')}`:''}.`;
+  }
+  function sysBuildTxnV7(input,sc,revision){
+    sysEnsureRuntime(sc);const started=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),intent=parseIntent(input),canon=sysCanonCapsuleV7(sc,input),phase=sysEventPhase(sc),now=sclock(sc?.world?.day,sc?.world?.time),parts=sparts(now),frame=sysPrimaryFrame(intent.actionFrames),baseDuration=sysRequestedDurationV7({intent,start:{day:parts.day,time:parts.time,location:sx(sc?.world?.location)}},sc,phase),endParts=sparts(now+Math.max(5,Math.min(baseDuration,240))),ctx=publicWriterContext(sc,canon),txn={version:'CORTEX_TXN_V2',engine:{id:typeof ENGINE_ID!=='undefined'?ENGINE_ID:'cortex',version:typeof VERSION!=='undefined'?VERSION:'1.9.0'},txnId:`txn-sys-${Date.now().toString(36)}-${revision}`,baseRevision:revision,canonHash:stableHash(`${sx(sc?.event?.id)}|${parts.day}|${parts.time}|${sx(sc?.world?.location)}|${revision}|${sx(input)}`),memory:{schema:canon?.schema||'CORTEX_CANON_LEDGER_V1',revision:+canon?.revision||0,selected:+canon?.selected||0,total:+canon?.total||0,chars:+canon?.chars||2,selectMs:+canon?.compileMs||0},intent:{...intent,deferredGoal:''},intentDisposition:'accepted',absorptionPlan:{required:false,mode:'NONE',strategy:'none',agencyRisk:'LOW',grounding:[],agencyFactsToPreserve:[],beats:[],rules:[],deferredGoal:'',lastResortUsed:false,lastResortDevice:''},prosePolicy:sysProseBandV7(sc,false,sysMicroTurnV14(intent.actionFrames,input)),dialoguePlan:{required:false,minBlocks:0,preferredSpeakerId:null,allowedSpeakers:[],serverResolvesSurfaceName:true},writerContext:ctx,start:{day:parts.day,time:parts.time,location:sx(sc?.world?.location)},corridor:{startDay:parts.day,endDay:endParts.day,startTime:parts.time,endTime:endParts.time,turnStartTime:parts.time,turnEndLimit:endParts.time,eventStartTime:sx(sc?.event?.startTime),eventEndTime:sx(sc?.event?.endTime),nextBeatAt:sx(sc?.event?.nextBeatAt),timeMonotonic:true},leases:[],expectedEffects:[sysActionEffectV7(frame)],endStatePatch:{worldDay:endParts.day,worldTime:endParts.time,location:sx(sc?.world?.location),eventCursor:typeof publicEntityRef==='function'?publicEntityRef(sc,sc?.event?.id,'event'):sx(sc?.event?.id),deferredGoal:''},eventPatch:{advanceAtCommit:false,advanceBeatAtCommit:false,auditAtCommit:phase!=='WAITING_FOR_START',fromEventRef:typeof publicEntityRef==='function'?publicEntityRef(sc,sc?.event?.id,'event'):sx(sc?.event?.id),systemicFSM:true},guards:{forbidTimeBefore:parts.time,forbidTimeAfter:endParts.time,forbidTimeAfterDay:endParts.day,forbidLocationJump:false,forbiddenDestination:'',forbidUnscheduledResolution:true,forbidUngroundedMindChange:false,forbidUnlicensedCanonFacts:true},completionPolicy:'SYSTEMIC_TYPED_COMPLETION · 모든 턴에서 완료조건을 감사하고 EVENT_END는 deadline으로만 사용한다.'};txn.dialoguePlan=sysDialoguePlanV7(sc,txn);txn.runtimeSystemic={schema:SYS_SCHEMA,authority:SYS_EXECUTION_AUTHORITY_V7,builtWithoutLegacyPolicy:true,buildMs:Math.max(0,((typeof performance!=='undefined'&&performance.now)?performance.now():Date.now())-started)};return txn;
+  }
+  try{buildTxn=function(input,sc,revision){return sysBuildTxnV7(input,sc,revision)}}catch{}
+
+  function sysApplyEventStartGateV7(txn,sc){
+    if(sysEventPhase(sc)!=='WAITING_FOR_START')return txn;const bounds=sysEventBounds(sc.event,sc.world),now=sclock(txn?.start?.day??sc.world?.day,txn?.start?.time||sc.world?.time),desired=Math.max(1,sysRequestedDurationV7(txn,sc,'WAITING_FOR_START')),remaining=Math.max(1,bounds.start-now);
+    /* v1.12.0 — INTERLUDE_CLOCK_POLICY.
+       v1.11.1 은 대기 구간에서도 사용자 행동의 추정 소요시간만큼만 시계를 밀었다.
+       다음 사건이 몇 시간 뒤면 짧은 행동을 수백 턴 반복해야 시작 시각에 닿는다.
+       사용자가 시간을 명시하지 않았고 공백이 길면, 그 행동을 실제로 치른 뒤
+       남은 시간을 한 턴 안에서 몽타주로 압축해 사건 개시 직전까지 보낸다.
+       사용자가 시간을 직접 지정했다면 그 값을 그대로 존중한다. */
+    const explicitTimeV12=(Number.isFinite(+txn?.intent?.requestedDurationSec)&&+txn.intent.requestedDurationSec>0)||txn?.intent?.requestedUntilSec!=null;
+    const compressV12=!explicitTimeV12&&remaining>=SYS_INTERLUDE_COMPRESS_SEC_V12&&desired<remaining;
+    const actual=compressV12?Math.max(desired,remaining-SYS_INTERLUDE_LEADIN_SEC_V12):Math.min(desired,remaining),target=now+actual,parts=sparts(target),mid=sparts(now+Math.max(1,Math.floor(actual*.55))),frames=sl(txn?.intent?.actionFrames).filter(f=>f?.modality!=='NEGATED').sort((a,b)=>(a?.order??0)-(b?.order??0));sysInterludeWriterContext(txn,sc,bounds);txn.eventWindow={schema:SYS_EVENT_SCHEMA,state:'WAITING_FOR_START',opensOnDay:bounds.startParts.day,opensAt:bounds.startParts.time,remainingSec:bounds.start-now,requestReachesStart:target>=bounds.start};txn.intentDisposition='accepted_pending_event';txn.absorptionPlan={required:false,mode:'NONE',strategy:'none',agencyRisk:'LOW',grounding:[],agencyFactsToPreserve:[`ACTION_SEQUENCE ${JSON.stringify(frames)}`],beats:[],rules:['현재 사용자 행동만 실제로 전개한다.','예약 사건의 인물·물품·장소·정답은 개시 전까지 사용하지 않는다.'],deferredGoal:'',lastResortUsed:false,lastResortDevice:''};if(desired>remaining){const goal=`예약 사건 개시 때문에 끝까지 완료하지 못한 사용자 행동 순서: ${frames.map(sysFrameDescriptionV6).join(' → ')}`;txn.deferredGoal=goal;txn.intent.deferredGoal=goal;txn.deferredActionFrames=sclone(frames);txn.absorptionPlan.deferredGoal=goal;txn.runtimeSystemic={...(txn.runtimeSystemic||{}),waitingTruncation:{schema:'CORTEX_WAITING_TRUNCATION_V2',requestedSec:desired,availableSec:remaining,remainingSec:desired-remaining,deferredActionFrames:sclone(frames)}}}
+    txn.prosePolicy=sysProseBandV7(sc,false,frames.length===1&&frames[0].kind==='COMMUNICATE');txn.dialoguePlan=sysDialoguePlanV7(sc,txn);txn.expectedEffects=[...frames.slice(0,4).map(sysActionEffectV7),'직접 결과와 실제로 흐른 시간만 확정하고 다음 예약 사건은 선취하지 않는다.',...(compressV12?[`사용자 행동을 먼저 실제로 치른 뒤, 거기서 ${sparts(target).time}까지 흐른 시간을 한 문단의 몽타주로 압축해 보여 준다. 시간을 건너뛰었다고 말하지 말고 그 사이에 무엇을 하며 보냈는지 구체적인 장면 몇 조각으로 넘긴다. 마지막은 ${sparts(target).time} 직전의 현재로 돌아와 닫는다.`]:[])];txn.leases=[{id:'L1',timeRange:[sparts(now).time,mid.time],claim:'사용자 행동 프레임을 입력 순서대로 실제 장면화한다.'},{id:'L2',timeRange:[mid.time,parts.time],claim:'행동의 직접 결과와 필요한 시간 경과만 보여 주고 미래 사건은 봉인한다.'}];txn.corridor={...txn.corridor,startDay:Math.floor(now/86400),endDay:parts.day,startTime:sparts(now).time,endTime:parts.time,turnStartTime:sparts(now).time,turnEndLimit:parts.time,eventStartDay:bounds.startParts.day,eventStartTime:bounds.startParts.time,eventEndTime:bounds.endParts.time,timeMonotonic:true};txn.endStatePatch={...txn.endStatePatch,worldDay:parts.day,worldTime:parts.time,location:sx(txn?.start?.location||sc?.world?.location),deferredGoal:sx(txn.deferredGoal)};txn.eventPatch={advanceBeatAtCommit:false,advanceAtCommit:false,auditAtCommit:false,waitingForStart:true,systemicFSM:true};txn.guards={...txn.guards,forbidTimeBefore:sparts(now).time,forbidTimeAfter:parts.time,forbidTimeAfterDay:parts.day,forbidLocationJump:false,forbidUnscheduledResolution:true,forbidUnlicensedCanonFacts:true};return txn;
+  }
+  try{applyEventStartGate=function(txn,sc){return sysApplyEventStartGateV7(txn,sc)}}catch{}
+
+  function sysApplyBeatV7(txn,sc){
+    const raw=sx(txn?.intent?.raw||''),legacyCanon=txn?.writerContext?.canonCapsule||sysCanonCapsuleV7(sc,raw);txn.intent=parseIntent(raw);const phase=sysEventPhase(sc),p=sysEnsureRuntime(sc),closure=sysClosureState(sc,'',txn),bounds=sysEventBounds(sc.event,sc.world),now=sclock(txn?.start?.day??sc.world?.day,txn?.start?.time||sc.world?.time);txn.writerContext=publicWriterContext(sc,legacyCanon);txn.runtimeSystemic={...(txn.runtimeSystemic||{}),schema:SYS_SCHEMA,authority:SYS_EXECUTION_AUTHORITY_V7,event:{phase,turnNo:p.eventTurns+1,minTurns:p.minTurns,pressure:closure.pressure,overdue:closure.overdue,missing:sclone(closure.audit.missing)},actionFrames:sclone(txn.intent.actionFrames)};txn.dialoguePlan=sysDialoguePlanV7(sc,txn);txn.writerContext.systemic={...(txn.writerContext.systemic||{}),schema:SYS_SCHEMA,authority:SYS_EXECUTION_AUTHORITY_V7,eventPhase:phase,actionFrameContract:sclone(txn.intent.actionFrames),physicalState:sclone(sysPhysicalState(sc)),motifDiscipline:sysMotifDirective(sc,txn.intent.raw),closure:{pressure:closure.pressure,minTurns:p.minTurns,eventTurn:p.eventTurns+1,missing:sclone(closure.audit.missing),eventEndIsDeadline:true}};if(phase==='WAITING_FOR_START')return sysApplyEventStartGateV7(txn,sc);
+    txn.absorptionPlan=sysAbsorptionPlan(txn,sc,closure);txn.semanticMandate=sl(txn.absorptionPlan?.semanticMandate).map(value=>sx(value)).filter(Boolean);if(txn.absorptionPlan.required){txn.intentDisposition=['REQUIRED_REALIZATION','ALTERNATE_REALIZATION','MANDATORY_REALIZATION'].includes(txn.absorptionPlan.mode)?'interrupted_by_canon':'guided_by_canon';txn.deferredGoal=txn.absorptionPlan.deferredGoal;txn.intent.deferredGoal=txn.deferredGoal;txn.deferredActionFrames=sl(txn.intent.actionFrames).filter(frame=>sl(txn.absorptionPlan.deferredFrameIds).includes(frame?.frameId))}else{txn.intentDisposition='accepted';txn.deferredGoal='';txn.intent.deferredGoal='';txn.deferredActionFrames=[]}const primary=sysPrimaryFrame(txn.intent.actionFrames),stateIssue=sysFrameCapabilityIssue(primary,sysPhysicalState(sc));if(stateIssue){txn.intentDisposition='state_constrained';txn.writerContext.systemic.stateConstraint={code:stateIssue,instruction:'행동 시도는 보존하되 현재 물리 상태에서 불가능한 성공을 확정하지 않는다. 회복·해제 원인을 먼저 장면에서 성립시킨다.'}}
+    /* v1.14.0 — 마감에 닿았으면 시간을 더 흘리지 않는다.
+       기존 하한 Math.max(1,…) 은 남은 시간이 0 이어도 1초를 만들어 냈다.
+       그래서 21:00 에 끝나야 하는 사건이 매 턴 1초씩 마감을 넘겼고,
+       종결 턴의 시각이 계약과 어긋난 채 기록됐다. 마감에서는 0초로 고정한다. */
+    let desired=sysRequestedDurationV7(txn,sc,phase);const plannedTransitionV172=txn?.absorptionPlan?.canonTransitionContract;if(plannedTransitionV172?.routeRequired)desired=Math.max(desired,+plannedTransitionV172.minimumTravelSec||900);const rawRemainingV14=bounds.end-now,atDeadlineV14=rawRemainingV14<=0,remaining=Math.max(0,rawRemainingV14),actual=atDeadlineV14?0:Math.max(1,Math.min(desired,remaining)),end=now+actual,ep=sparts(end),mid=sparts(now+(actual?Math.max(1,Math.floor(actual*.55)):0)),beat=sl(sc?.event?.beats)[sclamp(+sc?.event?.activeBeatIndex||0,0,Math.max(0,sl(sc?.event?.beats).length-1))],effects=[...sl(txn.intent.actionFrames).filter(f=>f.modality!=='NEGATED').slice(0,4).map(sysActionEffectV7)];if(plannedTransitionV172){txn.canonTransitionContract={...plannedTransitionV172,availableSec:actual,feasible:!plannedTransitionV172.routeRequired||actual>=+plannedTransitionV172.minimumTravelSec};txn.absorptionPlan.canonTransitionContract=txn.canonTransitionContract;sysEnsureRuntime(sc).activeCanonTransitionContract=sclone(txn.canonTransitionContract)}else sysEnsureRuntime(sc).activeCanonTransitionContract=null;
+    if(desired>remaining){const remainder=Math.max(1,desired-remaining),goal=`사건 경계에서 중단된 사용자 행동을 남은 ${remainder}초만큼 이어 간다.`;txn.deferredGoal=goal;txn.intent.deferredGoal=goal;txn.deferredActionFrames=sclone(txn.intent.actionFrames);txn.runtimeSystemic={...(txn.runtimeSystemic||{}),actionBoundarySplit:{schema:'CORTEX_ACTION_BOUNDARY_SPLIT_V1',requestedSec:desired,performedSec:actual,remainingSec:remainder,deferredActionFrames:sclone(txn.intent.actionFrames)}}}
+    /* v1.13.0 — 완료조건은 공개 단계에서만 작가에게 넘어간다.
+       그 전에는 존재조차 알리지 않는다. 성립 여부 판정은 단계와 무관하게 서버가 계속 수행한다. */
+    txn.beatPhase=sysBeatPhaseV13(sc,closure);txn.canonOpportunityMandate=sl(closure?.audit?.missing).map(value=>sx(value)).filter(Boolean);const opportunityTransitionV182=sysCanonTransitionForV172(sc,closure,'OPPORTUNITY',actual);txn.canonOpportunityTransitionContract=opportunityTransitionV182?{...opportunityTransitionV182,availableSec:actual,feasible:!opportunityTransitionV182.routeRequired||actual>=+opportunityTransitionV182.minimumTravelSec}:null;
+    const earlyGoalReadyV15=sysGoalReadyV15(txn,sc),goalsUnlocked=sysPhaseAllowsGoalsV13(txn.beatPhase)||earlyGoalReadyV15;
+    if(!goalsUnlocked&&txn?.writerContext?.event){txn.writerContext.event={...txn.writerContext.event,requiredFunctions:[],nextBeat:''}}
+    /* v1.13.0 — 연출형 요건은 단계와 무관하게 처음부터 작가에게 준다.
+       "한명진이 1년 전 실종된 외할머니임을 환경으로 보여 준다" 같은 문장은 정답 스포일러가 아니라
+       이 장면에서 써야 할 내용 그 자체다. 그것을 숨겨 놓고 안 썼다고 판정하니
+       영원히 미충족으로 남았다. 숨겨야 할 것은 발견·정답 같은 사건형 요건뿐이다. */
+    const openDirectives=sl(closure.audit.evidence).filter(r=>r?.directive&&r?.ok===false).map(r=>sx(r.requirement)).filter(Boolean).slice(0,2);
+    for(const directive of openDirectives)effects.push(`이 장면이 반드시 보여 줘야 하는 것: ${directive}`);
+    /* v1.13.0 — 지시문 충돌 정리.
+       실제 로그에서 "이 장면이 반드시 보여 줘야 하는 것: …"과
+       "사용자 행동과 그 직접 결과만 쓴다. 사건의 소재·발견·결말을 앞당기지 마라."가 함께 나갔다.
+       모델이 뒤엣것을 따르면 앞엣것을 안 쓴다. 같은 요건이 강한 문장과 약한 문장으로
+       두 번 나가는 경우도 있었고, 그때는 약한 쪽으로 수렴했다.
+       연출 의무가 열려 있으면 그것이 이번 턴의 지시이고, 그 뒤의 억제 문구는 붙이지 않는다. */
+    const directivesOpen=openDirectives.length>0;
+    const alreadyStated=new Set(openDirectives.map(sn));
+    /* v1.14.0 — 남은 요건을 작가에게 넘길지가 closure.pressure 하나에만 걸려 있었다.
+       연장·마감 임박 단계에서 압력이 꺼져 있으면 미충족 요건이 지시문에 한 줄도 안 나갔고,
+       그 상태로 연장 한도를 소진해 실패 봉인으로 갔다.
+       공개 허용 단계는 CLOSURE·RECOVERY·HARD 셋이고, 그 판단은 sysPhaseAllowsGoalsV13 이 이미 내렸다.
+       거기에 압력 조건을 한 겹 더 얹으면 마지막 비트에 도달하고도 남은 조건이 안 나간다.
+       단계가 공개를 허용했으면 그것으로 충분하다. 마지막 연장 턴에서는 수렴이 아니라 성립을 지시한다. */
+    const hardClosureV14=txn.beatPhase===SYS_BEAT_PHASE_V13.HARD;
+    if(goalsUnlocked){
+      const missingV14=sl(closure.audit.missing).map(value=>sx(value)).filter(Boolean).slice(0,4);
+      effects.push(...missingV14.map(m=>hardClosureV14
+        ?`이번 턴 안에서 반드시 성립시킨다. 마지막 연장 비트이므로 새 갈등을 열지 말고 이것을 끝낸다: ${m}`
+        :earlyGoalReadyV15&&!sysPhaseAllowsGoalsV13(txn.beatPhase)
+          ?`사용자 행동이 필요한 시간·장소·대상에 실제로 도달했으므로 직접 결과로 자연스럽게 성립할 수 있다. 강제하지 않는다: ${m}`
+          :`현재 사건의 남은 필수 인과를 새 갈등 없이 수렴시킨다: ${m}`));
+      /* v1.14.0 — 마지막 연장 턴에서는 지시로 끝내지 않고 결과를 확인한다.
+         지시만 넣고 넘기면 모델이 안 썼을 때 그대로 실패 봉인으로 떨어진다.
+         실제로 연장 두 번을 다 쓰고도 조건이 미성립인 채 닫히는 경로가 여기였다.
+         이 목록을 커밋 전 검사에 넘겨, 빠졌으면 같은 턴 안에서 한 번 다시 쓰게 한다. */
+      if(hardClosureV14)txn.closureMandate=missingV14;
+    }
+    else if(txn.beatPhase===SYS_BEAT_PHASE_V13.GUIDED){
+      /* v1.18.2 — GUIDED 에서 방향을 주되 완료 자체를 금지하지 않는다.
+         실제 로그에서 세 턴 내내 "사건 쪽으로 기울게 하라"만 나갔고, 어디가 사건 쪽인지 몰라
+         모델이 문 닫는 장면을 800자 쓰고 끝냈다. 첫 턴 폭주를 막으려다 반대편으로 간 것이다.
+         FREE 는 계속 잠그고, GUIDED 에서는 아직 일어나지 않은 것 하나를 방향으로 연다.
+         완결시키라는 것이 아니라 그쪽으로 한 걸음 다가가라는 지시다. */
+      const pendingV13=sl(closure.audit.missing).map(value=>sx(value)).filter(Boolean).filter(m=>!alreadyStated.has(sn(m))).slice(0,1);
+      if(pendingV13.length)effects.push(`이 사건에서 아직 일어나지 않은 것: ${pendingV13[0]}. 현재 행동에서 충분한 원인과 동기를 만들고 필요한 출발·이동·시간 경과·도착까지 자연스럽게 성립하면 이번 턴에 실현해도 된다. 과정이 부족하면 결과를 억지로 꺼내지 말고 검증 가능한 중간 지점에서 멈춘다.`);
+      else if(!directivesOpen)effects.push('사용자 행동을 그대로 살리되, 그 결과가 현재 사건 쪽으로 한 걸음 기울게 만든다.');
+    }
+    else if(txn.beatPhase===SYS_BEAT_PHASE_V13.FREE&&!directivesOpen)effects.push('사용자 행동과 그 직접 결과를 우선한다. 아직 원인이 없는 사건 결과를 억지로 호출하지 않는다. 다만 현재 행동의 자연스러운 인과가 활성 정사에 실제로 닿았다면 비트 단계만을 이유로 피하지 말고, 필요한 문맥·장소·시간 과정을 모두 보여 준 뒤 성립시킨다.');
+    /* v1.14.0 — 비트 목표가 본문에 안 나오면 커밋 시점에서 비트를 넘기지 않는다.
+       그런데 지시가 계속 "자연스럽게 진행한다"로만 나가면 같은 자리를 맴돌다 한도에 걸려
+       결국 증거 없이 넘어간다. 한 번 놓친 다음부터는 그 비트의 목표를 명시적으로 요구한다.
+       강제 진행은 남겨 둔다. 성립하지 않는 목표에 사건이 마감까지 갇히는 편이 더 나쁘다. */
+    if(beat&&!sysSyntheticBeats(sc.event)&&sx(beat.goal)&&!goalsUnlocked){
+      const beatStalledV14=(+sysEnsureRuntime(sc)?.beatStallTurns||0)>=1;
+      effects.push(beatStalledV14
+        ?`현재 비트의 목표가 아직 본문에서 일어나지 않았다. 이번 턴 안에서 실제로 벌어지게 한다: ${sx(beat.goal)}`
+        :`현재 비트의 공개 목표를 자연스럽게 진행한다: ${sx(beat.goal)}`);
+    }
+    if(txn?.canonTransitionContract?.routeRequired)effects.push(`정사 장소 전이는 최소 ${Math.ceil(txn.canonTransitionContract.minimumTravelSec/60)}분을 사용한다. 현재 사실에서 이동 동기를 만들고, 출발·이동 또는 시간 몽타주·도착을 순서대로 본문에 보여 준다. 도착 전에는 그 장소의 소품·인물·목표를 성립시키지 않는다.`);if(!effects.length)effects.push(`사용자 입력의 ${txn.intent.turnAct?.primary||'STATE_ASSERTION'} 담화행위를 행동으로 변조하지 않고 현재 장면에 반영한다.`);txn.expectedEffects=su(effects);txn.prosePolicy=sysProseBandV7(sc,txn.absorptionPlan.required,sysMicroTurnV14(txn.intent.actionFrames,raw));txn.dialoguePlan=sysDialoguePlanV7(sc,txn);txn.leases=[{id:'L1',timeRange:[sparts(now).time,mid.time],claim:'사용자 입력의 담화행위와 행동 프레임을 그대로 보존한다.'},{id:'L2',timeRange:[mid.time,ep.time],claim:txn.absorptionPlan.required?'공개된 정사 인과를 사용자 행동에 자연스럽게 접속하되 원래 계획을 지우지 않는다.':closure.pressure?'새 갈등을 늘리지 않고 현재 사건을 종결 방향으로 수렴시킨다.':'현재 입력의 직접 결과만 한 단계 진행한다.'}];txn.corridor={...txn.corridor,startDay:Math.floor(now/86400),endDay:ep.day,startTime:sparts(now).time,endTime:ep.time,turnStartTime:sparts(now).time,turnEndLimit:ep.time,eventStartDay:bounds.startParts.day,eventStartTime:bounds.startParts.time,eventEndTime:bounds.endParts.time,nextBeatAt:sx(sc?.event?.nextBeatAt),timeMonotonic:true};txn.endStatePatch={...txn.endStatePatch,worldDay:ep.day,worldTime:ep.time,location:sx(txn?.start?.location||sc?.world?.location),deferredGoal:sx(txn.deferredGoal)};/* v1.14.0 — 진행 가능 여부만 표시한다. 실제 진행은 커밋 시점의 증거 게이트가 결정한다.
+       기존의 !closure.pressure 조건은 압력이 걸린 순간부터 비트를 얼려 버려,
+       완료된 비트가 있어도 인덱스가 멈추고 뒤의 비트가 영원히 PENDING 으로 남았다.
+       그러면 예산이 소진되지 않아 연장도 열리지 않는다.
+       압력은 종결로 수렴하라는 뜻이지 비트를 멈추라는 뜻이 아니다. */
+    txn.eventPatch={advanceAtCommit:false,auditAtCommit:true,advanceBeatAtCommit:(+sc?.event?.activeBeatIndex||0)<Math.max(0,sl(sc?.event?.beats).length-1),systemicFSM:true};txn.locationLicense=CortexContract.createLocationLicense({currentLocation:sc?.world?.location,eventLocations:[sc?.event?.canonLocation],userDestinations:sl(txn?.intent?.actionFrames).map(frame=>frame?.destination),canonLocations:[...sysGoalReadinessAnchorsV15(sc),...sysCanonLocationCandidatesV172(sc,closure),...sl(sc?.runtime?.sceneContinuity?.stateFacts).filter(value=>typeof value==='string')]});txn.guards={...txn.guards,forbidTimeBefore:sparts(now).time,forbidTimeAfter:ep.time,forbidTimeAfterDay:ep.day,forbidLocationJump:true,forbidUnscheduledResolution:true,forbidUnlicensedCanonFacts:true};return txn;
+  }
+  try{applyBeatContract=function(txn,sc){return sysApplyBeatV7(txn,sc)}}catch{}
+  function sysSanitizeMotifCapsuleV7(sc,cap,input=''){
+    if(!cap?.payload)return cap;const directive=sysMotifDirective(sc,input),avoid=sl(directive.avoid);if(!avoid.length)return cap;const forbiddenTokens=su(avoid.flatMap(a=>sysContentTokens(a?.label||a?.key||''))),blocked=text=>{const t=sysContentTokens(sx(text));if(!t.length)return false;const overlap=t.filter(x=>forbiddenTokens.includes(x)).length;return overlap>=Math.max(1,Math.ceil(Math.min(t.length,forbiddenTokens.length)*.45))},filter=arr=>sl(arr).filter(x=>!blocked(typeof x==='string'?x:x?.statement||x?.label||''));cap.payload.sceneAtmosphere=filter(cap.payload.sceneAtmosphere);if(cap.payload.styleBlueprint){cap.payload.styleBlueprint.sensoryPalette=filter(cap.payload.styleBlueprint.sensoryPalette);if(blocked(cap.payload.styleBlueprint.endingImage))cap.payload.styleBlueprint.endingImage=''}if(cap.payload.sceneArc){cap.payload.sceneArc.atmosphere=filter(cap.payload.sceneArc.atmosphere);if(blocked(cap.payload.sceneArc.closingImage))cap.payload.sceneArc.closingImage=''}if(cap.payload.continuityGraph?.motifs)cap.payload.continuityGraph.motifs=filter(cap.payload.continuityGraph.motifs);cap.payload.motifDiscipline=directive;return cap;
+  }
+  // V7 motif sanitation remains a helper only; it no longer wraps the continuity decision surface.
+  const sysSensoryLegacyV7=typeof sensorySentences==='function'?sensorySentences:null;
+  try{sensorySentences=function(text){const base=sysSensoryLegacyV7?sysSensoryLegacyV7(text):[];const directive=sysMotifDirective(typeof scenario!=='undefined'?scenario:{runtime:{}},''),tokens=su(sl(directive.avoid).flatMap(a=>sysContentTokens(a?.label||a?.key||'')));return sl(base).filter(s=>{const st=sysContentTokens(s);return !st.length||st.filter(t=>tokens.includes(t)).length<Math.max(1,Math.ceil(Math.min(st.length,tokens.length)*.45))})}}catch{}
+
+  function sysPackageStateV9(sc){try{if(typeof packageState==='function')return packageState(sc)}catch{}const runtime=sc?.runtime?.packageV15||{};return {completedEventIds:sl(runtime.completedEventIds),failedEventIds:sl(runtime.failedEventIds),endingSeen:sl(runtime.endingSeen),flags:runtime.flags||{}}}
+  function sysBranchHasConditionV9(candidate){const c=candidate?.packageMeta?.conditions??candidate?.conditions;return !(c==null||c===''||(Array.isArray(c)&&c.length===0))}
+  function sysBranchDefaultV9(candidate){return candidate?.default===true||candidate?.isDefault===true||candidate?.packageMeta?.default===true||candidate?.packageMeta?.isDefault===true}
+  function sysBranchConditionSatisfiedV9(candidate,state){const condition=candidate?.packageMeta?.conditions??candidate?.conditions;if(!sysBranchHasConditionV9(candidate))return false;try{if(typeof packageConditionSatisfied==='function')return packageConditionSatisfied(condition,state)}catch{}return false}
+  /* v1.12.0 — 분기 해소는 멈추지 않는다.
+     v1.11.1 은 조건 일치가 2개 이상이거나 0개일 때 candidate=null 을 반환했고,
+     호출부가 그것을 BRANCH_PENDING 으로 굳혀 세이브가 더 진행되지 않았다.
+     수동 선택 UI 를 여는 방식은 분기 이름 자체가 스포일러가 되므로 택하지 않는다.
+     대신 결정적 규칙으로 하나를 고르고, 무엇이 모호했는지 상태에 남긴다. */
+  function sysBranchWeightV12(candidate){const meta=candidate?.packageMeta||{},explicit=+(meta.priority??candidate?.priority);if(Number.isFinite(explicit))return explicit;const conds=meta.conditions??candidate?.conditions;return Array.isArray(conds)?conds.length:(conds&&typeof conds==='object'?Object.keys(conds).length:0)}
+  function sysBranchChoiceLabelV12(candidate){return sx(candidate?.packageMeta?.publicChoiceLabel||candidate?.publicChoiceLabel)}
+  /* v1.12.0 — 마지막 정렬 기준을 ID 알파벳순에서 패키지 정의 순서로 바꾼다.
+     ID 는 서사와 무관한 문자열이다. 그것이 분기를 정하면 작가 의도와 무관한 전개가 나온다.
+     정의 순서는 최소한 작가가 먼저 쓴 것을 먼저 고른다. */
+  function sysPickDeterministicV12(list,all){
+    const arr=sl(list).filter(Boolean);if(arr.length<=1)return arr[0]||null;
+    const order=new Map();sl(all).forEach((c,i)=>{if(c&&!order.has(c))order.set(c,i)});
+    return arr.slice().sort((a,b)=>{const d=sysBranchWeightV12(b)-sysBranchWeightV12(a);return d||((order.get(a)??Number.MAX_SAFE_INTEGER)-(order.get(b)??Number.MAX_SAFE_INTEGER))})[0];
+  }
+  /* 결정 근거를 등급으로 남긴다.
+     CONTRACT = 패키지가 명시한 계약으로 정해짐. INFERRED = 계약이 없어 엔진이 메움.
+     후보 전원이 publicChoiceLabel 을 가지면 스포일러 없이 노출할 수 있는 선택지로 표시한다. */
+  function sysBranchResultV12(status,candidate,pool,grade,extra={}){
+    const choices=sl(pool).map(c=>({id:sx(c?.id),label:sysBranchChoiceLabelV12(c)})),labelled=choices.length>1&&choices.every(x=>x.label);
+    return {status,candidate:candidate||null,candidates:sl(pool),grade,playerChoiceAvailable:labelled,choices:labelled?choices:[],...extra};
+  }
+  function sysBranchHasExplicitPriorityV12(pool){return sl(pool).some(c=>Number.isFinite(+(c?.packageMeta?.priority??c?.priority)))}
+  function sysResolveBranchV9(sc,event){
+    const candidates=sl(event?.branchCandidates);if(!candidates.length)return {status:'NONE',candidate:event?.nextEvent||null,grade:'CONTRACT'};
+    const state=sysPackageStateV9(sc),matched=candidates.filter(candidate=>sysBranchConditionSatisfiedV9(candidate,state));
+    if(matched.length===1)return sysBranchResultV12('RESOLVED_CONDITION',matched[0],matched,'CONTRACT');
+    if(matched.length>1)return sysBranchResultV12('RESOLVED_AMBIGUOUS_DETERMINISTIC',sysPickDeterministicV12(matched,candidates),matched,sysBranchHasExplicitPriorityV12(matched)?'CONTRACT':'INFERRED',{ambiguous:true});
+    const defaults=candidates.filter(sysBranchDefaultV9),unconditional=candidates.filter(candidate=>!sysBranchHasConditionV9(candidate));
+    if(defaults.length===1)return sysBranchResultV12('RESOLVED_DEFAULT',defaults[0],defaults,'CONTRACT');
+    if(defaults.length>1)return sysBranchResultV12('RESOLVED_DEFAULT_DETERMINISTIC',sysPickDeterministicV12(defaults,candidates),defaults,sysBranchHasExplicitPriorityV12(defaults)?'CONTRACT':'INFERRED',{ambiguous:true});
+    if(unconditional.length===1)return sysBranchResultV12('RESOLVED_UNCONDITIONAL',unconditional[0],unconditional,'CONTRACT');
+    if(unconditional.length>1)return sysBranchResultV12('RESOLVED_UNCONDITIONAL_DETERMINISTIC',sysPickDeterministicV12(unconditional,candidates),unconditional,sysBranchHasExplicitPriorityV12(unconditional)?'CONTRACT':'INFERRED',{ambiguous:true});
+    if(event?.nextEvent)return {status:'RESOLVED_NEXT_EVENT',candidate:event.nextEvent,grade:'CONTRACT',fallback:true};
+    return sysBranchResultV12('RESOLVED_EXHAUSTED_DETERMINISTIC',sysPickDeterministicV12(candidates,candidates),candidates,'INFERRED',{fallback:true,exhausted:true});
+  }
+  function sysSealLedgerV9(sc,event,txn,ending){const committed={day:+txn?.endStatePatch?.worldDay||+sc?.world?.day||0,time:sx(txn?.endStatePatch?.worldTime||sc?.world?.time),location:sx(txn?.endStatePatch?.location||sc?.world?.location)};sc.runtime.eventLedger=sc.runtime.eventLedger||{sealed:[],activeEventId:event.id};/* v1.12.0 — 실패 봉인은 성공과 구분해 기록한다. 비트도 완료로 표시하지 않는다. */const failed=Boolean(ending?.forcedClosure);sc.runtime.eventLedger.sealed=[...sl(sc.runtime.eventLedger.sealed).filter(x=>(x?.id||x?.eventId)!==event.id),{id:event.id,title:event.title,status:failed?'SEALED_FAILURE':'SEALED',outcome:failed?'FAILURE':'SUCCESS',startTime:event.startTime,endTime:event.endTime,sealedAt:committed.time,sealReason:sysSealReason(ending),endingStatus:ending.status,unmetAtDeadline:failed?sl(ending?.missing).map(value=>sx(value)):[],beatCount:sl(event.beats).length}].slice(-256);for(const b of sl(event.beats))b.status=failed&&b.status!=='COMPLETED'?'ABANDONED':'COMPLETED';return committed}
+  function sysDirectAdvanceV7(sc,txn,ending,visible=''){
+    const event=sc?.event;if(!event)return {status:'NO_EVENT'};sc.runtime=sc.runtime||{};const phase=sysEventPhase(sc),p=sysEnsureRuntime(sc),turnNo=p.eventTurns+1;
+    if(phase==='WAITING_FOR_START'||txn?.eventPatch?.waitingForStart){sysExtractPhysical(sc,visible,+sc?.runtime?.systemicPhysicalState?.updatedTurn||0);sc.runtime.interludeEvidence=su([...sl(sc.runtime.interludeEvidence),sx(visible)].filter(Boolean)).slice(-8);p.phase=sysEventPhase(sc);p.lastAudit={status:'WAITING_NO_EVENT_EVIDENCE',at:new Date().toISOString()};sysUpdateMotifs(sc,visible,typeof turns!=='undefined'&&Array.isArray(turns)?turns.length:0);return {status:'CONTINUE_WAITING',eventId:event.id,phase:p.phase,eventTurns:p.eventTurns}}
+    event.runtimeEvidence=su([...sl(event.runtimeEvidence),sx(visible)].filter(Boolean)).slice(-12);sysExtractPhysical(sc,visible,turnNo);p.eventTurns=turnNo;p.lastAudit={...(p.lastAudit||{}),status:sx(ending?.status)};sysReconcileCarryover(sc,txn,ending,visible);
+    /* v1.12.0 — 확장 한도 초과가 BLOCKED 로 끝나고 아무 전이도 일으키지 않던 경로를 실패 봉인으로 잇는다. */
+    if(ending?.status==='EXTEND'){const extension=sysActivateExtensionBeatV15(event,p);sysUpdateMotifs(sc,visible,turnNo);return {status:'EXTEND',eventId:event.id,extension:p.closureExtensionCount,extensionBeat:extension.phase,forcedCanonRealization:p.closureExtensionCount>=2,missing:sl(ending?.missing).map(value=>sx(value))}}
+    if(!/^PASS_/u.test(sx(ending?.status))){
+      /* v1.12.0 — 마감 수렴.
+         v1.11.1 은 evaluateEnding 이 BLOCKED 를 내도 여기서 CONTINUE 로 흘려보내
+         마감을 넘긴 사건이 무한정 활성으로 남았다. 요건 판정이 fail-closed 라
+         실제로 벌어진 일도 미충족으로 남을 수 있어 출구가 반드시 필요하다.
+         마감 초과가 이어지면 실패 결과로 확정하고 다음 사건으로 넘긴다. */
+      const overdueNowV12=sysEventPhase(sc)==='OVERDUE'||sx(ending?.status)==='BLOCKED';
+      p.overdueTurns=overdueNowV12?(+p.overdueTurns||0)+1:0;
+      /* v1.14.0 — 비트 감사는 매 커밋 돈다. 진행 여부와 무관하다.
+         마지막 비트에서는 advanceBeatAtCommit 이 false 라, 그 조건 안에서만 감사하면
+         마지막 비트는 영원히 완료로 기록되지 않고 예산도 소진되지 않는다. */
+      if(!(overdueNowV12&&p.overdueTurns>=SYS_OVERDUE_LIMIT_V12)){const gateV14=sysBeatEvidenceAdvanceV14(event,visible,p);p.lastBeatGate=gateV14;if(gateV14.advance&&txn?.eventPatch?.advanceBeatAtCommit)sysApplyBeatAdvance(event);else if(gateV14.completed&&gateV14.isLastBeat&&!sysAuditRequirements(sc,visible,txn).ok&&sysClosureExtensionAllowedV1341(sc,visible,txn,p)){const extension=sysActivateExtensionBeatV15(event,p);sysUpdateMotifs(sc,visible,turnNo);return {status:'EXTEND',eventId:event.id,extension:p.closureExtensionCount,extensionBeat:extension.phase,missing:sl(ending?.missing).map(value=>sx(value)),beatGate:gateV14}}p.phase=sysEventPhase(sc);sysUpdateMotifs(sc,visible,turnNo);return {status:'CONTINUE',eventId:event.id,overdueTurns:p.overdueTurns,beatGate:gateV14}}
+      ending=Object.assign(ending||{},{status:'PASS_FORCED_DEADLINE',forcedClosure:true,forcedReason:`종결 연장 뒤에도 남은 조건: ${sl(ending?.missing).map(value=>sx(value)).join(' · ')}`});
+      p.overdueTurns=0;p.lastAudit={...(p.lastAudit||{}),forcedClosure:true,unmetAtDeadline:sl(ending?.missing).map(value=>sx(value))};
+    }
+    /* Completion effects must be visible to branch predicates. This call precedes the
+       strict resolver and no fallback selector is allowed to silently choose item zero. */
+    /* v1.12.0 — 강제 마감으로 닫힌 사건에는 성공 플래그를 붙이지 않는다.
+       분기 조건이 그 플래그를 보므로, 실패는 실패대로 분기 폴백을 타야 한다. */
+    try{if(ending?.forcedClosure){if(typeof applyPackageFailure==='function')applyPackageFailure(sc,event)}else if(typeof applyPackageCompletion==='function')applyPackageCompletion(sc,event,visible)}catch{}
+    const branch=sysResolveBranchV9(sc,event),next=branch.candidate||null,committed=sysSealLedgerV9(sc,event,txn,ending);
+    /* v1.12.0 — 정상 전이에서도 결정 근거를 남긴다. INFERRED 는 패키지에 계약이 없어 엔진이 메운 경우다. */
+    sc.runtime.branchDecision={schema:'CORTEX_BRANCH_DECISION_V1',eventId:sx(event.id),status:sx(branch.status),grade:sx(branch.grade),ambiguous:Boolean(branch.ambiguous),playerChoiceAvailable:Boolean(branch.playerChoiceAvailable),choices:sl(branch.choices),chosenId:sx(next?.id),candidates:sl(branch.candidates||event.branchCandidates).map(b=>sx(b?.id)).filter(Boolean)};
+    if(sl(event?.branchCandidates).length&&!next){event.status='BRANCH_PENDING';p.phase='BRANCH_PENDING';p.lastAudit={...(p.lastAudit||{}),branchStatus:branch.status,branchPending:true};/* v1.12.0 — 활성 사건 ID 를 유지한다. 비우면 재접속 후 복구 경로가 없다. */sc.runtime.eventLedger.activeEventId=event.id;sc.runtime.branchDecision={schema:'CORTEX_BRANCH_DECISION_V1',eventId:event.id,status:sx(branch?.status),candidates:sl(branch.candidates||event.branchCandidates).map(b=>sx(b?.id)).filter(Boolean),exhausted:true};sysUpdateMotifs(sc,visible,turnNo);return {status:'BRANCH_PENDING',reason:branch.status,eventId:event.id,nextEventId:null,candidates:sl(branch.candidates||event.branchCandidates).map(b=>sx(b?.id)).filter(Boolean)}}
+    event.status='SEALED';if(!next){sc.runtime.eventLedger.activeEventId=event.id;p.phase='SEALED';sysUpdateMotifs(sc,visible,turnNo);return {status:'SEALED',eventId:event.id,nextEventId:null}}
+    const before=event,transition=sysApplyLoopResetWorld(sc,before,next,committed);sc.event={...sclone(next),status:'ACTIVE',activeBeatIndex:Number.isFinite(+next?.activeBeatIndex)?+next.activeBeatIndex:0,runtimeEvidence:[],extensionActive:false};sc.world={...(sc.world||{}),...transition.world};if(transition.authorized)sc.runtime.lastLoopReset={schema:'CORTEX_LOOP_RESET_V2',fromEventId:sx(before.id),toEventId:sx(sc.event.id),authorizedBy:'PACKAGE_LOOP_POLICY_OR_RESET_MARKER',at:new Date().toISOString()};const nextPhase=sysEventPhase(sc);if(nextPhase==='WAITING_FOR_START'){for(const b of sl(sc.event.beats))if(b.status==='ACTIVE')b.status='PENDING'}else{const beats=sl(sc.event.beats);if(beats.length&&!beats.some(b=>b.status==='ACTIVE'))beats[sclamp(+sc.event.activeBeatIndex||0,0,beats.length-1)].status='ACTIVE'}sc.runtime.systemicEventState={schema:SYS_EVENT_SCHEMA,activeEventId:sx(sc.event.id),phase:nextPhase,eventBeats:0,eventTurns:0,minTurns:sysPacing(sc.event),closureExtensionCount:0,lastAudit:null,lastTransitionTurn:typeof turns!=='undefined'&&Array.isArray(turns)?turns.length:0,lastTransitionWasLoopReset:transition.authorized};sc.runtime.eventMachine={schema:'CORTEX_EVENT_FSM_V2',activeEventId:sx(sc.event.id),state:nextPhase,eventBeats:0,eventTurns:0,extensionCount:0};sc.runtime.eventLedger.activeEventId=sc.event.id;const graph=sysPresenceGraph(sc,visible,[]);sc.scene={...(sc.scene||{}),presentCharacterIds:nextPhase==='WAITING_FOR_START'?graph.presentCharacterIds:su([sc?.protagonist?.id,...sl(sc.event.presentCharacterIds)].filter(Boolean))};try{refreshDynamicDisclosure(sc)}catch{};if(nextPhase!=='WAITING_FOR_START')sc.summary=sx(sc.event.summary||sc.summary);sysUpdateMotifs(sc,visible,turnNo);sysPrepareTransitionCapsule(sc,visible);return {status:'SEALED',branchStatus:branch.status,eventId:event.id,nextEventId:sc.event.id,nextPhase};
+  }
+  sysDirectAdvance=sysDirectAdvanceV7;
+
+  /* ===== Systemic v10 sealed context compiler =====
+     Writer/capsule context is now compiled directly from public package state and
+     systemic ledgers. Legacy capsule/context generations are not called here. */
+  const SYS_CONTEXT_SCHEMA_V8='CORTEX_PUBLIC_CONTEXT_V11';
+  const SYS_CONTINUITY_SCHEMA_V8='CORTEX_CONTINUITY_CONTEXT_V9';
+
+  function sysSafePublicV8(sc,value,max=360){
+    try{if(typeof safePublicText==='function')return safePublicText(sc,value,max)}catch{}
+    return sline(value,max);
+  }
+  function sysPublicIdV8(sc,id,kind='actor'){
+    try{if(typeof publicEntityRef==='function')return publicEntityRef(sc,id,kind)}catch{}
+    return sx(id);
+  }
+  function sysPublicCharacterV8(sc,c){
+    if(!c)return null;const visibility=sx(c?.visibility||c?.disclosure||'public'),hidden=c?.secret===true||/(?:secret|hidden|gm|비공개)/iu.test(visibility),fallback={...c,name:sx(c?.preRevealAlias||c?.surfaceName||(hidden?'미공개 인물':c?.name))};let projected=fallback;try{if(typeof publicCharacter==='function')projected=publicCharacter(c,[sc?.protagonist,...sl(sc?.characters)].indexOf(c))||fallback}catch{}const id=sysPublicIdV8(sc,c.id,'actor'),name=sysSafePublicV8(sc,projected.name,80);if(!id||!name)return null;
+    return {id,name,role:sysSafePublicV8(sc,projected.role,140),publicProfile:sysSafePublicV8(sc,projected.publicProfile,360),voice:sysSafePublicV8(sc,projected.voice,300),relationshipToProtagonist:sysSafePublicV8(sc,projected.relationshipToProtagonist,180),drives:sl(projected.drives).map(v=>sysSafePublicV8(sc,v,180)).filter(Boolean).slice(0,4)};
+  }
+  function sysPublicCanonV8(sc,canonCapsule=null){
+    const src=sl(canonCapsule?.entries?.length?canonCapsule.entries:sc?.runtime?.canonLedger?.entries),out=[];
+    for(const e of src){if(e?.active===false||sx(e?.visibility)!=='PUBLIC_CONFIRMED')continue;out.push({id:sysPublicIdV8(sc,e.id,'canon'),kind:sx(e.kind),subjectRefs:sl(e.subjectRefs).map(id=>sysPublicIdV8(sc,id,'actor')).filter(Boolean),targetRef:e.targetRef?sysPublicIdV8(sc,e.targetRef,/^actor/u.test(sx(e.targetRef))?'actor':'item'):'',targetName:sysSafePublicV8(sc,e.targetName,120),value:sysSafePublicV8(sc,e.value,180),statement:sysSafePublicV8(sc,e.publicStatement||e.statement,320),status:sx(e.status||'ACTIVE'),sourceTurn:+e.sourceTurn||0});}
+    return {schema:SYS_CANON_SCHEMA,revision:+sc?.runtime?.canonLedger?.revision||0,entries:out.slice(-24)};
+  }
+  function sysPublicRelationshipsV8(sc,presentIds){
+    const ids=new Set(presentIds),out=[];for(const r of sl(sc?.relationships)){const from=sysPublicIdV8(sc,r?.from,'actor'),to=sysPublicIdV8(sc,r?.to,'actor');if(!ids.has(from)&&!ids.has(to))continue;const summary=sysSafePublicV8(sc,r?.publicSummary,260),status=sysSafePublicV8(sc,r?.publicStatus||r?.status,120);if(summary||status)out.push({from,to,summary,status});}return out.slice(0,16);
+  }
+  function sysCurrentEventPublicV8(sc){
+    const phase=sysEventPhase(sc),e=sc?.event||{};if(phase==='WAITING_FOR_START')return {id:'interlude',title:'사건 사이의 현재 장면',summary:'다음 예약 사건은 아직 시작되지 않았다.',stakes:[],requiredFunctions:[],nextBeat:'현재 행동·관계·환경의 직접 결과만 이어 간다.',phase};
+    return {id:sysPublicIdV8(sc,e.id,'event'),title:sysSafePublicV8(sc,e.title,140),summary:sysSafePublicV8(sc,e.summary,420),stakes:sl(e.stakes).map(v=>sysSafePublicV8(sc,v,260)).filter(Boolean).slice(0,8),requiredFunctions:sl(e.requiredFunctions).map(r=>({id:sysPublicIdV8(sc,r?.id||stableHash(sx(r?.description||r)),'requirement'),description:sysSafePublicV8(sc,r?.description||r,300),due:sx(r?.due||'EVENT_END')})).filter(r=>r.description).slice(0,12),nextBeat:sysSafePublicV8(sc,e.nextBeat||e?.beats?.[e.activeBeatIndex||0]?.goal,320),phase,activeBeatIndex:+e.activeBeatIndex||0};
+  }
+  function sysFreshSensoryV8(sc,visible=''){
+    const directive=sysMotifDirective(sc,''),avoid=su(sl(directive.avoid).flatMap(x=>sysContentTokens(x?.label||x?.key||''))),sentences=sysClauses(visible).filter(x=>x.length>=12&&x.length<=180),out=[];
+    for(const sentence of sentences.reverse()){const tok=sysContentTokens(sentence);if(!tok.length)continue;const overlap=tok.filter(t=>avoid.includes(t)).length;if(overlap>=Math.max(1,Math.ceil(tok.length*.45)))continue;if(/(?:생각|느꼈|알았다|깨달았다|기억했다)$/u.test(sn(sentence)))continue;out.unshift(sentence);if(out.length>=4)break;}return out;
+  }
+  function sysLastActionByCharacterV8(sc,turn,visible,ids){
+    const out=new Map(),catalog=sysEntityCatalog(sc);for(const b of sl(turn?.blocks)){const bid=sx(b?.speakerId),text=sline(b?.text,220);if(bid&&ids.has(sysPublicIdV8(sc,bid,'actor')))out.set(sysPublicIdV8(sc,bid,'actor'),text);for(const c of catalog){const pid=sysPublicIdV8(sc,c.id,'actor'),name=sx(c.name);if(ids.has(pid)&&name&&text.includes(name)&&SYS_PRESENCE_ACTION_RE.test(text))out.set(pid,text)}}return out;
+  }
+  function sysItemsV9(value,key='items'){if(Array.isArray(value))return value;if(value&&Array.isArray(value[key]))return value[key];return []}
+  function sysPackageContractV9(sc){const runtime=sc?.runtime?.packageV15;if(!runtime)return null;const ai=runtime.aiWorldContext?.worldContext||{},lens=runtime.routeLens||{},state=sysPackageStateV9(sc),active=sysItemsV9(runtime.narrativeRuntime?.events,'events').find(item=>sx(item?.eventId)===sx(sc?.event?.id))||{},filter=v=>sysSafePublicV8(sc,v,500),conditionOk=condition=>{if(!condition)return true;try{return typeof packageConditionSatisfied==='function'?packageConditionSatisfied(condition,state):false}catch{return false}},alternate=sysItemsV9(active.alternateBeats||sc?.event?.packageMeta?.alternateBeats).map(item=>({id:sysPublicIdV8(sc,item?.id||stableHash(JSON.stringify(item)),'beat'),priority:+item?.priority||0,narrativeGoal:filter(item?.narrativeGoal),requiredSignals:sl(item?.requiredSignals).map(filter).filter(Boolean).slice(0,8),preservePlayerChoice:item?.preservePlayerChoice!==false})).filter(item=>item.narrativeGoal),markers=sysItemsV9(active.sceneMarkers||sc?.event?.packageMeta?.sceneMarkers).filter(item=>conditionOk(item?.when)).map(item=>({id:sysPublicIdV8(sc,item?.id||stableHash(JSON.stringify(item)),'marker'),label:filter(item?.label),phase:sx(item?.phase||'progress')})).filter(item=>item.label);return {schema:sx(runtime.schema||'SCENARIOPACK_1_5'),routeId:sysPublicIdV8(sc,runtime.selectedRouteId,'route'),loopPolicy:{enabled:runtime.loopPolicy?.enabled===true,resetPoint:filter(runtime.loopPolicy?.resetPoint),stateRules:sl(runtime.loopPolicy?.stateRules).map(filter).filter(Boolean).slice(0,12)},worldGuide:{premise:filter(ai.premise),localContext:filter(ai.localContext),enrichmentPriorities:filter(ai.enrichmentPriorities),avoidElements:filter(ai.avoidElements)},routeFocusRules:sl(lens.focusRules).map(filter).filter(Boolean).slice(0,12),activeEventRuntime:{alternateBeats:alternate,sceneMarkers:markers},disclosure:{rule:'현재 사건에 필요한 공개 인과만 사용하고 공개 전 사실은 이름·정답·진명으로 출력하지 않는다.',protectedFingerprintCount:sl(sc?.disclosure?.protectedTerms).length}}}
+  function sysNarrativeContractV9(sc){const semantic=sc?.event?.packageMeta?.semantic||{},control=semantic.control||{},carry=sl(sc?.runtime?.carryoverLedger).filter(item=>item?.status==='OPEN'||item?.status==null).map(item=>({id:sysPublicIdV8(sc,item?.id,'carryover'),kind:sx(item?.kind||'OBLIGATION'),statement:sysSafePublicV8(sc,item?.statement,320)})).filter(item=>item.statement).slice(-12);return {schema:'CORTEX_UNIVERSAL_NARRATIVE_KERNEL_V2',topology:sx(sc?.runtime?.packageV15?.topology||'LINEAR_SEQUENCE'),principles:{playerAgency:'사용자가 선택한 행동을 첫 장면에서 실제로 수행하고 성공 여부와 대가만 정사에 맞게 판정한다.',canonContinuity:'확정된 시간·장소·부상·소지품·관계·인물의 지식은 다음 턴에서 되돌리지 않는다.',eventIntegrity:'현재 공개 사건의 의미와 완료 신호만 사용하고 공개 본문 증거 없이 사건을 완료하지 않는다.',disclosureSafety:'미래 사건·비선택 루트·GM 진실은 공개 조건을 통과하기 전 작가 문맥과 본문에 넣지 않는다.',naturalPacing:'사용자가 요청한 시간과 현실적인 행동 시간을 우선하며 사건 종료 시각까지 임의로 늘이지 않는다.',literaryQuality:'규칙을 설명하지 말고 감각·행동·대화·인과가 연결된 장면으로 보여 준다.'},eventControl:{playerCanIntervene:control.playerCanIntervene!==false,preservePlayerChoice:control.preservePlayerChoice!==false,endSceneAfterCompletion:control.endSceneAfterCompletion!==false,recoveryAlternatives:sl(control.recoveryAlternatives).map(v=>sysSafePublicV8(sc,v,260)).filter(Boolean).slice(0,8)},openCarryover:carry}}
+  function sysCapsuleProfileV9(sc){return sx((typeof settings!=='undefined'&&settings?.storyId)||sc?.runtime?.storyId||'systemic')}
+  function sysCapsuleRevisionV9(sc){return Math.max(0,+sc?.runtime?.canonLedger?.revision||+sc?.runtime?.canonRevision||0)}
+  function sysCapsuleCursorV9(sc){try{if(typeof capsuleEventCursor==='function')return capsuleEventCursor(sc)}catch{}return `${sx(sc?.event?.id)}:${+sc?.event?.activeBeatIndex||0}`}
+  function sysCapsuleHashV9(sc){try{if(typeof narrativeStateHash==='function')return narrativeStateHash(sc)}catch{}return stableHash(JSON.stringify({canon:sysPublicCanonV8(sc).entries.slice(-12),event:sysCapsuleCursorV9(sc),world:sc?.world}))}
+  function sysContinuityCapsuleV8(sc,turn,candidate={},visible='',source=CortexContract.contractSource){
+    if(typeof candidate==='string'){source=typeof visible==='string'&&visible?visible:source;visible=candidate;candidate={}}visible=sx(visible);const graph=sysPresenceGraph(sc,visible,turn?.blocks||[],{authorizedEntityRefs:sysInputPresenceLicenseV171(sc,turn?.txn)}),ids=new Set(graph.presentCharacterIds.map(id=>sysPublicIdV8(sc,id,'actor'))),people=[sc?.protagonist,...sl(sc?.characters)].filter(Boolean),lastActions=sysLastActionByCharacterV8(sc,turn,visible,ids),characters=[];
+    for(const c of people){const pub=sysPublicCharacterV8(sc,c);if(!pub||!ids.has(pub.id))continue;characters.push({...pub,present:true,lastAction:lastActions.get(pub.id)||'',goal:pub.drives?.[0]||''});}const sensory=sysFreshSensoryV8(sc,visible),canon=sysPublicCanonV8(sc),physical=sysPhysicalState(sc),event=sysCurrentEventPublicV8(sc),relationships=sysPublicRelationshipsV8(sc,[...ids]),carryKinds=new Set(['promise','pending_consequence','deferred_intent','narrative_debt','event_obligation']),carry=sl(sc?.runtime?.carryoverLedger).filter(x=>x?.status!=='RESOLVED'&&(!x?.eventRef||sx(x.eventRef)===sx(sc?.event?.id))).map(x=>({id:sysPublicIdV8(sc,x?.id||stableHash(sx(x?.statement)),'carryover'),kind:carryKinds.has(sx(x?.kind).toLowerCase())?sx(x.kind).toLowerCase():'event_obligation',statement:sysSafePublicV8(sc,x?.statement,260),priority:+x?.priority||0})).filter(x=>x.statement).slice(0,8),lastTail=sysSafePublicV8(sc,sysClauses(visible).slice(-2).join(' '),640),frames=sl(turn?.txn?.intent?.actionFrames).filter(f=>f?.modality!=='NEGATED'),next=[];
+    if(frames.length)next.push(`방금 선택한 ${frames.map(sysFrameDescriptionV6).join(' → ')}의 직접 결과와 여파를 이어 간다.`);if(event.nextBeat)next.push(event.nextBeat);for(const c of carry.slice(0,2))next.push(c.statement);if(!next.length)next.push('현재 장면에서 확정된 행동·감각·관계 변화의 직접 여파를 이어 간다.');const candidates=su(next).slice(0,5),pressures=candidates.slice(0,3).map((statement,index)=>({id:`pressure-${stableHash(`${index}|${statement}`)}`,statement})),inventory=canon.entries.filter(e=>e.kind==='inventory_add').map(e=>({id:e.targetRef||e.id,name:e.targetName||e.value||e.statement})),destroyed=canon.entries.filter(e=>e.kind==='destruction').map(e=>({id:e.targetRef||e.id,name:e.targetName||e.value||e.statement})),conditions=canon.entries.filter(e=>e.kind==='injury').map(e=>({id:e.id,name:e.targetName||e.value||e.statement})),emotionalResidue=characters.flatMap(c=>sl(c.emotionalResidue)).map(v=>sysSafePublicV8(sc,v,180)).filter(Boolean).slice(0,8),activeCharacterGoals=characters.map(c=>c.goal).filter(Boolean).slice(0,8),styleAvoid=sl(sysMotifDirective(sc,'').avoid).map(x=>sysSafePublicV8(sc,x?.label||x?.key,120)).filter(Boolean);

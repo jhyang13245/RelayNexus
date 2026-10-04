@@ -1,0 +1,428 @@
+{
+  "engine": "Cortex 1.6.5",
+  "sourceLogVersion": "1.6.4",
+  "replayMode": "exact-input-and-finalized-body deterministic state replay (no API calls)",
+  "turns": 20,
+  "assertions": {
+    "exactTurnCount": true,
+    "monotonicTime": true,
+    "unicodeObjectRefsUnique": true,
+    "disposedParcelInactive": true,
+    "figurativeDestructionRejected": true,
+    "severeConditionPersisted": true,
+    "unconsciousStatePersisted": true,
+    "relationshipPersisted": true,
+    "incompleteTailRemoved": true,
+    "malformedViolencePatchRemoved": true
+  },
+  "finalState": {
+    "inventory": [
+      {
+        "id": "canon-c67ef0a1",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": "item-8080fab7",
+        "targetName": "조개",
+        "value": "",
+        "statement": "그는 조개를 주머니에 넣고 계단을 내려갔다.",
+        "status": "ACTIVE",
+        "sourceTurn": 2
+      },
+      {
+        "id": "canon-b2e71367",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": "item-8412cbcd",
+        "targetName": "휴대전화",
+        "value": "",
+        "statement": "그녀가 발을 내딛자 시우도 주머니 속 꺼진 휴대전화를 움켜쥐었다.",
+        "status": "ACTIVE",
+        "sourceTurn": 15
+      }
+    ],
+    "conditions": [
+      {
+        "id": "canon-054804ee",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": null,
+        "targetName": "의식",
+        "value": "UNCONSCIOUS",
+        "statement": "고통이 한계를 넘자 시우의 의식이 끊겼다.",
+        "status": "ACTIVE",
+        "sourceTurn": 18
+      },
+      {
+        "id": "canon-599a9086",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": null,
+        "targetName": "다리",
+        "value": "PARALYZED",
+        "statement": "충격이 가라앉은 뒤에도 다리의 감각은 돌아오지 않았고, 그는 스스로 일어설 수 없었다.",
+        "status": "ACTIVE",
+        "sourceTurn": 18
+      }
+    ],
+    "relationships": [
+      {
+        "id": "canon-29eae444",
+        "subjectRefs": [
+          "actor-6f0a8676",
+          "actor-888ad7ad"
+        ],
+        "targetRef": null,
+        "targetName": "",
+        "value": "MUTUAL_AFFECTION",
+        "statement": "한시우는 상대에게 한 걸음 다가가 함께 식사하자고 직접 제안했다.",
+        "status": "ACTIVE",
+        "sourceTurn": 19
+      }
+    ],
+    "destroyed": [],
+    "promises": [],
+    "npcDecisions": [],
+    "pendingConsequences": [],
+    "sceneFacts": [
+      {
+        "id": "canon-b5e77a87",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": null,
+        "targetName": "",
+        "value": "",
+        "statement": "대신 무인택배함 알림을 다시 확인하고, 복도 끝 계단으로 발을 옮겼다.",
+        "status": "ACTIVE",
+        "sourceTurn": 1
+      },
+      {
+        "id": "canon-917857c3",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": null,
+        "targetName": "",
+        "value": "",
+        "statement": "그는 소포를 품에 더 단단히 안고 무인택배함의 닫힌 문을 확인했다.",
+        "status": "ACTIVE",
+        "sourceTurn": 6
+      },
+      {
+        "id": "canon-cdabc521",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": null,
+        "targetName": "",
+        "value": "",
+        "statement": "계단 입구에서 한시우는 걸음을 멈추고 무인택배함의 안내등을 다시 확인했다.",
+        "status": "ACTIVE",
+        "sourceTurn": 6
+      },
+      {
+        "id": "canon-51faaa3b",
+        "subjectRefs": [
+          "actor-6f0a8676"
+        ],
+        "targetRef": null,
+        "targetName": "",
+        "value": "",
+        "statement": "시우는 열쇠와 기록지 조각을 품 안에 넣고, 무인택배함의 닫힌 문을 마지막으로 확인했다.",
+        "status": "ACTIVE",
+        "sourceTurn": 17
+      }
+    ]
+  },
+  "replay": [
+    {
+      "turn": 1,
+      "input": "한시우는 불사조개 되어 태평양을 거닐게 되었다",
+      "blocksBefore": 6,
+      "blocksAfter": 6,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "scene_fact",
+          "targetName": "",
+          "publicStatement": "대신 무인택배함 알림을 다시 확인하고, 복도 끝 계단으로 발을 옮겼다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 2,
+      "input": "그는 휴대폰을 종료하고 무인택배함이 아닌 조개껍데기로 관심을 돌린다. 그는 조개껍데기를 주워서 도서관에 있는 미녀의 가슴팍에 껍데기를 붙인다.",
+      "blocksBefore": 6,
+      "blocksAfter": 6,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "inventory_add",
+          "targetName": "조개",
+          "publicStatement": "그는 조개를 주머니에 넣고 계단을 내려갔다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 3,
+      "input": "아니 이 택배 송장을 왜 당신이 가지고 있어요?",
+      "blocksBefore": 6,
+      "blocksAfter": 6,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "inventory_add",
+          "targetName": "휴대전화",
+          "publicStatement": "대신 전원이 꺼진 휴대전화를 쥔 손을 주머니 안에서 움켜쥐고, 복도 끝 무인택배함 쪽으로 시선을 돌렸다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 4,
+      "input": "송장을 여학생의 가슴골 사이에 꽂아버리고 그는 화난 모습으로 도서관 밖으로 나간다",
+      "blocksBefore": 7,
+      "blocksAfter": 7,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "inventory_remove",
+          "targetName": "종이",
+          "publicStatement": "그는 종이를 억지로 빼앗지 않았다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 5,
+      "input": "그는 하지만 그 여학생에게 고백을 했고 여학생은 그 고백을 받아줬다.",
+      "blocksBefore": 9,
+      "blocksAfter": 9,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "inventory_add",
+          "targetName": "소포",
+          "publicStatement": "검은 소포 하나를 꺼내 품에 안는 순간, 꺼진 휴대전화가 주머니 속에서 짧게 진동했다."
+        },
+        {
+          "kind": "relationship",
+          "targetName": "",
+          "publicStatement": "한시우는 상대에게 한 걸음 다가가 함께 식사하자고 직접 제안했다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 6,
+      "input": "여학생은 제안을 수락했다",
+      "blocksBefore": 5,
+      "blocksAfter": 5,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "scene_fact",
+          "targetName": "",
+          "publicStatement": "그는 소포를 품에 더 단단히 안고 무인택배함의 닫힌 문을 확인했다."
+        },
+        {
+          "kind": "scene_fact",
+          "targetName": "",
+          "publicStatement": "계단 입구에서 한시우는 걸음을 멈추고 무인택배함의 안내등을 다시 확인했다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 7,
+      "input": "한시우는 그냥 소포를 손에든채로 발로 세게 차서 마치 골킥을 찬 축구공처럼 소포는 저 멀리 날아가 사라진다",
+      "blocksBefore": 4,
+      "blocksAfter": 4,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 8,
+      "input": "한시우는 이제 택배는 더이상 신경쓰지 않기로 하고 여학생을 찾는다",
+      "blocksBefore": 6,
+      "blocksAfter": 6,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "inventory_add",
+          "targetName": "휴대전화",
+          "publicStatement": "시우는 꺼진 휴대전화를 쥔 손을 주머니 안에서 움켜쥐었다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 9,
+      "input": "안내 데스크에 있는 여성을 강제로 물구나무 서기 시킨다.",
+      "blocksBefore": 6,
+      "blocksAfter": 6,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 10,
+      "input": "한시우는 도망가는 척하다 뒤를 돌아서 안내데스크 여성의 뒤통수를 책으로 후려 갈기고 도망친다",
+      "blocksBefore": 8,
+      "blocksAfter": 8,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 11,
+      "input": "한참 달린 이후 학교와 멀리 떨어진 곳에서 만난 사람은 다름아닌 아까 그 여학생이었다",
+      "blocksBefore": 4,
+      "blocksAfter": 4,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 12,
+      "input": "그녀는 대답하지 않는다. 답답한 한시우는 여학생에게 그대로 박치기를 날린다. 그후 여학생의 손을 잡고 강제로 한시우의 집으로 데려간다",
+      "blocksBefore": 8,
+      "blocksAfter": 8,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 13,
+      "input": "아잇 이여자 뭐야? 한시우는 시험삼아 태권도 기술 240도 옆돌려차기를 시전해 여학생의 얼굴을 발차기로 강타시킨다",
+      "blocksBefore": 5,
+      "blocksAfter": 5,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 14,
+      "input": "발차기를 한 번 더 시도할때 여학생이 발을 손으로 그대로 잡고 한시우를 땅으로 패대기 쳐버린다",
+      "blocksBefore": 6,
+      "blocksAfter": 6,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 15,
+      "input": "한시우는 소포를 지나가는 옆 트럭에 던져버린다. 소포는 트럭을 타고 저 멀리 사라져버린다. 그리고 여학생과 마저 결투를 진행한다",
+      "blocksBefore": 7,
+      "blocksAfter": 8,
+      "repairs": [
+        "PRECISION_OUTCOME_LOCK"
+      ],
+      "acceptedCanon": [
+        {
+          "kind": "inventory_add",
+          "targetName": "휴대전화",
+          "publicStatement": "그녀가 발을 내딛자 시우도 주머니 속 꺼진 휴대전화를 움켜쥐었다."
+        },
+        {
+          "kind": "inventory_remove",
+          "targetName": "소포",
+          "publicStatement": "소포는 손을 완전히 떠나 움직이는 트럭과 함께 시야 밖으로 사라졌다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 16,
+      "input": "그러다 아까 식사를 제안했던 여학생을 마주친다",
+      "blocksBefore": 7,
+      "blocksAfter": 7,
+      "repairs": [],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    },
+    {
+      "turn": 17,
+      "input": "여학생은 갑자기 귀신으로 변해 한시우를 공격한다. 한시우는 귀신의 공격을 정통으로 맞아 불구가 되버린다",
+      "blocksBefore": 7,
+      "blocksAfter": 8,
+      "repairs": [
+        "PRECISION_OUTCOME_LOCK"
+      ],
+      "acceptedCanon": [
+        {
+          "kind": "scene_fact",
+          "targetName": "",
+          "publicStatement": "시우는 열쇠와 기록지 조각을 품 안에 넣고, 무인택배함의 닫힌 문을 마지막으로 확인했다."
+        },
+        {
+          "kind": "injury",
+          "targetName": "다리",
+          "publicStatement": "충격이 가라앉은 뒤에도 다리의 감각은 돌아오지 않았고, 그는 스스로 일어설 수 없었다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 18,
+      "input": "귀신은 이윽고 한시우의 하반신을 먹어버린다. 한시우는 고통에 크게 울부짖으녀 몸부림을 치다 쇼크로 정신을 잃는다",
+      "blocksBefore": 5,
+      "blocksAfter": 7,
+      "repairs": [
+        "PRECISION_OUTCOME_LOCK",
+        "PRECISION_OUTCOME_LOCK"
+      ],
+      "acceptedCanon": [
+        {
+          "kind": "injury",
+          "targetName": "다리",
+          "publicStatement": "충격이 가라앉은 뒤에도 다리의 감각은 돌아오지 않았고, 그는 스스로 일어설 수 없었다."
+        },
+        {
+          "kind": "injury",
+          "targetName": "의식",
+          "publicStatement": "고통이 한계를 넘자 시우의 의식이 끊겼다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 19,
+      "input": "귀신은 갑자기 미녀 여학생으로 다시 바뀌고 한시우와 딥키스를 나눈다",
+      "blocksBefore": 8,
+      "blocksAfter": 8,
+      "repairs": [],
+      "acceptedCanon": [
+        {
+          "kind": "relationship",
+          "targetName": "",
+          "publicStatement": "입맞춤은 깊어졌고, 골목의 소음은 얇은 유리 너머로 밀려났다."
+        },
+        {
+          "kind": "relationship",
+          "targetName": "",
+          "publicStatement": "한시우는 상대에게 한 걸음 다가가 함께 식사하자고 직접 제안했다."
+        }
+      ],
+      "incompleteTail": false
+    },
+    {
+      "turn": 20,
+      "input": "상대는 허락한다. 둘은 캠퍼스 근처 맛집에서 하하호호 수다를 떨며 즐거운 시간을 보낸다",
+      "blocksBefore": 6,
+      "blocksAfter": 7,
+      "repairs": [
+        "PRECISION_OUTCOME_LOCK"
+      ],
+      "acceptedCanon": [],
+      "incompleteTail": false
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "format": "RELAY_NOVEL_MEDIA_ASSET_MANIFEST_V2",
+  "storage": {
+    "format": "RELAY_NOVEL_ASSET_ONCE_V1",
+    "integrity": "SHA-256",
+    "inlineDataUrls": false,
+    "logicalAssetCount": 0,
+    "originalAssetBytes": 0,
+    "storedAssetCount": 0,
+    "storedAssetBytes": 0
+  },
+  "assets": []
+}

@@ -1,0 +1,17 @@
+{
+  "product": "단청",
+  "siteVersion": "1.25.11",
+  "generatedAt": "2026-10-04T03:07:43.578Z",
+  "fileCount": 971,
+  "sourceContentSha256": "sha256:e4b4228c67d1d41506e6d92cb8b8e65d8768e1d55514692ddaa91b7ddfc8af1c",
+  "operatingUrl": "https://relay-novel-nexus.juno12345.chatgpt.site",
+  "contents": "현재 배포 소스, 테스트, 실행 스크립트와 설정 예시",
+  "excluded": [
+    "API keys",
+    "environment secrets",
+    "dependencies",
+    "build outputs",
+    "runtime caches",
+    "pinned vision binary dependencies: restore with node scripts/install-vn-vision.mjs"
+  ]
+}

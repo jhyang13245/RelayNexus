@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-novel-studio.juno12345.chatgpt.site/schemas/instant_story_runtime_v2.json",
+  "title": "Relay Novel Instant Story Runtime v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "compilerVersion",
+    "sourcePackageSha256",
+    "generatedAt",
+    "featureId",
+    "runtimeMode",
+    "exclusiveRuntime",
+    "enabled",
+    "contextBudget",
+    "generation",
+    "deepPathTriggers",
+    "turnPolicy",
+    "streamContract",
+    "fallback"
+  ],
+  "properties": {
+    "format": {
+      "const": "RELAY_NOVEL_INSTANT_STORY_RUNTIME_V2"
+    },
+    "schemaVersion": {
+      "const": "2.0"
+    },
+    "compilerVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourcePackageSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceHashMethod": {
+      "type": "string"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "featureId": {
+      "const": "instant_story_runtime_v2"
+    },
+    "runtimeMode": {
+      "const": "instant_story"
+    },
+    "exclusiveRuntime": {
+      "const": true
+    },
+    "incompatibleRuntimeFeatures": {
+      "type": "array"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "profile": {
+      "const": "instant_story"
+    },
+    "promptPreset": {
+      "enum": [
+        "basic_novel",
+        "one_to_one",
+        "simulation",
+        "custom"
+      ]
+    },
+    "corePrompt": {
+      "type": "string"
+    },
+    "exampleScenes": {
+      "type": "array",
+      "maxItems": 3
+    },
+    "startProfiles": {
+      "type": "array"
+    },
+    "statRules": {
+      "type": "array",
+      "maxItems": 7
+    },
+    "contextBudget": {
+      "type": "object",
+      "required": [
+        "maxDynamicPromptChars",
+        "recentTurns",
+        "activeCharacters",
+        "semanticMemories",
+        "activeKeywordNotes",
+        "relevantMedia"
+      ]
+    },
+    "generation": {
+      "type": "object",
+      "required": [
+        "ordinaryTurnMaxOutputTokens",
+        "singleCallPreferred",
+        "reasoningEffort",
+        "streamingRequiredForFastPath"
+      ]
+    },
+    "deepPathTriggers": {
+      "type": "array",
+      "uniqueItems": true
+    },
+    "turnPolicy": {
+      "type": "object"
+    },
+    "endingPolicy": {
+      "type": "object"
+    },
+    "streamContract": {
+      "type": "object"
+    },
+    "researchPolicy": {
+      "type": "object"
+    },
+    "fallback": {
+      "const": "reject_if_unsupported"
+    }
+  }
+}

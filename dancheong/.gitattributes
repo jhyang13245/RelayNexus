@@ -1,0 +1,7 @@
+# Preserve the exact Cortex release bytes on every platform.
+vendor/cortex/*.html -text
+public/cortex.html -text
+
+vendor/cortex/parts/*.part -text
+vendor/visual-novel/** -text
+public/vn-runtime/** -text

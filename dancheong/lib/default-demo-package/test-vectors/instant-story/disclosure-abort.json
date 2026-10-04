@@ -1,0 +1,9 @@
+{
+  "publicEvents": [
+    "turn_ack",
+    "narration_commit",
+    "turn_abort"
+  ],
+  "protectedTermInjectedAfterSafeSentence": true,
+  "expectedClientResult": "remove_all_provisional_narration_and_keep_previous_session"
+}

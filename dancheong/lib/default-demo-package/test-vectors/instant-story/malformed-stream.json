@@ -1,0 +1,9 @@
+{
+  "publicEvents": [
+    "turn_ack",
+    "narration_commit",
+    "error"
+  ],
+  "malformedSidecar": true,
+  "expectedClientResult": "do_not_commit_turn"
+}
