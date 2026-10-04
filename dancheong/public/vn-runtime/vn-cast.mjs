@@ -1,15 +1,15 @@
-import {stagecraftSchema,stagecraftInstructions,validateStagecraft} from '../cortex-vn-stagecraft.mjs?v=88af24489d44';
-import {performanceSchema,performanceInstructions,validatePerformance} from '../cortex-vn-performance.mjs?v=88af24489d44';
-import { compactCastRequest, expandCastDecision } from '../cortex-vn-cast-wire.mjs?v=88af24489d44';
-import { applyWriterSpeaker } from '../cortex-vn-writer-speakers.mjs?v=88af24489d44';
+import {stagecraftSchema,stagecraftInstructions,validateStagecraft} from '../cortex-vn-stagecraft.mjs?v=7cd28f52501e';
+import {performanceSchema,performanceInstructions,validatePerformance} from '../cortex-vn-performance.mjs?v=7cd28f52501e';
+import { compactCastRequest, expandCastDecision } from '../cortex-vn-cast-wire.mjs?v=7cd28f52501e';
+import { applyWriterSpeaker } from '../cortex-vn-writer-speakers.mjs?v=7cd28f52501e';
 // Old name-only decisions can bind a generic speaker to an unrelated person.
 // Recheck those decisions while retaining already-paid character artwork.
-import { outfitKinds, wardrobeState, createWardrobeReplay, continueOutfit, wardrobeAnchors } from './vn-wardrobe.mjs?v=88af24489d44';
-import { shotKinds, validatedShot } from './vn-shots.mjs?v=88af24489d44';
-import { ruleTransitions, validatedEmphasis, validatedCutin } from './vn-cinema.mjs?v=88af24489d44';
-import { labelOccurrences, identityLabel, unsafePresenceEvidence, evidenceContext } from './vn-identity.mjs?v=88af24489d44';
-import { musicCues, validatedMusic } from './vn-music-direction.mjs?v=88af24489d44';
-import { validatedComposition } from './vn-storyboard.mjs?v=88af24489d44';
+import { outfitKinds, wardrobeState, createWardrobeReplay, continueOutfit, wardrobeAnchors } from './vn-wardrobe.mjs?v=7cd28f52501e';
+import { shotKinds, validatedShot } from './vn-shots.mjs?v=7cd28f52501e';
+import { ruleTransitions, validatedEmphasis, validatedCutin } from './vn-cinema.mjs?v=7cd28f52501e';
+import { labelOccurrences, identityLabel, unsafePresenceEvidence, evidenceContext } from './vn-identity.mjs?v=7cd28f52501e';
+import { musicCues, validatedMusic } from './vn-music-direction.mjs?v=7cd28f52501e';
+import { validatedComposition } from './vn-storyboard.mjs?v=7cd28f52501e';
 const POLICY = 'PUBLIC_PHYSICAL_CAST_TIMELINE_V8';
 const DIRECTION_POLICY = 'PUBLIC_CAST_DIRECTION_V8';
 const POLICIES = new Set([DIRECTION_POLICY]);

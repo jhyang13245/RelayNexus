@@ -1,6 +1,6 @@
-import { optimizeImageRecord, imageEncodingProfile } from './vn-image-codec.mjs?v=88af24489d44';
-import { assetWork, visitRecords } from './vn-storage.mjs?v=88af24489d44';
-import { readAsset, replaceAssetEncoding } from './vn-assets.mjs?v=88af24489d44';
+import { optimizeImageRecord, imageEncodingProfile } from './vn-image-codec.mjs?v=7cd28f52501e';
+import { assetWork, visitRecords } from './vn-storage.mjs?v=7cd28f52501e';
+import { readAsset, replaceAssetEncoding } from './vn-assets.mjs?v=7cd28f52501e';
 
 export async function optimizeWorkImages(slug, { visit = visitRecords, read = readAsset, replace = replaceAssetEncoding, optimize = optimizeImageRecord, progress = () => {} } = {}) {
   const keys = [];

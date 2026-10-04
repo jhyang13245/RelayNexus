@@ -1,6 +1,6 @@
-import { SLOT_COUNT, QUICK_SLOT, slotLabel } from './vn-saves.mjs?v=88af24489d44';
-import { storageStatus, formatBytes, requestDurableStorage } from './vn-storage.mjs?v=88af24489d44';
-import { storageDescription } from './vn-storage-ui.mjs?v=88af24489d44';
+import { SLOT_COUNT, QUICK_SLOT, slotLabel } from './vn-saves.mjs?v=7cd28f52501e';
+import { storageStatus, formatBytes, requestDurableStorage } from './vn-storage.mjs?v=7cd28f52501e';
+import { storageDescription } from './vn-storage-ui.mjs?v=7cd28f52501e';
 
 export function createSaveDialog({ root, store, canSave, onOpen, save, load, readFile, importFile, exportFile }) {
   const dialog = document.createElement('dialog'); dialog.className = 'vn-saves-dialog'; dialog.id = 'vn-saves-dialog';

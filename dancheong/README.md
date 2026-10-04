@@ -1,6 +1,8 @@
 # Dancheong
 
-Current release: **v1.25.11** (source version; deployment status is tracked by Sites)
+Current release: **v1.26.0** (source version; deployment status is tracked by Sites)
+
+1.26.0 extends VN staging: inline word colour/size/tremble, a single centred line on black and slow typing; speed/focus lines, manga panel splits, negative and red-strobe impact frames, slow motion and rapid cuts from existing art; heuristic 2.5D background depth with dialogue depth-of-field; Ken Burns and face/hand close-ups on event CGs; a per-work art rule, a shared colour grade and a CG/sprite colour check; character motifs, a battle cue, stingers and cue-synced music; recorded CC0 foley; and presentation during AI waits. Directions arrive in the existing cast call (no new paid calls). See `docs/VN_STAGECRAFT_1.26.0.md`.
 
 1.25.11 anchors VN cues to displayed phrases and voice completion, adds evidence-bound reusable pose art, stable scene framing, lighting, foley and voice delivery context. Existing optional generation preferences, artwork, keys and saves remain compatible. Real API checks used about $0.01905 under the user's $2 cap. See `docs/VN_PERFORMANCE_1.25.11.md` for verification and limitations.
 
