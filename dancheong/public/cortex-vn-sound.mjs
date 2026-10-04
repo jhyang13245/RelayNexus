@@ -48,9 +48,9 @@ export function createStageSound({ createContext, musicEnabled = () => false, sf
     src.connect(filter); filter.connect(gain); gain.connect(out); live.add(src); src.onended = () => { live.delete(src); src.disconnect(); filter.disconnect(); gain.disconnect(); };
     src.start(at); src.stop(end + .02);
   }
-  function bus(ctx, level) {
+  function bus(ctx, level, seconds = 4) {
     const gain = ctx.createGain(); gain.gain.value = level; gain.connect(ctx.destination);
-    setTimeout(() => { try { gain.disconnect(); } catch { /* detached */ } }, 6000);
+    setTimeout(() => { try { gain.disconnect(); } catch { /* detached */ } }, (seconds + 2) * 1000);
     return gain;
   }
   const musicLevel = () => Math.max(0, Math.min(1, volume())) * (speaking() ? .45 : 1);
@@ -81,8 +81,8 @@ export function createStageSound({ createContext, musicEnabled = () => false, sf
     motif(id, scope = '') {
       if (!musicEnabled()) return false;
       const ctx = ready(); if (!ctx) return false;
-      const theme = leitmotif(id, scope), beat = 60 / theme.bpm, out = bus(ctx, .5 * musicLevel()), t = ctx.currentTime + .02;
-      const total = theme.notes.reduce((end, note) => Math.max(end, note.at + note.length), 0) * beat;
+      const theme = leitmotif(id, scope), beat = 60 / theme.bpm, t = ctx.currentTime + .02;
+      const total = theme.notes.reduce((end, note) => Math.max(end, note.at + note.length), 0) * beat, out = bus(ctx, .5 * musicLevel(), total + 2);
       duck.duck(.4, total * 1000 + 300, 1200);
       voice(ctx, out, { type:'triangle', freq:midiHz(theme.root), at:t, attack:.4, hold:Math.max(0, total - .6), decay:1, peak:.04 });
       for (const note of theme.notes) {

@@ -1,4 +1,4 @@
-import { hostServices } from './vn-host.mjs?v=7cd28f52501e';
+import { hostServices } from './vn-host.mjs?v=a63fa2266034';
 export async function fetchAccount(fetchImpl = globalThis.fetch) {
   const response = await fetchImpl(hostServices().accountEndpoint, {
     credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(8000),

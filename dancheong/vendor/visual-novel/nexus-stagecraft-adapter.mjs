@@ -10,9 +10,13 @@ export function adaptStagecraft(name, code, version){
     code=`import {stagecraftSchema,stagecraftInstructions,validateStagecraft} from '${from('stagecraft')}';\n`+code;
     code=once(code,"props.properties.performance=performanceSchema;props.required.push('performance');","props.properties.performance=performanceSchema;props.required.push('performance');props.properties.stagecraft=stagecraftSchema;props.required.push('stagecraft');");
     code=once(code,"performanceInstructions+'\\nReturn ONLY JSON with this shape:'","performanceInstructions+stagecraftInstructions+'\\nReturn ONLY JSON with this shape:'");
-    code=once(code,'return { expressions, focusId, performance:','return { expressions, focusId, stagecraft:validateStagecraft(beat.stagecraft,eventSource,{focusId}), performance:');
+    code=once(code,'return { expressions, focusId, performance:','return { expressions, focusId, stagecraft:validateStagecraft(beat.stagecraft,eventSource,{focusId,fx:beat.fx}), performance:');
   }
-  if(name==='vn-music-direction.mjs')code=once(code,"export const musicCues = ['keep', 'silence', 'normal', 'warm', 'sad', 'tense', 'eerie', 'memory'];","export const musicCues = ['keep', 'silence', 'normal', 'warm', 'sad', 'tense', 'battle', 'eerie', 'memory'];");
+  if(name==='vn-music-direction.mjs'){
+    // An explicit battle entrance lands on its beat like tense/eerie on an impact.
+    code=once(code,"(pending.dramatic && ['tense', 'eerie'].includes(pending.cue)))","(pending.dramatic && ['tense', 'eerie'].includes(pending.cue)) || pending.cue === 'battle')");
+    code=once(code,"export const musicCues = ['keep', 'silence', 'normal', 'warm', 'sad', 'tense', 'eerie', 'memory'];","export const musicCues = ['keep', 'silence', 'normal', 'warm', 'sad', 'tense', 'battle', 'eerie', 'memory'];");
+  }
   if(name==='vn-music.mjs'){
     code=once(code,'const MOODS = ["normal", "warm", "sad", "tense", "eerie", "memory"];','const MOODS = ["normal", "warm", "sad", "tense", "battle", "eerie", "memory"];');
     code=once(code,'  tense: { bpm: 112, root: 56,','  battle: { bpm: 152, root: 52, scale: [0, 2, 3, 5, 7, 8, 10], prog: [0, 0, 8, 10, 0, 0, 5, 7] },\n  tense: { bpm: 112, root: 56,');
@@ -21,6 +25,7 @@ export function adaptStagecraft(name, code, version){
     // A low pulse on every beat gives the battle pattern percussion.
     code=once(code,'    for (const b of slot.bass) {','    if (pattern.mood === "battle" && idx % 2 === 0) playTone({ freq: 62, time, dur: 0.11, type: "sine", peak: 0.26 * (0.4 + vol) });\n    for (const b of slot.bass) {');
   }
+  if(name==='vn-assets.mjs')code=exactly(code,"String(style || '').trim().slice(0, 600)","String(style || '').trim().slice(0, 820)",2);
   if(name==='vn-music-ai.mjs')code=once(code,"  eerie: { bpm: 60,","  battle: { bpm: 152, text: 'full-scale battle; fast driving percussion ostinato, aggressive low strings and brass stabs, heroic and violent, relentless forward momentum' },\n  eerie: { bpm: 60,");
   if(name==='vn-work-music.mjs'){
     code=once(code,"tense: '긴장·전투', eerie:","tense: '긴장·대치', battle: '전투', eerie:");
@@ -54,8 +59,9 @@ const stageDuck=createDuck();
 let stageAudio=null;
 const stageAudioContext=()=>stageAudio&&stageAudio.state!=='closed'?stageAudio:(stageAudio=createFoleyContext());
 const artRuleKey=slug=>'dancheong-vn-art-rule-v1:'+slug;
-function readArtRule(slug){try{return normalizeArtRule(JSON.parse(localStorage.getItem(artRuleKey(slug))||'{}'));}catch{return normalizeArtRule({});}}
-function writeArtRule(slug,rule){try{const value=normalizeArtRule(rule);if(Object.values(value).every(v=>v==='auto'))localStorage.removeItem(artRuleKey(slug));else localStorage.setItem(artRuleKey(slug),JSON.stringify(value));}catch{/* This tab keeps the previous rule. */}}
+const artRules=new Map();
+function readArtRule(slug){if(!artRules.has(slug)){let rule;try{rule=normalizeArtRule(JSON.parse(localStorage.getItem(artRuleKey(slug))||'{}'));}catch{rule=normalizeArtRule({});}artRules.set(slug,rule);}return artRules.get(slug);}
+function writeArtRule(slug,rule){artRules.delete(slug);try{const value=normalizeArtRule(rule);if(Object.values(value).every(v=>v==='auto'))localStorage.removeItem(artRuleKey(slug));else localStorage.setItem(artRuleKey(slug),JSON.stringify(value));}catch{/* This tab keeps the previous rule. */}}
 let stagecraftPrefs=(()=>{try{return normalizeStagecraftPrefs(JSON.parse(localStorage.getItem('dancheong-vn-stagecraft-v1')||'{}'));}catch{return normalizeStagecraftPrefs({});}})();
 const musicSync=createMusicSync();\n`+code;
     // Music engines poll their volume getter; direction moments duck through it.
@@ -69,6 +75,8 @@ const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionRedu
     code=once(code,'fire:(cue,frame)=>{\n  if(cue.sound!==\'none\')foley.play(cue.sound,frame.key+cue.at);',`fire:(cue,frame)=>{
   stagecraft.fire(cue,frame);if(musicSync.release())requestRender();
   if(cue.sound!=='none')foley.play(cue.sound==='impact'&&['heavy_shake','flash_red'].includes(frame.direction.fx)?'heavy':cue.sound,frame.key+cue.at,{weather:$('vn-stage').dataset.weather});`);
+    // Impact flashes share one budget with stagecraft's invert/strobe.
+    code=once(code,"if(cue.kind==='impact'&&!motionReduced())playEffect(frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake');","if(cue.kind==='impact'&&!motionReduced()){const fx=frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake';playEffect(String(fx).startsWith('flash')&&!stagecraft.flashGate()?'shake':fx);}");
     code=once(code,'getStyle: () => state.artStyle,','getStyle: () => composeArtStyle(state.artStyle, readArtRule(state.activeSlug)),');
     code=once(code,'state.artStyle, state.reading.cg','composeArtStyle(state.artStyle, readArtRule(state.activeSlug)), state.reading.cg');
     // A music change on a beat with a text cue enters with that cue.
@@ -78,7 +86,7 @@ const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionRedu
   void workMusic.update(state.activeSlug, syncedMusic, scenario?.runtime?.packageContract?.presentation?.music);`);
     code=once(code,'  cinema.update(cinematicFrame);',`  cinema.update(cinematicFrame);
   stagecraft.update({pageKey:pageKey(page),scope:sceneScope(),direction:view?.direction||{},kind:page.kind,composition,fresh:state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip',
-    enabled:state.reading.cinema==='on'&&state.screen==='stage',waiting:state.dialogueWaiting,loading:Boolean(state.awaitingTurn||busy()),background:state.backgroundDisplayedUrl||'',
+    enabled:state.reading.cinema==='on'&&state.screen==='stage',waiting:state.dialogueWaiting,loading:Boolean(state.awaitingTurn||state.pages.some(row=>row.isLive)),background:state.backgroundDisplayedUrl||'',
     eventArt:view?.eventBackground||'',eventCharacterIds:view?.eventCharacterIds||[],portraits:view?.portraits||[],focusId:state.focusId||view?.speakerId||''});`);
     code=once(code,"const layout = typeset(String(frame.at(-1)?.text || '…'),state.presentedView?.direction?.emphasis?.text||'')","const layout = typeset(String(frame.at(-1)?.text || '…'),state.presentedView?.direction?.emphasis?.text||'',stagecraft.marks(state.presentedView?.direction,String(frame.at(-1)?.text || '')))");
     code=once(code,"reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed,","reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed, pace: stagecraft.pace(state.presentedView?.direction, full),");

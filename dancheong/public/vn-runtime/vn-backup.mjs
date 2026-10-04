@@ -1,6 +1,6 @@
-import { makeSlot, validateSlot } from './vn-saves.mjs?v=7cd28f52501e';
-import { snapshotScope } from './vn-edition-key.mjs?v=7cd28f52501e';
-import { assetScope, workAssets, workCosts, mergeRecords } from './vn-storage.mjs?v=7cd28f52501e';
+import { makeSlot, validateSlot } from './vn-saves.mjs?v=a63fa2266034';
+import { snapshotScope } from './vn-edition-key.mjs?v=a63fa2266034';
+import { assetScope, workAssets, workCosts, mergeRecords } from './vn-storage.mjs?v=a63fa2266034';
 
 export const BACKUP_SCHEMA = 'DANCHEONG_VN_FILE_V1';
 export const MAX_BACKUP_BYTES = 256 * 1024 * 1024;

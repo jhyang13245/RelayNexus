@@ -1,77 +1,78 @@
-import {createStagecraft} from '../cortex-vn-stagecraft-dom.mjs?v=7cd28f52501e';
-import {createStageSound,createSampleFoley,createDuck} from '../cortex-vn-sound.mjs?v=7cd28f52501e';
-import {createMusicSync,composeArtStyle,normalizeArtRule,normalizeStagecraftPrefs} from '../cortex-vn-stagecraft.mjs?v=7cd28f52501e';
-import {cuePlan as stagecraftCuePlan} from '../cortex-vn-performance.mjs?v=7cd28f52501e';
-import {portraitCutin as stagecraftCrop} from './vn-cinema.mjs?v=7cd28f52501e';
+import {createStagecraft} from '../cortex-vn-stagecraft-dom.mjs?v=a63fa2266034';
+import {createStageSound,createSampleFoley,createDuck} from '../cortex-vn-sound.mjs?v=a63fa2266034';
+import {createMusicSync,composeArtStyle,normalizeArtRule,normalizeStagecraftPrefs} from '../cortex-vn-stagecraft.mjs?v=a63fa2266034';
+import {cuePlan as stagecraftCuePlan} from '../cortex-vn-performance.mjs?v=a63fa2266034';
+import {portraitCutin as stagecraftCrop} from './vn-cinema.mjs?v=a63fa2266034';
 const stageDuck=createDuck();
 let stageAudio=null;
 const stageAudioContext=()=>stageAudio&&stageAudio.state!=='closed'?stageAudio:(stageAudio=createFoleyContext());
 const artRuleKey=slug=>'dancheong-vn-art-rule-v1:'+slug;
-function readArtRule(slug){try{return normalizeArtRule(JSON.parse(localStorage.getItem(artRuleKey(slug))||'{}'));}catch{return normalizeArtRule({});}}
-function writeArtRule(slug,rule){try{const value=normalizeArtRule(rule);if(Object.values(value).every(v=>v==='auto'))localStorage.removeItem(artRuleKey(slug));else localStorage.setItem(artRuleKey(slug),JSON.stringify(value));}catch{/* This tab keeps the previous rule. */}}
+const artRules=new Map();
+function readArtRule(slug){if(!artRules.has(slug)){let rule;try{rule=normalizeArtRule(JSON.parse(localStorage.getItem(artRuleKey(slug))||'{}'));}catch{rule=normalizeArtRule({});}artRules.set(slug,rule);}return artRules.get(slug);}
+function writeArtRule(slug,rule){artRules.delete(slug);try{const value=normalizeArtRule(rule);if(Object.values(value).every(v=>v==='auto'))localStorage.removeItem(artRuleKey(slug));else localStorage.setItem(artRuleKey(slug),JSON.stringify(value));}catch{/* This tab keeps the previous rule. */}}
 let stagecraftPrefs=(()=>{try{return normalizeStagecraftPrefs(JSON.parse(localStorage.getItem('dancheong-vn-stagecraft-v1')||'{}'));}catch{return normalizeStagecraftPrefs({});}})();
 const musicSync=createMusicSync();
-import {createCuePlayer,createPortraitContinuity} from '../cortex-vn-cue-player.mjs?v=7cd28f52501e';
-import {createStageBlocking,lightingGrade,deliveryNotes} from '../cortex-vn-performance.mjs?v=7cd28f52501e';
-import {createFoley} from '../cortex-vn-foley.mjs?v=7cd28f52501e';
-import {createPlaybackContext as createFoleyContext} from './vn-media-session.mjs?v=7cd28f52501e';
-import { updateStoryClock } from '../cortex-vn-clock.mjs?v=7cd28f52501e';
-import { createQualityReferenceLoader, readWorkArt, writeWorkArt, workPortrait, readPortraitReplacement, writePortraitReplacement } from './vn-character-art.mjs?v=7cd28f52501e';
-import { backgroundFor, pagesForTurn, createPageCollector } from './vn-core.mjs?v=7cd28f52501e';
-import { loadDeviceKeys, storeDeviceKeys, changedDeviceKeys } from './vn-key-vault.mjs?v=7cd28f52501e';
-import { imageRoutingKey, readImageRouting, imageProviderFor } from './vn-image-routing.mjs?v=7cd28f52501e';
-import { storageProblem, submitEngineTurn, pendingAdjudication, retryAdjudication } from './vn-progress.mjs?v=7cd28f52501e';
-import { createAutoRecovery, retryVerdict } from './vn-recovery.mjs?v=7cd28f52501e';
-import { optimizeWorkImages } from './vn-image-storage.mjs?v=7cd28f52501e';
-import { captureScene, sceneVersion } from './vn-scene.mjs?v=7cd28f52501e';
-import { continueEnvironment, createEnvironmentContinuity } from './vn-environment.mjs?v=7cd28f52501e';
+import {createCuePlayer,createPortraitContinuity} from '../cortex-vn-cue-player.mjs?v=a63fa2266034';
+import {createStageBlocking,lightingGrade,deliveryNotes} from '../cortex-vn-performance.mjs?v=a63fa2266034';
+import {createFoley} from '../cortex-vn-foley.mjs?v=a63fa2266034';
+import {createPlaybackContext as createFoleyContext} from './vn-media-session.mjs?v=a63fa2266034';
+import { updateStoryClock } from '../cortex-vn-clock.mjs?v=a63fa2266034';
+import { createQualityReferenceLoader, readWorkArt, writeWorkArt, workPortrait, readPortraitReplacement, writePortraitReplacement } from './vn-character-art.mjs?v=a63fa2266034';
+import { backgroundFor, pagesForTurn, createPageCollector } from './vn-core.mjs?v=a63fa2266034';
+import { loadDeviceKeys, storeDeviceKeys, changedDeviceKeys } from './vn-key-vault.mjs?v=a63fa2266034';
+import { imageRoutingKey, readImageRouting, imageProviderFor } from './vn-image-routing.mjs?v=a63fa2266034';
+import { storageProblem, submitEngineTurn, pendingAdjudication, retryAdjudication } from './vn-progress.mjs?v=a63fa2266034';
+import { createAutoRecovery, retryVerdict } from './vn-recovery.mjs?v=a63fa2266034';
+import { optimizeWorkImages } from './vn-image-storage.mjs?v=a63fa2266034';
+import { captureScene, sceneVersion } from './vn-scene.mjs?v=a63fa2266034';
+import { continueEnvironment, createEnvironmentContinuity } from './vn-environment.mjs?v=a63fa2266034';
 const environmentContinuity = createEnvironmentContinuity();
-import { loadWorkPresentation } from './vn-public-cast.mjs?v=7cd28f52501e';
-import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice, eventSceneSetting } from './vn-assets.mjs?v=7cd28f52501e';
-import { installCostMeter } from './vn-costs.mjs?v=7cd28f52501e';
-import { createCastDirector } from './vn-cast.mjs?v=7cd28f52501e';
-import { publishedUnit, dialogueWait, createDialogueGrace, resolvedSpeaker, preparationPages, createPreparationQueue, prepareAhead, preparationTier } from './vn-stage-timing.mjs?v=7cd28f52501e';
-import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, createTextWaitTracker, readDelay } from './vn-reader.mjs?v=7cd28f52501e';
-import { fullAutoStep, fullAutoVisuals, storyComplete, createContinuationGate } from './vn-autoplay.mjs?v=7cd28f52501e';
-import { directionAt, transitionFor, createSound } from './vn-direction.mjs?v=7cd28f52501e';
-import { stageOrder, stagePositions, slotWidth, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs?v=7cd28f52501e';
-import { projectStature } from './vn-stature.mjs?v=7cd28f52501e';
-import { useMediaPlayback } from './vn-media-session.mjs?v=7cd28f52501e';
-import { displaySprite, clearSpriteMemory } from './vn-sprite.mjs?v=7cd28f52501e';
-import { setDisplayImage, holdDisplay } from './vn-display-memory.mjs?v=7cd28f52501e';
-import { createAmbience, ambienceFor } from './vn-audio.mjs?v=7cd28f52501e';
-import { createScore } from './vn-music.mjs?v=7cd28f52501e';
-import { createMusicDirection, musicSeed } from './vn-music-direction.mjs?v=7cd28f52501e';
-import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs?v=7cd28f52501e';
-import { createVoicePlayer } from './vn-voice-post.mjs?v=7cd28f52501e';
-import { fetchTypecastCatalog } from './vn-typecast-connection.mjs?v=7cd28f52501e';
-import { createTypecastTransport } from './vn-typecast-direct.mjs?v=7cd28f52501e';
-import { createVoiceCredits, TYPECAST_CREDIT, TYPECAST_URL } from './vn-voice-credits.mjs?v=7cd28f52501e';
-import { prepareMotionFrames } from './vn-motion.mjs?v=7cd28f52501e';
-import { motionFrameFor } from './vn-motion-playback.mjs?v=7cd28f52501e';
-import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs?v=7cd28f52501e';
-import { faceComposite } from './vn-face-compose.mjs?v=7cd28f52501e';
-import { typeset, renderTypeset, TYPEFACES, loadTypeface } from './vn-typeset.mjs?v=7cd28f52501e';
-import { createCinema } from './vn-cinema.mjs?v=7cd28f52501e';
-import { compositionFor, createCueWindow, createArtContinuity, createCompositionContinuity } from './vn-storyboard.mjs?v=7cd28f52501e';
-import { createWorkMusic, createMusicSettings, musicKey, musicMoods, licensedTrack } from './vn-work-music.mjs?v=7cd28f52501e';
-import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock, QUICK_SLOT } from './vn-saves.mjs?v=7cd28f52501e';
-import { createGalleryDialog, galleryImages } from './vn-gallery.mjs?v=7cd28f52501e';
-import { createSaveDialog } from './vn-save-ui.mjs?v=7cd28f52501e';
-import { requestDurableStorage, withMediaTask, withMediaMaintenance, setMediaPaused, mediaPaused, removeWorkMedia, isMediaStorageEvent, workAssets } from './vn-storage.mjs?v=7cd28f52501e';
-import { createStoragePanel } from './vn-storage-ui.mjs?v=7cd28f52501e';
-import { readBackup, exportSlotFile, storeImportedSlot, restoreSlotMedia } from './vn-backup.mjs?v=7cd28f52501e';
-import { readEventProgress } from './vn-event-progress.mjs?v=7cd28f52501e';
-import { createEventProgressDialog } from './vn-event-progress-ui.mjs?v=7cd28f52501e';
-import { prepareNewGame, createNewGameDialog } from './vn-new-game.mjs?v=7cd28f52501e';
-import { createEditionStore, catalogRevision } from './vn-editions.mjs?v=7cd28f52501e';
-import { editionScope, snapshotEdition, editionId } from './vn-edition-key.mjs?v=7cd28f52501e';
-import { createEditionDialog } from './vn-edition-ui.mjs?v=7cd28f52501e';
-import { createAccountMenu } from './vn-account.mjs?v=7cd28f52501e';
-import { createCloudDialog } from './vn-cloud-ui.mjs?v=7cd28f52501e';
-import { inspectWork, createHealthDialog } from './vn-health.mjs?v=7cd28f52501e';
-import { diagnostics } from './vn-diagnostics.mjs?v=7cd28f52501e';
-import { framingFor, framingControls } from './vn-framing.mjs?v=7cd28f52501e';
+import { loadWorkPresentation } from './vn-public-cast.mjs?v=a63fa2266034';
+import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice, eventSceneSetting } from './vn-assets.mjs?v=a63fa2266034';
+import { installCostMeter } from './vn-costs.mjs?v=a63fa2266034';
+import { createCastDirector } from './vn-cast.mjs?v=a63fa2266034';
+import { publishedUnit, dialogueWait, createDialogueGrace, resolvedSpeaker, preparationPages, createPreparationQueue, prepareAhead, preparationTier } from './vn-stage-timing.mjs?v=a63fa2266034';
+import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, createTextWaitTracker, readDelay } from './vn-reader.mjs?v=a63fa2266034';
+import { fullAutoStep, fullAutoVisuals, storyComplete, createContinuationGate } from './vn-autoplay.mjs?v=a63fa2266034';
+import { directionAt, transitionFor, createSound } from './vn-direction.mjs?v=a63fa2266034';
+import { stageOrder, stagePositions, slotWidth, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs?v=a63fa2266034';
+import { projectStature } from './vn-stature.mjs?v=a63fa2266034';
+import { useMediaPlayback } from './vn-media-session.mjs?v=a63fa2266034';
+import { displaySprite, clearSpriteMemory } from './vn-sprite.mjs?v=a63fa2266034';
+import { setDisplayImage, holdDisplay } from './vn-display-memory.mjs?v=a63fa2266034';
+import { createAmbience, ambienceFor } from './vn-audio.mjs?v=a63fa2266034';
+import { createScore } from './vn-music.mjs?v=a63fa2266034';
+import { createMusicDirection, musicSeed } from './vn-music-direction.mjs?v=a63fa2266034';
+import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs?v=a63fa2266034';
+import { createVoicePlayer } from './vn-voice-post.mjs?v=a63fa2266034';
+import { fetchTypecastCatalog } from './vn-typecast-connection.mjs?v=a63fa2266034';
+import { createTypecastTransport } from './vn-typecast-direct.mjs?v=a63fa2266034';
+import { createVoiceCredits, TYPECAST_CREDIT, TYPECAST_URL } from './vn-voice-credits.mjs?v=a63fa2266034';
+import { prepareMotionFrames } from './vn-motion.mjs?v=a63fa2266034';
+import { motionFrameFor } from './vn-motion-playback.mjs?v=a63fa2266034';
+import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs?v=a63fa2266034';
+import { faceComposite } from './vn-face-compose.mjs?v=a63fa2266034';
+import { typeset, renderTypeset, TYPEFACES, loadTypeface } from './vn-typeset.mjs?v=a63fa2266034';
+import { createCinema } from './vn-cinema.mjs?v=a63fa2266034';
+import { compositionFor, createCueWindow, createArtContinuity, createCompositionContinuity } from './vn-storyboard.mjs?v=a63fa2266034';
+import { createWorkMusic, createMusicSettings, musicKey, musicMoods, licensedTrack } from './vn-work-music.mjs?v=a63fa2266034';
+import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock, QUICK_SLOT } from './vn-saves.mjs?v=a63fa2266034';
+import { createGalleryDialog, galleryImages } from './vn-gallery.mjs?v=a63fa2266034';
+import { createSaveDialog } from './vn-save-ui.mjs?v=a63fa2266034';
+import { requestDurableStorage, withMediaTask, withMediaMaintenance, setMediaPaused, mediaPaused, removeWorkMedia, isMediaStorageEvent, workAssets } from './vn-storage.mjs?v=a63fa2266034';
+import { createStoragePanel } from './vn-storage-ui.mjs?v=a63fa2266034';
+import { readBackup, exportSlotFile, storeImportedSlot, restoreSlotMedia } from './vn-backup.mjs?v=a63fa2266034';
+import { readEventProgress } from './vn-event-progress.mjs?v=a63fa2266034';
+import { createEventProgressDialog } from './vn-event-progress-ui.mjs?v=a63fa2266034';
+import { prepareNewGame, createNewGameDialog } from './vn-new-game.mjs?v=a63fa2266034';
+import { createEditionStore, catalogRevision } from './vn-editions.mjs?v=a63fa2266034';
+import { editionScope, snapshotEdition, editionId } from './vn-edition-key.mjs?v=a63fa2266034';
+import { createEditionDialog } from './vn-edition-ui.mjs?v=a63fa2266034';
+import { createAccountMenu } from './vn-account.mjs?v=a63fa2266034';
+import { createCloudDialog } from './vn-cloud-ui.mjs?v=a63fa2266034';
+import { inspectWork, createHealthDialog } from './vn-health.mjs?v=a63fa2266034';
+import { diagnostics } from './vn-diagnostics.mjs?v=a63fa2266034';
+import { framingFor, framingControls } from './vn-framing.mjs?v=a63fa2266034';
 
 const activeKey = 'dancheong-ln-active-work-v1';
 const nexusBase = location.origin;
@@ -368,7 +369,7 @@ const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionRedu
 const performancePlayer=createCuePlayer({release:()=>{if(state.screen==='stage'){requestRender();schedulePlayback();}},fire:(cue,frame)=>{
   stagecraft.fire(cue,frame);if(musicSync.release())requestRender();
   if(cue.sound!=='none')foley.play(cue.sound==='impact'&&['heavy_shake','flash_red'].includes(frame.direction.fx)?'heavy':cue.sound,frame.key+cue.at,{weather:$('vn-stage').dataset.weather});
-  if(cue.kind==='impact'&&!motionReduced())playEffect(frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake');
+  if(cue.kind==='impact'&&!motionReduced()){const fx=frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake';playEffect(String(fx).startsWith('flash')&&!stagecraft.flashGate()?'shake':fx);}
   if(['cutin','emphasis'].includes(cue.kind)&&cinematicFrame&&!motionReduced())cinema.update({...cinematicFrame,fresh:true,waiting:false,cueOpen:true,cueReady:cue.kind});
 }});
 const cinema = createCinema({ stage: $('vn-stage'), visual, reduced: motionReduced, onRelease: () => { queueMicrotask(() => { if (state.screen === 'stage') { renderPage(); schedulePlayback(); } }); } });
@@ -1594,7 +1595,7 @@ function renderPage() {
   cinematicFrame={ pageKey: pageKey(page), sceneKey: JSON.stringify([sceneScope(), scene?.world?.location, lightFor(scene?.world?.time || '')]), cueOpen: state.cueOpen, composition, background: view?.environment || '', turnId: page.turnId, turnIndex: page.turnIndex, title: scene?.world?.location || scenario?.event?.title, direction: view?.direction || {}, portraits: view?.portraits || [], fresh: state.cursor > state.readThrough && !page.isLive && state.playback !== 'skip', enabled: state.reading.cinema === 'on' && state.screen === 'stage', waiting: state.dialogueWaiting, eventArt: Boolean(view?.eventBackground || view?.shotKind) };
   cinema.update(cinematicFrame);
   stagecraft.update({pageKey:pageKey(page),scope:sceneScope(),direction:view?.direction||{},kind:page.kind,composition,fresh:state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip',
-    enabled:state.reading.cinema==='on'&&state.screen==='stage',waiting:state.dialogueWaiting,loading:Boolean(state.awaitingTurn||busy()),background:state.backgroundDisplayedUrl||'',
+    enabled:state.reading.cinema==='on'&&state.screen==='stage',waiting:state.dialogueWaiting,loading:Boolean(state.awaitingTurn||state.pages.some(row=>row.isLive)),background:state.backgroundDisplayedUrl||'',
     eventArt:view?.eventBackground||'',eventCharacterIds:view?.eventCharacterIds||[],portraits:view?.portraits||[],focusId:state.focusId||view?.speakerId||''});
   const selectedTurn = turns[page.turnIndex];
   $('vn-stage').dataset.dramatic=String(Boolean(view?.direction?.emphasis));
@@ -2133,7 +2134,7 @@ function multiplayerApi(api){
 }
 async function setupMultiplayer(){
   const [{createSharedAssets},multiplayer,timeline]=await Promise.all([
-    import('../cortex-vn-shared.mjs?v=7cd28f52501e'),import('../cortex-vn-multiplayer.mjs?v=7cd28f52501e'),import('../cortex-vn-timeline.mjs?v=7cd28f52501e')]);
+    import('../cortex-vn-shared.mjs?v=a63fa2266034'),import('../cortex-vn-multiplayer.mjs?v=a63fa2266034'),import('../cortex-vn-timeline.mjs?v=a63fa2266034')]);
   roomTimeline=timeline.createRoomTimeline();roomGlyphSchedule=timeline.glyphSchedule;roomRevealCount=timeline.revealCount;roomHold=timeline.paragraphHold;
   const {createMultiplayerProjection,createInputNotice}=multiplayer;multiplayerReadStep=multiplayer.multiplayerReadStep;
   multiplayerProjection=createMultiplayerProjection(host.api());

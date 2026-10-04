@@ -1,6 +1,6 @@
-import { createCloudClient, cloudPayload, cloudSlot, continueSlot } from './vn-cloud.mjs?v=7cd28f52501e';
-import { hostServices } from './vn-host.mjs?v=7cd28f52501e';
-import { formatBytes } from './vn-storage.mjs?v=7cd28f52501e';
+import { createCloudClient, cloudPayload, cloudSlot, continueSlot } from './vn-cloud.mjs?v=a63fa2266034';
+import { hostServices } from './vn-host.mjs?v=a63fa2266034';
+import { formatBytes } from './vn-storage.mjs?v=a63fa2266034';
 
 export function createCloudDialog({ root, capture, load, localStore, currentSlug, canSave, onOpen, notify = () => {}, onStatus = () => {}, storage = localStorage }) {
   const client = createCloudClient(), dialog = document.createElement('dialog'); dialog.className = 'vn-saves-dialog vn-cloud-dialog';

@@ -6,7 +6,7 @@ import {ART_RULES,STAGECRAFT_DEFAULTS,estimateDepth,depthMasks,focusRegions,regi
 const LRU = (size) => { const map = new Map(); return { get:key => map.get(key), has:key => map.has(key), set(key, value) { map.delete(key); map.set(key, value); while (map.size > size) map.delete(map.keys().next().value); return value; } }; };
 
 async function pixels(url, width, { loadImage } = {}) {
-  const image = loadImage ? await loadImage(url) : await new Promise((resolve, reject) => { const img = new Image(); img.decoding = 'async'; img.onload = () => resolve(img); img.onerror = reject; img.src = url; });
+  const image = loadImage ? await loadImage(url) : await new Promise((resolve, reject) => { const img = new Image(); img.decoding = 'async'; if (/^https?:/iu.test(url)) img.crossOrigin = 'anonymous'; img.onload = () => resolve(img); img.onerror = reject; img.src = url; });
   const w = Math.max(8, Math.round(width)), h = Math.max(8, Math.round(width * image.naturalHeight / Math.max(1, image.naturalWidth)));
   const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d', { willReadFrequently:true }); ctx.drawImage(image, 0, 0, w, h);
@@ -20,6 +20,14 @@ function maskUrl(alpha, w, h) {
 }
 const cssUrl = url => `url("${String(url).replaceAll('"', '%22')}")`;
 const urlOf = element => (/url\("?(.*?)"?\)/u.exec(element?.style.backgroundImage || '')?.[1] || '').replaceAll('%22', '"');
+// Cancelling WAAPI snaps to the CSS value; ease back from where it is instead.
+function release(element, animation, ms = 650) {
+  if (!animation) return;
+  let from = '';
+  try { from = getComputedStyle(element).transform; } catch { /* detached */ }
+  animation.cancel();
+  if (from && from !== 'none' && element.isConnected) element.animate([{ transform:from }, { transform:'none' }], { duration:ms, easing:'ease-out' });
+}
 const idle = fn => (globalThis.requestIdleCallback || (cb => setTimeout(cb, 60)))(fn);
 
 export function createStagecraft({ stage, visual, reduced = () => false, prefs = () => STAGECRAFT_DEFAULTS, palette = () => 'auto', crop = async () => '', sound = null, foley = null, notify = () => {}, loadImage, storage = globalThis.localStorage } = {}) {
@@ -33,7 +41,7 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
   badge.setAttribute('role', 'status'); badge.removeAttribute('aria-hidden'); badge.hidden = true;
   for (const el of [speed, focus, strobe, panels, rapid]) el.hidden = true;
   const depthCache = LRU(10), regionCache = LRU(16), signatureCache = LRU(24), checked = LRU(64);
-  let key = '', frame = {}, cgUrl = '', cgMotion = null, waitMotion = null, lastCg = '', lastScope = '', parallaxFrame = 0, badgeTimer = 0, motifAt = -Infinity, ticket = 0;
+  let key = '', frame = {}, cgUrl = '', cgMotion = null, cgElement = null, cgTicket = 0, waitMotion = null, waitElement = null, lastCg = '', lastScope = '', parallaxFrame = 0, badgeTimer = 0, motifAt = -Infinity, ticket = 0, lastFlash = -Infinity;
   const fired = new Set(), timers = new Set();
   const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
   const on = name => prefs()[name] !== 'off';
@@ -62,12 +70,13 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
     for (const background of visual.querySelectorAll('.vn-background')) {
       const url = urlOf(background), enabled = on('depth') && url && url !== eventUrl && background.classList.contains('has-image') && !stage.classList.contains('has-cover');
       const layers = depthLayers(background);
-      background.dataset.depth = enabled ? 'on' : 'off';
-      if (!enabled) { if (layers.url) { layers.url = ''; clearMask(layers); } continue; }
+      if (!enabled) { background.dataset.depth = 'off'; if (layers.url) { layers.url = ''; clearMask(layers); } continue; }
       if (layers.url === url) continue;
-      layers.url = url; clearMask(layers);
+      // Layers (and their slight overscan) appear only once masks exist.
+      layers.url = url; clearMask(layers); background.dataset.depth = 'off';
       const apply = masks => {
         if (layers.url !== url || !masks) return;
+        background.dataset.depth = 'on';
         const position = getComputedStyle(background).backgroundPosition || 'center';
         for (const [name, mask] of [['mid', masks.mid], ['near', masks.near]]) {
           const el = layers[name]; el.style.maskImage = el.style.webkitMaskImage = cssUrl(mask);
@@ -85,7 +94,7 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
     }
   }
   function onPointer(event) {
-    if (calm() || !on('depth') || parallaxFrame) return;
+    if (parallaxFrame || !on('depth') || calm()) return;
     const rect = stage.getBoundingClientRect(), x = (event.clientX - rect.left) / Math.max(1, rect.width) * 2 - 1, y = (event.clientY - rect.top) / Math.max(1, rect.height) * 2 - 1;
     parallaxFrame = requestAnimationFrame(() => { parallaxFrame = 0; stage.style.setProperty('--vn-par-x', Math.max(-1, Math.min(1, x)).toFixed(3)); stage.style.setProperty('--vn-par-y', Math.max(-1, Math.min(1, y)).toFixed(3)); });
   }
@@ -93,7 +102,7 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
 
   // ---------- CG camera ----------
   const activeBackground = () => visual.querySelector('.vn-background.is-active');
-  function stopCg() { cgMotion?.cancel(); cgMotion = null; cgUrl = ''; }
+  function stopCg() { cgTicket++; release(cgElement, cgMotion); cgMotion = null; cgElement = null; cgUrl = ''; }
   async function regionsFor(url) {
     if (regionCache.has(url)) return regionCache.get(url);
     try { const { data, w, h, natural } = await pixels(url, 128, { loadImage }); return regionCache.set(url, { regions:focusRegions(data, w, h), natural }); }
@@ -102,14 +111,15 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
   function startCg(url, first) {
     const element = activeBackground();
     if (!element || urlOf(element) !== url) return;
-    stopCg(); cgUrl = url; const mine = ++ticket;
+    stopCg(); cgUrl = url; cgElement = element; const mine = ++cgTicket;
     void regionsFor(url).then(({ regions, natural }) => {
-      if (mine !== ticket || cgUrl !== url || calm() || !on('cgcamera')) return;
+      // Its own ticket: page turns and action cues must not cancel the camera.
+      if (mine !== cgTicket || cgUrl !== url || calm() || !on('cgcamera')) return;
       const box = { width:element.clientWidth || 1, height:element.clientHeight || 1 }, position = (getComputedStyle(element).backgroundPosition || '50% 50%').split(' ').map(v => v.endsWith('%') ? parseFloat(v) / 100 : .5);
       const points = natural ? regions.map(region => coverPoint(region, natural, box, [position[0] ?? .5, position[1] ?? .5])) : [];
       const target = points[0] || { x:.5, y:.4 };
       const drift = [{ transform:'translate(0,0) scale(1.02)' }, { transform:regionTransform(target, 1.12) }];
-      const kenBurns = () => { if (cgUrl === url && mine === ticket) cgMotion = element.animate(drift, { duration:16000, iterations:Infinity, direction:'alternate', easing:'ease-in-out' }); };
+      const kenBurns = () => { if (cgUrl === url && mine === cgTicket) cgMotion = element.animate(drift, { duration:16000, iterations:Infinity, direction:'alternate', easing:'ease-in-out' }); };
       if (!first || !points.length) { kenBurns(); return; }
       // Sequential close-ups: wide → region 1 → region 2 → wide, then drift.
       const frames = [{ transform:'translate(0,0) scale(1.02)', offset:0 }, { transform:'translate(0,0) scale(1.02)', offset:.16 }];
@@ -123,12 +133,13 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
 
   // ---------- CG ↔ sprite colour consistency ----------
   async function checkCg(url, portraits, ids) {
-    if (!on('facecheck') || checked.has(url)) return;
-    checked.set(url, true);
+    if (!on('facecheck') || checked.has(url) || pending.has(url)) return;
+    const people = portraits.filter(person => ids.includes(person.id) && person.url);
+    if (!people.length) return; // Sprites not ready yet: judge on a later render.
+    pending.add(url);
     try {
-      const people = portraits.filter(person => ids.includes(person.id) && person.url);
-      if (!people.length) return;
       const cg = await pixels(url, 128, { loadImage }), misses = [];
+      checked.set(url, true);
       for (const person of people) {
         let signature = signatureCache.get(person.url);
         if (signature === undefined) { try { const sprite = await pixels(person.url, 96, { loadImage }); signature = spriteSignature(sprite.data, sprite.w, sprite.h); } catch { signature = null; } signatureCache.set(person.url, signature); }
@@ -140,9 +151,10 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
         clearTimeout(badgeTimer); badgeTimer = setTimeout(() => { badge.hidden = true; }, 5200);
         notify({ kind:'cg-mismatch', names:misses, url });
       }
-    } catch { /* Unreadable image (e.g. cross-origin cover): not judged. */ }
+    } catch { checked.set(url, true); /* Unreadable image (e.g. cross-origin): not judged. */ }
+    finally { pending.delete(url); }
   }
-  const reports = [];
+  const reports = [], pending = new Set();
 
   // ---------- Waiting presentation ----------
   function setWaiting(kind) {
@@ -150,8 +162,8 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
     stage.classList.toggle('is-wait-masked', Boolean(active));
     stage.dataset.waitKind = active ? kind : '';
     const element = activeBackground();
-    if (!active || calm() || cgMotion) { waitMotion?.cancel(); waitMotion = null; }
-    else if (!waitMotion && element) waitMotion = element.animate([{ transform:'translate(0,0) scale(1.02)' }, { transform:'translate(-1.6%,-.8%) scale(1.09)' }], { duration:9000, iterations:Infinity, direction:'alternate', easing:'ease-in-out' });
+    if (!active || calm() || cgMotion) { release(waitElement, waitMotion, 900); waitMotion = null; waitElement = null; }
+    else if (!waitMotion && element) { waitElement = element; waitMotion = element.animate([{ transform:'translate(0,0) scale(1.02)' }, { transform:'translate(-1.6%,-.8%) scale(1.09)' }], { duration:9000, iterations:Infinity, direction:'alternate', easing:'ease-in-out' }); }
     const showMemory = Boolean(active && kind === 'turn' && lastCg && lastCg !== frame.background && !calm());
     if (showMemory && memory.dataset.url !== lastCg) { memory.dataset.url = lastCg; memory.style.backgroundImage = cssUrl(lastCg); }
     memory.classList.toggle('is-on', showMemory);
@@ -178,7 +190,7 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
     if (sources.length < 2) return playSimple('focuslines');
     panels.replaceChildren(...sources.map((el, i) => { const cell = document.createElement('div'); cell.className = 'vn-sc-panel'; cell.style.setProperty('--i', String(i)); cell.append(el); return cell; }));
     panels.dataset.count = String(sources.length);
-    show(panels, 1700); sound?.whoosh(.8); foley?.play('impact', `${key}:panels`);
+    show(panels, 1700); sound?.whoosh(.8);
   }
   async function playRapid(mine) {
     const bg = frame.background, crops = await faces(2);
@@ -194,8 +206,12 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
     if (kind === 'speedlines') { show(speed, 950); sound?.whoosh(1); }
     if (kind === 'focuslines') { const point = focusPoint(); focus.style.setProperty('--fx', `${(point.x * 100).toFixed(1)}%`); focus.style.setProperty('--fy', `${(point.y * 100).toFixed(1)}%`); show(focus, 1150); sound?.whoosh(.5); }
   }
+  // One budget for every full-screen flash (also impact flashes from vn.js):
+  // at most one flashing effect per second, i.e. two flashes per second.
+  function flashGate() { const t = performance.now(); if (t - lastFlash < 1000) return false; lastFlash = t; return true; }
   function playAction(kind) {
     const mine = ++ticket;
+    if ((kind === 'invert' || kind === 'strobe') && !flashGate()) { foley?.play('impact', `${key}:${kind}`); return; }
     if (kind === 'speedlines' || kind === 'focuslines') playSimple(kind);
     else if (kind === 'panels') void playPanels(mine);
     else if (kind === 'rapidcut') void playRapid(mine);
@@ -209,21 +225,25 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
       strobe.animate([{ opacity:0 }, { opacity:.72, offset:.12 }, { opacity:0, offset:.4 }, { opacity:.55, offset:.6 }, { opacity:0 }], { duration:820, easing:'ease-out' }).onfinish = () => { strobe.hidden = true; };
       foley?.play('impact', `${key}:strobe`);
     } else if (kind === 'slowmo') {
-      visual.animate([{ scale:'1', filter:'none' }, { scale:'1.05', filter:'saturate(.55) blur(.6px)', offset:.35 }, { scale:'1.06', filter:'saturate(.6) blur(.4px)', offset:.8 }, { scale:'1', filter:'none' }], { duration:1700, easing:'cubic-bezier(.2,.7,.2,1)' });
+      // Scale the visual, filter the grade wrapper: the mood filter on the
+      // visual itself stays untouched.
+      const base = gradeFor(palette(), prefs().grade).filter, prefix = base === 'none' ? '' : base + ' ';
+      visual.animate([{ scale:'1' }, { scale:'1.05', offset:.35 }, { scale:'1.06', offset:.8 }, { scale:'1' }], { duration:1700, easing:'cubic-bezier(.2,.7,.2,1)' });
+      grade.animate([{ filter:base }, { filter:prefix + 'saturate(.55) blur(.6px)', offset:.35 }, { filter:prefix + 'saturate(.6) blur(.4px)', offset:.8 }, { filter:base }], { duration:1700 });
       sound?.duck.duck(.35, 1500, 700);
     }
   }
 
   function reset() {
     ticket++; key = ''; fired.clear(); for (const t of timers) clearTimeout(t); timers.clear();
-    stopCg(); waitMotion?.cancel(); waitMotion = null;
+    stopCg(); release(waitElement, waitMotion); waitMotion = null; waitElement = null;
     for (const el of [speed, focus, strobe, panels, rapid]) { el.hidden = true; el.classList.remove('is-on'); }
     panels.replaceChildren(); rapid.replaceChildren(); memory.classList.remove('is-on'); badge.hidden = true;
     stage.classList.remove('is-center-line', 'is-wait-masked', 'has-dof'); stage.dataset.waitKind = '';
   }
 
   return {
-    reset, reports,
+    reset, reports, flashGate,
     // Typewriter pace for the current line.
     pace(direction, visible) { return on('textfx') && frame.enabled !== false ? typingPace(direction?.stagecraft, visible) : null; },
     marks(direction, visible) { return on('textfx') && frame.enabled !== false ? textMarks(direction?.stagecraft, visible) : []; },
@@ -250,7 +270,11 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
         if (!id) {
           let met = {}; try { met = JSON.parse(storage?.getItem(`dancheong-vn-motif-met-v1:${input.scope}`) || '{}'); } catch { /* fresh */ }
           const fresh = (input.portraits || []).find(p => p.url && !met[p.id]);
-          if (fresh) { id = fresh.id; met[fresh.id] = 1; try { storage?.setItem(`dancheong-vn-motif-met-v1:${input.scope}`, JSON.stringify(met)); } catch { /* tab only */ } }
+          if (fresh && !fired.has(`motif:${key}`) && sound.motif(fresh.id, input.scope)) {
+            // Recorded only once it was actually heard (music on, audio unlocked).
+            fired.add(`motif:${key}`); motifAt = performance.now(); met[fresh.id] = 1;
+            try { storage?.setItem(`dancheong-vn-motif-met-v1:${input.scope}`, JSON.stringify(met)); } catch { /* tab only */ }
+          }
         }
         if (id && !fired.has(`motif:${key}`)) { fired.add(`motif:${key}`); if (sound.motif(id, input.scope)) motifAt = performance.now(); }
       }

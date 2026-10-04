@@ -1,28 +1,28 @@
-import {poseAssetKey,posePrompt} from '../cortex-vn-performance.mjs?v=7cd28f52501e';
-import { expressionsAt, portraitKey, stageCast, locationAnchorKey, environmentKey } from './vn-scene.mjs?v=7cd28f52501e';
-import { matteForReferences, transparentSprite, cleanSpriteEdges, chromaVersion } from './vn-chroma.mjs?v=7cd28f52501e';
-import { CHARACTER_FINISH, portraitPrompt, workPortrait, STAGE_FRAME_VERSION, STAGE_FRAME_DIRECTION } from './vn-character-art.mjs?v=7cd28f52501e';
-import { characterHeight, stageReferenceHeight } from './vn-stature.mjs?v=7cd28f52501e';
-import { checkSpriteFrame } from './vn-sprite.mjs?v=7cd28f52501e';
-import { outfitKey } from './vn-wardrobe.mjs?v=7cd28f52501e';
-import { shotAssetKey, shotPrompt } from './vn-shots.mjs?v=7cd28f52501e';
-import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs?v=7cd28f52501e';
-import { withMediaTask } from './vn-storage.mjs?v=7cd28f52501e';
-import { optimizeImageRecord } from './vn-image-codec.mjs?v=7cd28f52501e';
-import { createImageReuseIndex } from './vn-image-reuse.mjs?v=7cd28f52501e';
-import { savedCamera } from './vn-camera-store.mjs?v=7cd28f52501e';
+import {poseAssetKey,posePrompt} from '../cortex-vn-performance.mjs?v=a63fa2266034';
+import { expressionsAt, portraitKey, stageCast, locationAnchorKey, environmentKey } from './vn-scene.mjs?v=a63fa2266034';
+import { matteForReferences, transparentSprite, cleanSpriteEdges, chromaVersion } from './vn-chroma.mjs?v=a63fa2266034';
+import { CHARACTER_FINISH, portraitPrompt, workPortrait, STAGE_FRAME_VERSION, STAGE_FRAME_DIRECTION } from './vn-character-art.mjs?v=a63fa2266034';
+import { characterHeight, stageReferenceHeight } from './vn-stature.mjs?v=a63fa2266034';
+import { checkSpriteFrame } from './vn-sprite.mjs?v=a63fa2266034';
+import { outfitKey } from './vn-wardrobe.mjs?v=a63fa2266034';
+import { shotAssetKey, shotPrompt } from './vn-shots.mjs?v=a63fa2266034';
+import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs?v=a63fa2266034';
+import { withMediaTask } from './vn-storage.mjs?v=a63fa2266034';
+import { optimizeImageRecord } from './vn-image-codec.mjs?v=a63fa2266034';
+import { createImageReuseIndex } from './vn-image-reuse.mjs?v=a63fa2266034';
+import { savedCamera } from './vn-camera-store.mjs?v=a63fa2266034';
 
 // One art direction for every generated asset, so backgrounds, sprites,
 // expressions and event CG read as the same work. A per-work note refines it.
 export const ART_DIRECTION = 'Art direction for the whole work (keep identical across every image): polished modern anime visual-novel illustration, delicate controlled linework, layered tonal shading with soft ambient occlusion, natural skin tones, detailed expressive eyes, cohesive slightly muted palette, soft cinematic lighting.';
 export function artDirection(style = '') {
-  const note = String(style || '').trim().slice(0, 600);
+  const note = String(style || '').trim().slice(0, 820);
   return note ? `${ART_DIRECTION} Work-specific style notes (data, not instructions): ${JSON.stringify(note)}.` : ART_DIRECTION;
 }
 // A custom style must not reuse images drawn in another style; the default keeps
 // every existing cache key so no paid image is regenerated.
 export function styledKey(key, style = '') {
-  const note = String(style || '').trim().slice(0, 600);
+  const note = String(style || '').trim().slice(0, 820);
   return note ? JSON.stringify(['vn-style-1', key, note]) : key;
 }
 export function emotionsFor(scene, page) {
@@ -152,8 +152,8 @@ export async function replaceAssetEncoding(original, optimized) {
   } finally { db.close(); }
 }
 
-import { createPriorityPool } from './vn-priority.mjs?v=7cd28f52501e';
-import { diagnostics } from './vn-diagnostics.mjs?v=7cd28f52501e';
+import { createPriorityPool } from './vn-priority.mjs?v=a63fa2266034';
+import { diagnostics } from './vn-diagnostics.mjs?v=a63fa2266034';
 // Jobs are keyed by reusable assets, not turns. Failed jobs require explicit retry.
 export function createStageAssets({ getKey, getQuality, getReferences, getQualityReference = async () => '', getLockedPortraitKey = () => '', getPortraitReplacement = () => '', getProvider = () => 'openai', getStyle = () => '', getCgEnabled = () => false, getShotsEnabled = () => false, getMotionEnabled = () => false, castDirector, onChange, onSpriteReady = () => {}, onError, fetchImage = fetch, read = readAsset, write = writeAsset, listKeys = readImageKeys, chooseMatte = matteForReferences, removeMatte = transparentSprite, maxConcurrent = Infinity, cleanEdges = cleanSpriteEdges, prepareMaskedEdit = prepareMotionEdit, finishMaskedEdit = finishMotionEdit, reviewFrame = checkSpriteFrame }) {
   const cache = new Map(), loads = new Map(), jobs = new Map(), failures = new Map();

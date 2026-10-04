@@ -245,3 +245,53 @@ test('the built reader wires stagecraft through the adapter only',()=>{
  for(const marker of ['stagecraft.update({pageKey','musicSync.select(','composeArtStyle(state.artStyle','stagecraft.marks(','pace: stagecraft.pace(','* stageDuck.level()','createSampleFoley({'])assert.ok(vn.includes(marker),marker);
  assert.ok(!fs.readFileSync('vendor/visual-novel/public/vn.js','utf8').includes('stagecraft'),'originals stay intact');
 });
+
+test('review: flashing effects need a blow or wound in their own sentence and never stack on an fx flash',()=>{
+ for(const quiet of ['그녀는 빠르게 계단을 내려갔다.','그 말에 마음이 무너졌다.','시간은 순식간에 흘렀다.']){
+  const anchor=quiet.slice(0,6);
+  assert.equal(validateStagecraft({...plain,action:{kind:'strobe',anchor}},quiet)?.action??null,null,quiet);
+  assert.equal(validateStagecraft({...plain,action:{kind:'invert',anchor}},quiet)?.action??null,null,quiet);
+ }
+ const hit='칼날이 어깨를 베었다. 피가 튀었다.';
+ assert.equal(validateStagecraft({...plain,action:{kind:'strobe',anchor:'피가 튀었다'}},hit).action.kind,'strobe');
+ assert.equal(validateStagecraft({...plain,action:{kind:'strobe',anchor:'피가 튀었다'}},hit,{fx:'flash_red'})?.action??null,null);
+ assert.equal(validateStagecraft({...plain,action:{kind:'invert',anchor:'그는 웃었다'}},'그는 웃었다. 칼날이 어깨를 베었다.')?.action??null,null,'motivation must be in the anchor sentence');
+});
+
+test('review: an explicit battle cue enters on its beat',async()=>{
+ const {createMusicDirection}=await import('../../public/vn-runtime/vn-music-direction.mjs');
+ let t=0;const music=createMusicDirection({now:()=>t});
+ music.update({scope:'s',scene:'a',pageKey:'p0',index:0,mood:'normal',music:{cue:'normal',evidence:'평범한 하루가 시작됐다'}});
+ t=40000;music.update({scope:'s',scene:'a',pageKey:'p1',index:1,mood:'normal',music:{cue:'keep',evidence:''}});
+ t=41000;assert.equal(music.update({scope:'s',scene:'a',pageKey:'p2',index:2,mood:'tense',music:{cue:'battle',evidence:'두 사람이 동시에 검을 뽑아 들었다'}}),'battle');
+});
+
+test('review: neutral grade by default; art rule leaves the 600-character note intact',()=>{
+ assert.equal(gradeFor('auto','subtle').filter,'none');
+ assert.notEqual(gradeFor('auto','strong').filter,'none');
+ assert.notEqual(gradeFor('warm','subtle').filter,'none');
+ const note='가'.repeat(600),style=composeArtStyle(note,{palette:'noir',line:'bold',shading:'painted'});
+ assert.ok(style.endsWith(note));
+});
+
+test('review: CG camera survives page turns; motif met only when heard; check waits for sprites',async()=>{
+ const dom=new JSDOM('<div id="vn-stage"><div class="vn-scene-visual"><div class="vn-background is-active has-image" style="background-image:url(&quot;cg.png&quot;)"></div></div></div>',{pretendToBeVisual:true});
+ const {window}=dom;for(const name of ['document','getComputedStyle','requestAnimationFrame','Image'])globalThis[name]=window[name];
+ globalThis.requestIdleCallback=()=>0;const animations=[];
+ window.HTMLElement.prototype.animate=function(frames,opts){const a={frames,opts,cancel(){a.cancelled=true;},set onfinish(f){a.finish=f;}};animations.push(a);return a;};
+ const {createStagecraft}=await import('../../public/cortex-vn-stagecraft-dom.mjs');
+ const stage=window.document.getElementById('vn-stage'),visual=stage.querySelector('.vn-scene-visual');
+ let release;const loads=[];const loadImage=url=>{loads.push(url);return new Promise(r=>{release=r;});};
+ let heard=false;const storage=new Map();
+ const craft=createStagecraft({stage,visual,prefs:()=>normalizeStagecraftPrefs({}),loadImage,storage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},sound:{motif:()=>heard,whoosh:()=>true,duck:{duck(){}}}});
+ const base={scope:'w',enabled:true,composition:'stage',direction:{},kind:'narration',fresh:true,background:'cg.png',eventArt:'cg.png',eventCharacterIds:['a'],portraits:[{id:'a',name:'가',url:''}]};
+ craft.update({...base,pageKey:'p1'});
+ craft.update({...base,pageKey:'p2'});craft.fire({kind:'action',action:'speedlines'});
+ const canvas=window.document.createElement('canvas');window.HTMLCanvasElement.prototype.getContext=()=>({drawImage(){},getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)})});
+ release({naturalWidth:160,naturalHeight:90});await new Promise(r=>setTimeout(r,10));
+ assert.ok(animations.some(a=>a.opts?.iterations===Infinity||a.opts?.duration>3000),'camera still starts');
+ assert.equal(loads.length,1,'no consistency check before the sprite exists');
+ assert.equal(storage.size,0,'a motif that could not play is not recorded');
+ heard=true;craft.update({...base,pageKey:'p3',kind:'dialogue',eventArt:'',background:'bg.png',portraits:[{id:'a',name:'가',url:'a.png'}]});
+ assert.equal(storage.size,1);void canvas;
+});

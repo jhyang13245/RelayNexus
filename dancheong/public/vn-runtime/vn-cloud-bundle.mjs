@@ -1,6 +1,6 @@
 // Account-scoped content-addressed pieces. No media bytes live in the slot
 // manifest, so different slots and later saves share the same immutable files.
-import { BACKUP_SCHEMA, scrubBackup, validateBackup } from './vn-backup.mjs?v=7cd28f52501e';
+import { BACKUP_SCHEMA, scrubBackup, validateBackup } from './vn-backup.mjs?v=a63fa2266034';
 export const CLOUD_BUNDLE = 'DANCHEONG_VN_CLOUD_V2';
 export const CLOUD_CHUNK_BYTES = 8 * 1024 * 1024;
 export const CLOUD_TOTAL_BYTES = 1024 * 1024 * 1024;

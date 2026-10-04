@@ -23,15 +23,18 @@ export const stagecraftInstructions = `
 - stagecraft.tempo "slow" types a weighty line letter by letter; "halting" pauses at its punctuation for broken, hesitant speech. Otherwise normal.
 - stagecraft.action is for PRESENT physical action shown by THIS beat's narration: speedlines (fast movement/dash/slash), focuslines (sudden shock or realisation), panels (a 2-3 panel split of an exchange of blows or simultaneous reactions), invert (the instant a blow or blade lands), strobe (red flicker for a wound or bloodshed), slowmo (a decisive instant stretched), rapidcut (a flurry of exchanges). anchor is an exact narration substring of THIS beat where it happens. Never for dialogue alone, memory, threats or metaphors. At most one action per paragraph unless it is a sustained fight.
 - stagecraft.stinger is a short musical hit at an exact anchor substring of THIS beat: shock (sudden horror/violence), reveal (revelation), sorrow (a loss lands), resolve (a vow or relief). Rare; never on ordinary lines.
+- music cue battle: only when a sustained physical fight actually begins in THIS beat (not a threat, argument or single blow); quote that narration as evidence.
 - stagecraft.leitmotif "focus" plays the focused character's motif when they make a meaningful entrance or a defining moment; it requires a physically present focus. Otherwise none.
 `;
 
 const narration = value => String(value || '').replace(/[“「『‘][^”」』’]*[”」』’]|"[^"\n]*"/gu,'');
 const indirect = /만약|언젠가|내일|사진\s*속|영상\s*속|회상|기억\s*속|꿈\s*속|상상/iu;
 const glyphs = value => Array.from(String(value || ''));
-export const ACTION_WORDS = /베[었어이]|베어|찌르|찔[렀러]|휘둘|휘두르|내리쳤|내려쳤|후려|때[렸리]|치[고며]\s|쳤다|주먹|발차기|걷어|날아[들왔갔]|부딪|충돌|폭발|터[졌지]|총성|총알|쏘[았아]|쐈|칼날|검[이을끝날]|창[이을끝]|화살|피[가를]|핏|선혈|상처|비명|달려|뛰어[들올]|돌진|덮쳤|덮치|막아[냈내]|튕[겼겨]|공격|일격|쾅|쿵|콰|섬광|번쩍|슬래시|돌격|격돌|부서|깨[졌지]|무너|쓰러|날카로운|빠르게|순식간|눈\s*깜짝|slash|strike|blow|stab|punch|kick|explo|crash|charge|dash|blade|sword|blood|shot|gun/iu;
+export const ACTION_WORDS = /베[었어이]|베어|찌르|찔[렀러]|휘둘|휘두르|내리쳤|내려쳤|후려|때[렸리]|쳤다|주먹|발차기|걷어|날아[들왔갔]|부딪|충돌|폭발|터[졌지]|총성|총알|쏘[았아]|쐈|칼날|검[이을끝날]|창[이을끝]|화살|피가|피를|핏|선혈|비명|달려[들나]|뛰어[들올]|돌진|덮쳤|덮치|막아[냈내]|튕[겼겨]|공격|일격|쾅|쿵|콰|섬광|번쩍|돌격|격돌|부서[졌지]|깨[졌지]|쓰러[졌지]|순식간에|slash|strike|blow|stab|punch|kick|explo|crash|charge|dash|blade|sword|blood|gunshot/iu;
+// The two flashing effects need a blow, wound, shot or blast in the anchor sentence.
+export const STRIKE_WORDS = /베[었어이]|베어|찌르|찔[렀러]|후려|때[렸리]|쳤다|주먹|걷어찼|총성|총알|쏘[았아]|쐈|발사|폭발|터[졌지]|피가|피를|핏|선혈|꽂[혔았]|관통|명중|맞[았혔]|slash|stab|struck|gunshot|explo|blood/iu;
 export const SHOCK_WORDS = /깨달|알아[챘차]|눈이\s*커|숨이\s*멎|숨을\s*삼|얼어붙|굳어|소름|놀라|경악|충격|멈춰\s*섰|심장이|등골|realis|realiz|froze|gasp|shock/iu;
-const PHYSICAL = new Set(['speedlines','panels','invert','strobe','rapidcut']);
+const PHYSICAL = new Set(['speedlines','panels','invert','strobe','rapidcut']), FLASHING = new Set(['invert','strobe']);
 
 // The anchor and the sentence around it must be present-tense scene text.
 function sentenceOf(source, value) {
@@ -41,7 +44,7 @@ function sentenceOf(source, value) {
 }
 function anchorIn(anchor, source) { const value = typeof anchor === 'string' ? anchor.trim() : ''; return value.length >= 2 && value.length <= 80 && source.includes(value) && !indirect.test(sentenceOf(source, value)) ? value : ''; }
 // Advisory fields: malformed values drop back to plain presentation.
-export function validateStagecraft(value, current = '', { focusId = '' } = {}) {
+export function validateStagecraft(value, current = '', { focusId = '', fx = 'none' } = {}) {
   if (!value || typeof value !== 'object') return null;
   const now = String(current || ''), told = narration(now), out = { marks:[], layout:'normal', tempo:'normal', action:null, stinger:null, leitmotif:'none' };
   for (const row of (Array.isArray(value.marks) ? value.marks : []).slice(0, 2)) {
@@ -56,8 +59,9 @@ export function validateStagecraft(value, current = '', { focusId = '' } = {}) {
   if (value.tempo === 'halting' && /[…,，、—–]|\.\.\./u.test(now)) out.tempo = 'halting';
   const kind = ACTIONS.includes(value.action?.kind) ? value.action.kind : 'none';
   if (kind !== 'none') {
-    const anchor = anchorIn(value.action.anchor, PHYSICAL.has(kind) ? told : now);
-    const motivated = PHYSICAL.has(kind) ? ACTION_WORDS.test(told) : ACTION_WORDS.test(told) || SHOCK_WORDS.test(now);
+    const source = PHYSICAL.has(kind) ? told : now, anchor = anchorIn(value.action.anchor, source), sentence = anchor ? sentenceOf(source, anchor) : '';
+    // Motivation is judged in the anchor's own sentence, not anywhere in the beat.
+    const motivated = FLASHING.has(kind) ? STRIKE_WORDS.test(sentence) && !String(fx).startsWith('flash') : PHYSICAL.has(kind) ? ACTION_WORDS.test(sentence) : ACTION_WORDS.test(sentence) || SHOCK_WORDS.test(sentence);
     if (anchor && motivated) out.action = { kind, anchor };
   }
   const sting = STINGERS.includes(value.stinger?.kind) ? value.stinger.kind : 'none';
@@ -151,7 +155,7 @@ export function estimateDepth(data, w, h) {
   }
   const mean = boxBlur(light, w, h, 2), contrast = new Float32Array(n);
   for (let i = 0; i < n; i++) contrast[i] = Math.abs(light[i] - mean[i]);
-  const detail = boxBlur(contrast, w, h, 2), maxDetail = Math.max(1e-4, ...detail);
+  const detail = boxBlur(contrast, w, h, 2); let maxDetail = 1e-4; for (const v of detail) if (v > maxDetail) maxDetail = v;
   const raw = new Float32Array(n);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x, vertical = Math.pow(y / Math.max(1, h - 1), 1.4);
@@ -265,7 +269,7 @@ export function signatureMatch(signature, data, w, h) {
 
 // ---------- Art rule and colour grade ----------
 export const ART_RULES = {
-  palette:{ auto:['자동', ''], warm:['따뜻한 앰버', 'warm amber-tinted palette with soft golden highlights and warm shadows'], cool:['차가운 블루', 'cool blue-teal palette with crisp cool shadows'], muted:['저채도 차분', 'desaturated muted palette with low-chroma midtones'], vivid:['선명한 애니', 'vivid saturated anime palette with clean bright highlights'], noir:['흑백+적색 포인트', 'near-monochrome desaturated palette with a single deep crimson accent'] },
+  palette:{ auto:['자동', ''], warm:['따뜻한 앰버', 'warm amber-tinted palette with soft golden highlights and warm shadows'], cool:['차가운 블루', 'cool blue-teal palette with crisp cool shadows'], muted:['저채도 차분', 'desaturated muted palette with low-chroma midtones'], vivid:['선명한 애니', 'vivid saturated anime palette with clean bright highlights'], noir:['흑백+적색 포인트', 'near-monochrome palette with one deep crimson accent'] },
   line:{ auto:['자동', ''], fine:['가늘고 깨끗한 선', 'thin clean uniform lineart'], bold:['굵은 강약 선', 'bold confident lineart with clear weight variation'], soft:['선 최소·회화풍', 'soft painterly edges with minimal lineart'] },
   shading:{ auto:['자동', ''], cel:['2톤 셀 음영', 'two-tone cel shading with hard-edged shadows'], soft:['부드러운 그라데이션', 'soft gradient shading'], painted:['두꺼운 채색', 'painterly rendered shading with visible brushwork'] },
 };
@@ -275,12 +279,14 @@ export function normalizeArtRule(value) {
 }
 export function artRuleText(value) {
   const rule = normalizeArtRule(value), parts = Object.keys(ART_RULES).map(name => ART_RULES[name][rule[name]][1]).filter(Boolean);
-  return parts.length ? `Work art rule (identical for every background, sprite and event image): ${parts.join('; ')}.` : '';
+  return parts.length ? `Art rule for every image: ${parts.join('; ')}.` : '';
 }
 // The structured rule joins the free-text style note, so it follows the same
 // cache rule: images drawn under another style are not reused.
 export function composeArtStyle(style = '', rule) {
-  return [artRuleText(rule), String(style || '').trim()].filter(Boolean).join(' ').slice(0, 600);
+  // The style limit is raised to 820 by the adapter, so the rule never eats
+  // into the reader's own 600-character note.
+  return [artRuleText(rule), String(style || '').trim().slice(0, 600)].filter(Boolean).join(' ').slice(0, 820);
 }
 // One grade over backdrop, sprites, CG and inserts: tone curve via CSS filter
 // plus split-toning overlays (shadow/highlight tints).
@@ -293,7 +299,9 @@ export const GRADES = {
   noir:{ filter:[1.12, .35, .98, 0], shadow:'rgba(10,8,10,.30)', highlight:'rgba(255,240,236,.06)' },
 };
 export function gradeFor(palette = 'auto', strength = 'subtle') {
-  const grade = GRADES[palette] || GRADES.auto, k = strength === 'strong' ? 1 : strength === 'off' ? 0 : .6;
+  // Existing works look unchanged until a palette is chosen (or "strong").
+  const neutral = !GRADES[palette] || palette === 'auto';
+  const grade = GRADES[palette] || GRADES.auto, k = strength === 'off' || neutral && strength !== 'strong' ? 0 : strength === 'strong' ? 1 : .6;
   const [contrast, saturate, brightness, hue] = grade.filter, mix = value => 1 + (value - 1) * k;
   const alpha = color => color.replace(/,([\d.]+)\)$/u, (_, a) => `,${(Number(a) * k).toFixed(3)})`);
   return { filter:k ? `contrast(${mix(contrast).toFixed(3)}) saturate(${mix(saturate).toFixed(3)}) brightness(${mix(brightness).toFixed(3)})${hue ? ` hue-rotate(${(hue * k).toFixed(1)}deg)` : ''}` : 'none', shadow:alpha(grade.shadow), highlight:alpha(grade.highlight) };

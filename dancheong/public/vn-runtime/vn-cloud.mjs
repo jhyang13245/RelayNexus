@@ -1,8 +1,8 @@
-import { hostServices } from './vn-host.mjs?v=7cd28f52501e';
-import { readBackup } from './vn-backup.mjs?v=7cd28f52501e';
-import { createCloudBundle, readCloudBundle } from './vn-cloud-bundle.mjs?v=7cd28f52501e';
-import { snapshotScope } from './vn-edition-key.mjs?v=7cd28f52501e';
-import { workAssets, workCosts } from './vn-storage.mjs?v=7cd28f52501e';
+import { hostServices } from './vn-host.mjs?v=a63fa2266034';
+import { readBackup } from './vn-backup.mjs?v=a63fa2266034';
+import { createCloudBundle, readCloudBundle } from './vn-cloud-bundle.mjs?v=a63fa2266034';
+import { snapshotScope } from './vn-edition-key.mjs?v=a63fa2266034';
+import { workAssets, workCosts } from './vn-storage.mjs?v=a63fa2266034';
 
 export const cloudSlot = number => `slot-${number}`;
 export const continueSlot = slug => `continue-${slug}`;

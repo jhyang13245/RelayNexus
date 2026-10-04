@@ -62,7 +62,7 @@ export function createMusicDirection({ now = () => performance.now() } = {}) {
     }
     if (!pending) return current;
     pending.pages.add(input.pageKey);
-    const decisive = pending.explicit && (pending.cue === 'silence' || (pending.dramatic && ['tense', 'eerie'].includes(pending.cue)));
+    const decisive = pending.explicit && (pending.cue === 'silence' || (pending.dramatic && ['tense', 'eerie'].includes(pending.cue)) || pending.cue === 'battle');
     const hold = decisive ? 8000 : pending.explicit ? 24000 : 30000;
     const dwell = decisive ? 0 : pending.explicit ? 6000 : 8000;
     const pages = decisive ? 1 : pending.explicit ? 2 : 3;
