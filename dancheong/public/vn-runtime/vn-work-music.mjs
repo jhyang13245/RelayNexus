@@ -1,10 +1,10 @@
-import { readAsset, writeAsset } from './vn-assets.mjs?v=a63fa2266034';
-import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=a63fa2266034';
-import { waitForBoundary } from './vn-loop.mjs?v=a63fa2266034';
-import { analyzeMusicData, basicMusicAnalysis } from './vn-audio-analysis.mjs?v=a63fa2266034';
-import { analyzeInWorker } from './vn-audio-task.mjs?v=a63fa2266034';
-import { requestDurableStorage, withMediaTask } from './vn-storage.mjs?v=a63fa2266034';
-import { MUSIC_MODELS, moodPrompt, generateMusic, generatedRecord } from './vn-music-ai.mjs?v=a63fa2266034';
+import { readAsset, writeAsset } from './vn-assets.mjs?v=4a6fe5d540c6';
+import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=4a6fe5d540c6';
+import { waitForBoundary } from './vn-loop.mjs?v=4a6fe5d540c6';
+import { analyzeMusicData, basicMusicAnalysis } from './vn-audio-analysis.mjs?v=4a6fe5d540c6';
+import { analyzeInWorker } from './vn-audio-task.mjs?v=4a6fe5d540c6';
+import { requestDurableStorage, withMediaTask } from './vn-storage.mjs?v=4a6fe5d540c6';
+import { MUSIC_MODELS, moodPrompt, generateMusic, generatedRecord } from './vn-music-ai.mjs?v=4a6fe5d540c6';
 export const musicMoods = { normal: '평상시', warm: '따뜻함', sad: '슬픔', tense: '긴장·대치', battle: '전투', eerie: '불길함·공포', memory: '회상' };
 export const musicKey = (work, mood) => JSON.stringify(['vn-work-music-1', work, mood]);
 export function licensedTrack(value) {

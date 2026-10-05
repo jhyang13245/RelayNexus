@@ -1,8 +1,8 @@
-import { writerBindings } from '../cortex-vn-writer-speakers.mjs?v=a63fa2266034';
+import { writerBindings } from '../cortex-vn-writer-speakers.mjs?v=4a6fe5d540c6';
 // Presentation metadata only: the story and its canonical state remain in Cortex.
-import { presentationScenario, publicAppearance, visualCharacter } from './vn-public-cast.mjs?v=a63fa2266034';
-import { lightFor, placeIdentity, weatherIdentity } from './vn-environment.mjs?v=a63fa2266034';
-export { lightFor } from './vn-environment.mjs?v=a63fa2266034';
+import { presentationScenario, publicAppearance, visualCharacter } from './vn-public-cast.mjs?v=4a6fe5d540c6';
+import { lightFor, placeIdentity, weatherIdentity } from './vn-environment.mjs?v=4a6fe5d540c6';
+export { lightFor } from './vn-environment.mjs?v=4a6fe5d540c6';
 export function environmentKey(scope, world) {
   // Cast, turn number and minute changes do not change an environment.
   return JSON.stringify(['vn-environment-1', scope, placeIdentity(world?.location), lightFor(world?.time), weatherIdentity(world?.weather)]);

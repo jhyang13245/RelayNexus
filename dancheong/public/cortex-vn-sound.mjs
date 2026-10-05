@@ -105,10 +105,10 @@ export function createStageSound({ createContext, musicEnabled = () => false, sf
 // Recorded foley. Buffers decode after the first unlock gesture; until then
 // (or when a browser cannot decode Ogg) the procedural foley plays instead.
 export function createSampleFoley({ createContext, enabled = () => false, speaking = () => false, mode = () => 'recorded', fallback, base = '/vn-sfx/', fetchImpl = (...args) => fetch(...args) } = {}) {
-  let context, manifest = null, loading = null;
+  let context, manifest = null, loading = null, disposed = false;
   const buffers = new Map(), live = new Set();
   async function load() {
-    if (loading) return loading;
+    if (disposed || loading) return loading;
     loading = (async () => {
       try {
         context ||= createContext();
@@ -116,8 +116,10 @@ export function createSampleFoley({ createContext, enabled = () => false, speaki
         if (!response.ok) return;
         manifest = await response.json();
         for (const [kind, files] of Object.entries(manifest?.kinds || {})) {
+          if (disposed) return;
           const decoded = [];
           for (const file of Array.isArray(files) ? files.slice(0, 8) : []) {
+            if (disposed) return;
             if (typeof file?.path !== 'string' || !/^[a-z0-9_.-]+\.(?:ogg|mp3|wav|m4a)$/iu.test(file.path)) continue;
             try {
               const bytes = await (await fetchImpl(base + file.path, { credentials:'same-origin' })).arrayBuffer();
@@ -125,7 +127,7 @@ export function createSampleFoley({ createContext, enabled = () => false, speaki
               decoded.push({ buffer, gain:normalizeGain(buffer, Number(file.gain) || 1) });
             } catch { /* Undecodable here (e.g. Ogg on an older Safari): synthesized fallback. */ }
           }
-          if (decoded.length) buffers.set(kind, decoded);
+          if (!disposed && decoded.length) buffers.set(kind, decoded);
         }
       } catch { /* Offline or blocked: synthesized fallback. */ }
     })();
@@ -136,7 +138,7 @@ export function createSampleFoley({ createContext, enabled = () => false, speaki
     stop() { for (const source of live) { try { source.stop(); } catch { /* ended */ } } live.clear(); fallback?.stop(); },
     resume() { fallback?.resume(); if (enabled() && mode() === 'recorded') void load(); },
     play(kind, seed = 1, { weather = '' } = {}) {
-      if (!enabled()) return false;
+      if (disposed || !enabled()) return false;
       const name = kind === 'footstep' && weather === 'snow' && buffers.has('snow') ? 'snow' : kind;
       const options = mode() === 'recorded' ? buffers.get(name) : null;
       if (!options?.length || !context || context.state !== 'running' || live.size > 12) return fallback ? fallback.play(kind === 'heavy' ? 'impact' : kind, seed) : false;
@@ -150,14 +152,14 @@ export function createSampleFoley({ createContext, enabled = () => false, speaki
       source.start(context.currentTime + .005);
       return true;
     },
-    dispose() { for (const source of live) { try { source.stop(); } catch { /* ended */ } } live.clear(); buffers.clear(); fallback?.dispose?.(); },
+    dispose() { disposed = true; for (const source of live) { try { source.stop(); } catch { /* ended */ } } live.clear(); buffers.clear(); fallback?.dispose?.(); },
   };
 }
 // Peak-safe loudness levelling so samples from different packs sit together.
 export function normalizeGain(buffer, trim = 1) {
   let peak = 0, sum = 0, count = 0;
-  for (let c = 0; c < buffer.numberOfChannels; c++) { const data = buffer.getChannelData(c); for (let i = 0; i < data.length; i += 4) { const v = Math.abs(data[i]); peak = Math.max(peak, v); sum += v * v; count++; } }
+  for (let c = 0; c < buffer.numberOfChannels; c++) { const data = buffer.getChannelData(c); for (let i = 0; i < data.length; i++) { const v = Math.abs(data[i]); peak = Math.max(peak, v); sum += v * v; count++; } }
   const rms = Math.sqrt(sum / Math.max(1, count));
   if (!peak || !rms) return 0;
-  return Math.min(.9 / peak, .12 / rms) * Math.max(.2, Math.min(2, trim));
+  return Math.min(.9 / peak, .12 / rms * Math.max(.2, Math.min(2, Number.isFinite(trim) ? trim : 1)));
 }

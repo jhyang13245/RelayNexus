@@ -63,14 +63,14 @@ const artRules=new Map();
 function readArtRule(slug){if(!artRules.has(slug)){let rule;try{rule=normalizeArtRule(JSON.parse(localStorage.getItem(artRuleKey(slug))||'{}'));}catch{rule=normalizeArtRule({});}artRules.set(slug,rule);}return artRules.get(slug);}
 function writeArtRule(slug,rule){artRules.delete(slug);try{const value=normalizeArtRule(rule);if(Object.values(value).every(v=>v==='auto'))localStorage.removeItem(artRuleKey(slug));else localStorage.setItem(artRuleKey(slug),JSON.stringify(value));}catch{/* This tab keeps the previous rule. */}}
 let stagecraftPrefs=(()=>{try{return normalizeStagecraftPrefs(JSON.parse(localStorage.getItem('dancheong-vn-stagecraft-v1')||'{}'));}catch{return normalizeStagecraftPrefs({});}})();
-const musicSync=createMusicSync();\n`+code;
+const musicSync=createMusicSync({onChange:()=>requestRender()});\n`+code;
     // Music engines poll their volume getter; direction moments duck through it.
     code=exactly(code,'state.reading.musicVolume * (voiceBusy() ? .3 : 1)','state.reading.musicVolume * (voiceBusy() ? .3 : 1) * stageDuck.level()',2);
     // One shared audio context for procedural foley, recorded foley and stage sound.
     code=once(code,"const foley=createFoley({createContext:createFoleyContext,enabled:()=>state.reading.sound==='on'&&state.screen==='stage'&&!document.hidden&&!document.querySelector('dialog[open]'),speaking:()=>voiceBusy()});",
       `const foleyEnabled=()=>state.reading.sound==='on'&&state.screen==='stage'&&!document.hidden&&!document.querySelector('dialog[open]');
 const foley=createSampleFoley({createContext:stageAudioContext,enabled:foleyEnabled,speaking:()=>voiceBusy(),mode:()=>stagecraftPrefs.sfx,fallback:createFoley({createContext:stageAudioContext,enabled:foleyEnabled,speaking:()=>voiceBusy()})});
-const stageSound=createStageSound({createContext:stageAudioContext,musicEnabled:()=>state.reading.music!=='off'&&state.screen==='stage'&&!document.hidden,sfxEnabled:()=>state.reading.sound==='on'&&state.screen==='stage'&&!document.hidden,volume:()=>state.reading.musicVolume,speaking:()=>voiceBusy(),duck:stageDuck});
+const stageSound=createStageSound({createContext:stageAudioContext,musicEnabled:()=>state.reading.music!=='off'&&state.reading.musicVolume>0&&state.screen==='stage'&&!document.hidden&&!document.querySelector('dialog[open]')&&$('vn-stage').dataset.stageMusic!=='silence',sfxEnabled:foleyEnabled,volume:()=>state.reading.musicVolume,speaking:()=>voiceBusy(),duck:stageDuck});
 const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionReduced,prefs:()=>stagecraftPrefs,palette:()=>readArtRule(state.activeSlug).palette,crop:stagecraftCrop,sound:stageSound,foley});`);
     code=once(code,'fire:(cue,frame)=>{\n  if(cue.sound!==\'none\')foley.play(cue.sound,frame.key+cue.at);',`fire:(cue,frame)=>{
   stagecraft.fire(cue,frame);if(musicSync.release())requestRender();
@@ -83,15 +83,16 @@ const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionRedu
     code=once(code,'  score.update(music);\n  void workMusic.update(state.activeSlug, music, scenario?.runtime?.packageContract?.presentation?.music);',
       `  const syncedMusic=musicSync.select({pageKey:pageKey(page),music,cueBound:state.reading.cinema==='on'&&state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip'&&stagecraftCuePlan(view?.direction||{},typeset(page.rawText||page.text).visible).length>0});
   score.update(syncedMusic);
+  $('vn-stage').dataset.stageMusic=syncedMusic;
   void workMusic.update(state.activeSlug, syncedMusic, scenario?.runtime?.packageContract?.presentation?.music);`);
     code=once(code,'  cinema.update(cinematicFrame);',`  cinema.update(cinematicFrame);
-  stagecraft.update({pageKey:pageKey(page),scope:sceneScope(),direction:view?.direction||{},kind:page.kind,composition,fresh:state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip',
+  stagecraft.update({pageKey:pageKey(page),scope:sceneScope(),sceneKey:cinematicFrame.sceneKey,paused:document.hidden||!$('vn-history').hidden||state.hideText||Boolean(document.querySelector('dialog[open]'))||root.classList.contains('vn-menu-open'),direction:view?.direction||{},kind:page.kind,composition,fresh:state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip',
     enabled:state.reading.cinema==='on'&&state.screen==='stage',waiting:state.dialogueWaiting,loading:Boolean(state.awaitingTurn||state.pages.some(row=>row.isLive)),background:state.backgroundDisplayedUrl||'',
     eventArt:view?.eventBackground||'',eventCharacterIds:view?.eventCharacterIds||[],portraits:view?.portraits||[],focusId:state.focusId||view?.speakerId||''});`);
     code=once(code,"const layout = typeset(String(frame.at(-1)?.text || '…'),state.presentedView?.direction?.emphasis?.text||'')","const layout = typeset(String(frame.at(-1)?.text || '…'),state.presentedView?.direction?.emphasis?.text||'',stagecraft.marks(state.presentedView?.direction,String(frame.at(-1)?.text || '')))");
     code=once(code,"reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed,","reveal.update({ key, text: state.dialogueWaiting ? '' : full, speed: state.api._settings()?.typingSpeed, pace: stagecraft.pace(state.presentedView?.direction, full),");
     code=once(code,"if (screen !== 'stage') { performancePlayer.reset();","if (screen !== 'stage') { stagecraft.reset();stageSound.stop();musicSync.reset();performancePlayer.reset();");
-    code=once(code,"document.addEventListener('visibilitychange', () => { if (document.hidden) { performancePlayer.reset();foley.stop();","document.addEventListener('visibilitychange', () => { if (document.hidden) { performancePlayer.reset();foley.stop();stageSound.stop();");
+    code=once(code,"document.addEventListener('visibilitychange', () => { if (document.hidden) { performancePlayer.reset();foley.stop();","document.addEventListener('visibilitychange', () => { if (document.hidden) { performancePlayer.reset();foley.stop();stageSound.stop();stagecraft.reset();");
     code=once(code,"root.addEventListener('pointerdown',()=>foley.resume(),{passive:true});",`root.addEventListener('pointerdown',()=>{foley.resume();stageSound.resume();},{passive:true});
 const stagecraftSettings=stagecraft.mountSettings(directionPanel,{save:value=>{stagecraftPrefs=normalizeStagecraftPrefs(value);try{localStorage.setItem('dancheong-vn-stagecraft-v1',JSON.stringify(stagecraftPrefs));}catch{/* This tab only. */}requestRender();},
   rule:()=>readArtRule(state.activeSlug)});`);

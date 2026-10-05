@@ -39,7 +39,7 @@ const PHYSICAL = new Set(['speedlines','panels','invert','strobe','rapidcut']), 
 // The anchor and the sentence around it must be present-tense scene text.
 function sentenceOf(source, value) {
   const at = source.indexOf(value), start = Math.max(...['.', '!', '?', '。', '\n'].map(mark => source.lastIndexOf(mark, at - 1))) + 1;
-  const ends = ['.', '!', '?', '。', '\n'].map(mark => source.indexOf(mark, at + value.length)).filter(end => end >= 0);
+  const ends = ['.', '!', '?', '。', '\n'].map(mark => source.indexOf(mark, at)).filter(end => end >= 0);
   return source.slice(start, ends.length ? Math.min(...ends) + 1 : source.length);
 }
 function anchorIn(anchor, source) { const value = typeof anchor === 'string' ? anchor.trim() : ''; return value.length >= 2 && value.length <= 80 && source.includes(value) && !indirect.test(sentenceOf(source, value)) ? value : ''; }
@@ -59,10 +59,11 @@ export function validateStagecraft(value, current = '', { focusId = '', fx = 'no
   if (value.tempo === 'halting' && /[…,，、—–]|\.\.\./u.test(now)) out.tempo = 'halting';
   const kind = ACTIONS.includes(value.action?.kind) ? value.action.kind : 'none';
   if (kind !== 'none') {
-    const source = PHYSICAL.has(kind) ? told : now, anchor = anchorIn(value.action.anchor, source), sentence = anchor ? sentenceOf(source, anchor) : '';
+    const source = told, anchor = anchorIn(value.action.anchor, source), sentence = anchor ? sentenceOf(source, anchor) : '';
     // Motivation is judged in the anchor's own sentence, not anywhere in the beat.
     const motivated = FLASHING.has(kind) ? STRIKE_WORDS.test(sentence) && !String(fx).startsWith('flash') : PHYSICAL.has(kind) ? ACTION_WORDS.test(sentence) : ACTION_WORDS.test(sentence) || SHOCK_WORDS.test(sentence);
-    if (anchor && motivated) out.action = { kind, anchor };
+    const negated = /지\s*(?:않|못)|않았|않는다|하지\s*않|할\s*것이다|\b(?:not|never|didn't|would|might)\b/iu.test(sentence);
+    if (anchor && sentence.includes(anchor) && motivated && !negated) out.action = { kind, anchor };
   }
   const sting = STINGERS.includes(value.stinger?.kind) ? value.stinger.kind : 'none';
   if (sting !== 'none') { const anchor = anchorIn(value.stinger.anchor, now); if (anchor) out.stinger = { kind:sting, anchor }; }
@@ -105,17 +106,23 @@ export function typingPace(stagecraft, visible = '') {
 
 // ---------- Music sync, leitmotifs ----------
 // A music change on a beat with a text cue waits for that cue (or 6s).
-export function createMusicSync({ now = () => Date.now(), hold = 6000 } = {}) {
-  let key = '', applied = null, target = null, since = 0;
+export function createMusicSync({ now = () => Date.now(), hold = 6000, onChange = null, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  let key = '', applied = null, target = null, since = 0, timer = null;
+  const clear = () => { if (timer !== null) clearTimer(timer); timer = null; };
+  const release = () => { clear(); if (target === null) return false; applied = target; target = null; return true; };
   return {
-    reset() { key = ''; applied = null; target = null; },
+    reset() { clear(); key = ''; applied = null; target = null; },
     select({ pageKey, music, cueBound = false }) {
-      if (pageKey !== key) { key = pageKey; if (target !== null) applied = target; target = null; since = now(); }
-      if (applied === null || music === applied) { applied = music; target = null; return music; }
-      if (cueBound && now() - since < hold) { target = music; return applied; }
-      applied = music; target = null; return music;
+      if (pageKey !== key) { clear(); key = pageKey; if (target !== null) applied = target; target = null; since = now(); }
+      if (applied === null || music === applied) { clear(); applied = music; target = null; return music; }
+      if (cueBound && music !== 'silence' && now() - since < hold) {
+        target = music;
+        if (timer === null && onChange) timer = setTimer(() => { if (release()) onChange(); }, hold - (now() - since));
+        return applied;
+      }
+      clear(); applied = music; target = null; return music;
     },
-    release() { if (target === null) return false; applied = target; target = null; return true; },
+    release,
   };
 }
 function hash(value) { let h = 2166136261 >>> 0; for (const c of String(value)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
@@ -300,8 +307,8 @@ export const GRADES = {
 };
 export function gradeFor(palette = 'auto', strength = 'subtle') {
   // Existing works look unchanged until a palette is chosen (or "strong").
-  const neutral = !GRADES[palette] || palette === 'auto';
-  const grade = GRADES[palette] || GRADES.auto, k = strength === 'off' || neutral && strength !== 'strong' ? 0 : strength === 'strong' ? 1 : .6;
+  const neutral = !Object.hasOwn(GRADES, palette) || palette === 'auto';
+  const grade = Object.hasOwn(GRADES, palette) ? GRADES[palette] : GRADES.auto, k = strength === 'off' || neutral && strength !== 'strong' ? 0 : strength === 'strong' ? 1 : .6;
   const [contrast, saturate, brightness, hue] = grade.filter, mix = value => 1 + (value - 1) * k;
   const alpha = color => color.replace(/,([\d.]+)\)$/u, (_, a) => `,${(Number(a) * k).toFixed(3)})`);
   return { filter:k ? `contrast(${mix(contrast).toFixed(3)}) saturate(${mix(saturate).toFixed(3)}) brightness(${mix(brightness).toFixed(3)})${hue ? ` hue-rotate(${(hue * k).toFixed(1)}deg)` : ''}` : 'none', shadow:alpha(grade.shadow), highlight:alpha(grade.highlight) };

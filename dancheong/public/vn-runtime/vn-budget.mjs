@@ -1,4 +1,4 @@
-import { estimateCost } from './vn-cost-core.mjs?v=a63fa2266034';
+import { estimateCost } from './vn-cost-core.mjs?v=4a6fe5d540c6';
 const key = 'dancheong-vn-budget-v1';
 const finite = value => Number.isFinite(Number(value)) ? Math.max(0, Math.min(10000, Number(value))) : 0;
 export function budgetSettings(storage = localStorage) {

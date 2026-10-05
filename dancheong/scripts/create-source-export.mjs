@@ -36,6 +36,9 @@ const shouldExclude = (relativePath, directoryEntry) => {
   // Rebuilt byte-for-byte from vendor/cortex by npm run build.
   if (normalized === "vendor/cortex/Cortex_v1.42.0.html" || normalized === "public/cortex.html" || normalized === "scripts/connect-cortex-shell.mjs") return true;
   if (normalized === "public/downloads" || normalized.startsWith("public/downloads/")) return true;
+  // An imported ZIP can leave its old manifest at the root. Hash/count the
+  // actual source files only; write one fresh manifest after collection.
+  if (normalized === "SOURCE_EXPORT_MANIFEST.json") return true;
   // Pinned third-party models/WASM are reproducible binary dependencies, like
   // node_modules. Keep their loader, licenses, URLs, checksums and installer in
   // the full source ZIP; ship the actual binaries with the runtime Site assets.

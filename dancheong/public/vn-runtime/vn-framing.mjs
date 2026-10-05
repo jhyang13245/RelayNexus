@@ -1,4 +1,4 @@
-import { readWorkArt, writeWorkArt } from './vn-character-art.mjs?v=a63fa2266034';
+import { readWorkArt, writeWorkArt } from './vn-character-art.mjs?v=4a6fe5d540c6';
 const clamp = (n, low, high, fallback) => Number.isFinite(Number(n)) ? Math.min(high, Math.max(low, Number(n))) : fallback;
 export function cleanFraming(value) { return { scale: clamp(value?.scale, .7, 1.3, 1), offset: clamp(value?.offset, -.15, .15, 0) }; }
 export function framingFor(storage, scope, id) { return cleanFraming(readWorkArt(storage, scope).frames?.[JSON.stringify([scope, id])]); }

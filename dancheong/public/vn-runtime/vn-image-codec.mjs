@@ -1,4 +1,4 @@
-import { rasterTask } from './vn-raster.mjs?v=a63fa2266034';
+import { rasterTask } from './vn-raster.mjs?v=4a6fe5d540c6';
 
 export const WEBP_STORAGE_VERSION = 1;
 export function imageEncodingProfile(record) {

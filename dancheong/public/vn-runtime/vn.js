@@ -1,8 +1,8 @@
-import {createStagecraft} from '../cortex-vn-stagecraft-dom.mjs?v=a63fa2266034';
-import {createStageSound,createSampleFoley,createDuck} from '../cortex-vn-sound.mjs?v=a63fa2266034';
-import {createMusicSync,composeArtStyle,normalizeArtRule,normalizeStagecraftPrefs} from '../cortex-vn-stagecraft.mjs?v=a63fa2266034';
-import {cuePlan as stagecraftCuePlan} from '../cortex-vn-performance.mjs?v=a63fa2266034';
-import {portraitCutin as stagecraftCrop} from './vn-cinema.mjs?v=a63fa2266034';
+import {createStagecraft} from '../cortex-vn-stagecraft-dom.mjs?v=4a6fe5d540c6';
+import {createStageSound,createSampleFoley,createDuck} from '../cortex-vn-sound.mjs?v=4a6fe5d540c6';
+import {createMusicSync,composeArtStyle,normalizeArtRule,normalizeStagecraftPrefs} from '../cortex-vn-stagecraft.mjs?v=4a6fe5d540c6';
+import {cuePlan as stagecraftCuePlan} from '../cortex-vn-performance.mjs?v=4a6fe5d540c6';
+import {portraitCutin as stagecraftCrop} from './vn-cinema.mjs?v=4a6fe5d540c6';
 const stageDuck=createDuck();
 let stageAudio=null;
 const stageAudioContext=()=>stageAudio&&stageAudio.state!=='closed'?stageAudio:(stageAudio=createFoleyContext());
@@ -11,68 +11,68 @@ const artRules=new Map();
 function readArtRule(slug){if(!artRules.has(slug)){let rule;try{rule=normalizeArtRule(JSON.parse(localStorage.getItem(artRuleKey(slug))||'{}'));}catch{rule=normalizeArtRule({});}artRules.set(slug,rule);}return artRules.get(slug);}
 function writeArtRule(slug,rule){artRules.delete(slug);try{const value=normalizeArtRule(rule);if(Object.values(value).every(v=>v==='auto'))localStorage.removeItem(artRuleKey(slug));else localStorage.setItem(artRuleKey(slug),JSON.stringify(value));}catch{/* This tab keeps the previous rule. */}}
 let stagecraftPrefs=(()=>{try{return normalizeStagecraftPrefs(JSON.parse(localStorage.getItem('dancheong-vn-stagecraft-v1')||'{}'));}catch{return normalizeStagecraftPrefs({});}})();
-const musicSync=createMusicSync();
-import {createCuePlayer,createPortraitContinuity} from '../cortex-vn-cue-player.mjs?v=a63fa2266034';
-import {createStageBlocking,lightingGrade,deliveryNotes} from '../cortex-vn-performance.mjs?v=a63fa2266034';
-import {createFoley} from '../cortex-vn-foley.mjs?v=a63fa2266034';
-import {createPlaybackContext as createFoleyContext} from './vn-media-session.mjs?v=a63fa2266034';
-import { updateStoryClock } from '../cortex-vn-clock.mjs?v=a63fa2266034';
-import { createQualityReferenceLoader, readWorkArt, writeWorkArt, workPortrait, readPortraitReplacement, writePortraitReplacement } from './vn-character-art.mjs?v=a63fa2266034';
-import { backgroundFor, pagesForTurn, createPageCollector } from './vn-core.mjs?v=a63fa2266034';
-import { loadDeviceKeys, storeDeviceKeys, changedDeviceKeys } from './vn-key-vault.mjs?v=a63fa2266034';
-import { imageRoutingKey, readImageRouting, imageProviderFor } from './vn-image-routing.mjs?v=a63fa2266034';
-import { storageProblem, submitEngineTurn, pendingAdjudication, retryAdjudication } from './vn-progress.mjs?v=a63fa2266034';
-import { createAutoRecovery, retryVerdict } from './vn-recovery.mjs?v=a63fa2266034';
-import { optimizeWorkImages } from './vn-image-storage.mjs?v=a63fa2266034';
-import { captureScene, sceneVersion } from './vn-scene.mjs?v=a63fa2266034';
-import { continueEnvironment, createEnvironmentContinuity } from './vn-environment.mjs?v=a63fa2266034';
+const musicSync=createMusicSync({onChange:()=>requestRender()});
+import {createCuePlayer,createPortraitContinuity} from '../cortex-vn-cue-player.mjs?v=4a6fe5d540c6';
+import {createStageBlocking,lightingGrade,deliveryNotes} from '../cortex-vn-performance.mjs?v=4a6fe5d540c6';
+import {createFoley} from '../cortex-vn-foley.mjs?v=4a6fe5d540c6';
+import {createPlaybackContext as createFoleyContext} from './vn-media-session.mjs?v=4a6fe5d540c6';
+import { updateStoryClock } from '../cortex-vn-clock.mjs?v=4a6fe5d540c6';
+import { createQualityReferenceLoader, readWorkArt, writeWorkArt, workPortrait, readPortraitReplacement, writePortraitReplacement } from './vn-character-art.mjs?v=4a6fe5d540c6';
+import { backgroundFor, pagesForTurn, createPageCollector } from './vn-core.mjs?v=4a6fe5d540c6';
+import { loadDeviceKeys, storeDeviceKeys, changedDeviceKeys } from './vn-key-vault.mjs?v=4a6fe5d540c6';
+import { imageRoutingKey, readImageRouting, imageProviderFor } from './vn-image-routing.mjs?v=4a6fe5d540c6';
+import { storageProblem, submitEngineTurn, pendingAdjudication, retryAdjudication } from './vn-progress.mjs?v=4a6fe5d540c6';
+import { createAutoRecovery, retryVerdict } from './vn-recovery.mjs?v=4a6fe5d540c6';
+import { optimizeWorkImages } from './vn-image-storage.mjs?v=4a6fe5d540c6';
+import { captureScene, sceneVersion } from './vn-scene.mjs?v=4a6fe5d540c6';
+import { continueEnvironment, createEnvironmentContinuity } from './vn-environment.mjs?v=4a6fe5d540c6';
 const environmentContinuity = createEnvironmentContinuity();
-import { loadWorkPresentation } from './vn-public-cast.mjs?v=a63fa2266034';
-import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice, eventSceneSetting } from './vn-assets.mjs?v=a63fa2266034';
-import { installCostMeter } from './vn-costs.mjs?v=a63fa2266034';
-import { createCastDirector } from './vn-cast.mjs?v=a63fa2266034';
-import { publishedUnit, dialogueWait, createDialogueGrace, resolvedSpeaker, preparationPages, createPreparationQueue, prepareAhead, preparationTier } from './vn-stage-timing.mjs?v=a63fa2266034';
-import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, createTextWaitTracker, readDelay } from './vn-reader.mjs?v=a63fa2266034';
-import { fullAutoStep, fullAutoVisuals, storyComplete, createContinuationGate } from './vn-autoplay.mjs?v=a63fa2266034';
-import { directionAt, transitionFor, createSound } from './vn-direction.mjs?v=a63fa2266034';
-import { stageOrder, stagePositions, slotWidth, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs?v=a63fa2266034';
-import { projectStature } from './vn-stature.mjs?v=a63fa2266034';
-import { useMediaPlayback } from './vn-media-session.mjs?v=a63fa2266034';
-import { displaySprite, clearSpriteMemory } from './vn-sprite.mjs?v=a63fa2266034';
-import { setDisplayImage, holdDisplay } from './vn-display-memory.mjs?v=a63fa2266034';
-import { createAmbience, ambienceFor } from './vn-audio.mjs?v=a63fa2266034';
-import { createScore } from './vn-music.mjs?v=a63fa2266034';
-import { createMusicDirection, musicSeed } from './vn-music-direction.mjs?v=a63fa2266034';
-import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs?v=a63fa2266034';
-import { createVoicePlayer } from './vn-voice-post.mjs?v=a63fa2266034';
-import { fetchTypecastCatalog } from './vn-typecast-connection.mjs?v=a63fa2266034';
-import { createTypecastTransport } from './vn-typecast-direct.mjs?v=a63fa2266034';
-import { createVoiceCredits, TYPECAST_CREDIT, TYPECAST_URL } from './vn-voice-credits.mjs?v=a63fa2266034';
-import { prepareMotionFrames } from './vn-motion.mjs?v=a63fa2266034';
-import { motionFrameFor } from './vn-motion-playback.mjs?v=a63fa2266034';
-import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs?v=a63fa2266034';
-import { faceComposite } from './vn-face-compose.mjs?v=a63fa2266034';
-import { typeset, renderTypeset, TYPEFACES, loadTypeface } from './vn-typeset.mjs?v=a63fa2266034';
-import { createCinema } from './vn-cinema.mjs?v=a63fa2266034';
-import { compositionFor, createCueWindow, createArtContinuity, createCompositionContinuity } from './vn-storyboard.mjs?v=a63fa2266034';
-import { createWorkMusic, createMusicSettings, musicKey, musicMoods, licensedTrack } from './vn-work-music.mjs?v=a63fa2266034';
-import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock, QUICK_SLOT } from './vn-saves.mjs?v=a63fa2266034';
-import { createGalleryDialog, galleryImages } from './vn-gallery.mjs?v=a63fa2266034';
-import { createSaveDialog } from './vn-save-ui.mjs?v=a63fa2266034';
-import { requestDurableStorage, withMediaTask, withMediaMaintenance, setMediaPaused, mediaPaused, removeWorkMedia, isMediaStorageEvent, workAssets } from './vn-storage.mjs?v=a63fa2266034';
-import { createStoragePanel } from './vn-storage-ui.mjs?v=a63fa2266034';
-import { readBackup, exportSlotFile, storeImportedSlot, restoreSlotMedia } from './vn-backup.mjs?v=a63fa2266034';
-import { readEventProgress } from './vn-event-progress.mjs?v=a63fa2266034';
-import { createEventProgressDialog } from './vn-event-progress-ui.mjs?v=a63fa2266034';
-import { prepareNewGame, createNewGameDialog } from './vn-new-game.mjs?v=a63fa2266034';
-import { createEditionStore, catalogRevision } from './vn-editions.mjs?v=a63fa2266034';
-import { editionScope, snapshotEdition, editionId } from './vn-edition-key.mjs?v=a63fa2266034';
-import { createEditionDialog } from './vn-edition-ui.mjs?v=a63fa2266034';
-import { createAccountMenu } from './vn-account.mjs?v=a63fa2266034';
-import { createCloudDialog } from './vn-cloud-ui.mjs?v=a63fa2266034';
-import { inspectWork, createHealthDialog } from './vn-health.mjs?v=a63fa2266034';
-import { diagnostics } from './vn-diagnostics.mjs?v=a63fa2266034';
-import { framingFor, framingControls } from './vn-framing.mjs?v=a63fa2266034';
+import { loadWorkPresentation } from './vn-public-cast.mjs?v=4a6fe5d540c6';
+import { createStageAssets, readAsset, writeAsset, imageProviders, imageNotice, eventSceneSetting } from './vn-assets.mjs?v=4a6fe5d540c6';
+import { installCostMeter } from './vn-costs.mjs?v=4a6fe5d540c6';
+import { createCastDirector } from './vn-cast.mjs?v=4a6fe5d540c6';
+import { publishedUnit, dialogueWait, createDialogueGrace, resolvedSpeaker, preparationPages, createPreparationQueue, prepareAhead, preparationTier } from './vn-stage-timing.mjs?v=4a6fe5d540c6';
+import { pageKey, pageText, readingFrame, reconcileCursor, reconcileReadThrough, nextPlaybackStep, createTextRevealer, createTextWaitTracker, readDelay } from './vn-reader.mjs?v=4a6fe5d540c6';
+import { fullAutoStep, fullAutoVisuals, storyComplete, createContinuationGate } from './vn-autoplay.mjs?v=4a6fe5d540c6';
+import { directionAt, transitionFor, createSound } from './vn-direction.mjs?v=4a6fe5d540c6';
+import { stageOrder, stagePositions, slotWidth, speakerHue, weatherFor, lightFor, mergeDirection, recordMet } from './vn-stage.mjs?v=4a6fe5d540c6';
+import { projectStature } from './vn-stature.mjs?v=4a6fe5d540c6';
+import { useMediaPlayback } from './vn-media-session.mjs?v=4a6fe5d540c6';
+import { displaySprite, clearSpriteMemory } from './vn-sprite.mjs?v=4a6fe5d540c6';
+import { setDisplayImage, holdDisplay } from './vn-display-memory.mjs?v=4a6fe5d540c6';
+import { createAmbience, ambienceFor } from './vn-audio.mjs?v=4a6fe5d540c6';
+import { createScore } from './vn-music.mjs?v=4a6fe5d540c6';
+import { createMusicDirection, musicSeed } from './vn-music-direction.mjs?v=4a6fe5d540c6';
+import { createVoice, voiceLine, readingVoiceLine, voiceOptions, narratorOptions, castVoices, ttsProvider, TTS_PROVIDERS, GEMINI_VOICES, voiceFamily, defaultNarrator, setTypecastVoices, typecastVoices } from './vn-voice.mjs?v=4a6fe5d540c6';
+import { createVoicePlayer } from './vn-voice-post.mjs?v=4a6fe5d540c6';
+import { fetchTypecastCatalog } from './vn-typecast-connection.mjs?v=4a6fe5d540c6';
+import { createTypecastTransport } from './vn-typecast-direct.mjs?v=4a6fe5d540c6';
+import { createVoiceCredits, TYPECAST_CREDIT, TYPECAST_URL } from './vn-voice-credits.mjs?v=4a6fe5d540c6';
+import { prepareMotionFrames } from './vn-motion.mjs?v=4a6fe5d540c6';
+import { motionFrameFor } from './vn-motion-playback.mjs?v=4a6fe5d540c6';
+import { createBlinker, createMouth, breathDelay } from './vn-actor-life.mjs?v=4a6fe5d540c6';
+import { faceComposite } from './vn-face-compose.mjs?v=4a6fe5d540c6';
+import { typeset, renderTypeset, TYPEFACES, loadTypeface } from './vn-typeset.mjs?v=4a6fe5d540c6';
+import { createCinema } from './vn-cinema.mjs?v=4a6fe5d540c6';
+import { compositionFor, createCueWindow, createArtContinuity, createCompositionContinuity } from './vn-storyboard.mjs?v=4a6fe5d540c6';
+import { createWorkMusic, createMusicSettings, musicKey, musicMoods, licensedTrack } from './vn-work-music.mjs?v=4a6fe5d540c6';
+import { createSlotStore, makeSlot, capturePresentation, applyPresentation, activateSlot, recoverSlotLoad, withSlotLock, QUICK_SLOT } from './vn-saves.mjs?v=4a6fe5d540c6';
+import { createGalleryDialog, galleryImages } from './vn-gallery.mjs?v=4a6fe5d540c6';
+import { createSaveDialog } from './vn-save-ui.mjs?v=4a6fe5d540c6';
+import { requestDurableStorage, withMediaTask, withMediaMaintenance, setMediaPaused, mediaPaused, removeWorkMedia, isMediaStorageEvent, workAssets } from './vn-storage.mjs?v=4a6fe5d540c6';
+import { createStoragePanel } from './vn-storage-ui.mjs?v=4a6fe5d540c6';
+import { readBackup, exportSlotFile, storeImportedSlot, restoreSlotMedia } from './vn-backup.mjs?v=4a6fe5d540c6';
+import { readEventProgress } from './vn-event-progress.mjs?v=4a6fe5d540c6';
+import { createEventProgressDialog } from './vn-event-progress-ui.mjs?v=4a6fe5d540c6';
+import { prepareNewGame, createNewGameDialog } from './vn-new-game.mjs?v=4a6fe5d540c6';
+import { createEditionStore, catalogRevision } from './vn-editions.mjs?v=4a6fe5d540c6';
+import { editionScope, snapshotEdition, editionId } from './vn-edition-key.mjs?v=4a6fe5d540c6';
+import { createEditionDialog } from './vn-edition-ui.mjs?v=4a6fe5d540c6';
+import { createAccountMenu } from './vn-account.mjs?v=4a6fe5d540c6';
+import { createCloudDialog } from './vn-cloud-ui.mjs?v=4a6fe5d540c6';
+import { inspectWork, createHealthDialog } from './vn-health.mjs?v=4a6fe5d540c6';
+import { diagnostics } from './vn-diagnostics.mjs?v=4a6fe5d540c6';
+import { framingFor, framingControls } from './vn-framing.mjs?v=4a6fe5d540c6';
 
 const activeKey = 'dancheong-ln-active-work-v1';
 const nexusBase = location.origin;
@@ -183,7 +183,7 @@ connectionPanel.querySelector('#vn-openai-key').closest('label').querySelector('
 const imageQualityHelp = document.createElement('small'); imageQualityHelp.id = 'vn-image-quality-help';
 connectionPanel.querySelector('#vn-image-quality').after(imageQualityHelp);
 const readingFields = document.createElement('fieldset'); readingFields.className = 'vn-reading-settings';
-readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>본문 글꼴<select id="vn-typeface">' + Object.entries(TYPEFACES).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('') + '</select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>사건 장면 연출<select id="vn-cg-setting"><option value="on">자동 · 중요한 동작과 사건</option><option value="off">끔 · 풍경과 인물만</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 표정은 뚜렷한 감정 변화 때만 본문 상황을 읽고 자연스럽게 새로 그리며, 풍경은 장소·시간대·날씨가 바뀔 때 재사용 여부를 확인합니다. 같은 인물의 적합한 표정은 저장된 이미지를 먼저 재사용합니다. 인물은 세밀한 선·눈·머리카락·재질 묘사를 글로 지정하며, 다른 작품의 인물 이미지는 보내지 않습니다. 이미 저장된 기본 입상은 유지합니다. 만난 인물에서 기본 입상을 고정할 수 있고, 같은 인물·표정은 재사용합니다. 평소에는 기본 복장을 유지하며, 실제 물놀이·취침·행사 등 본문 상황에 맞춰 복장을 바꿉니다. 복장별 입상과 표정을 저장해 다시 쓰고, 일상으로 돌아오면 기본 복장을 재사용합니다(처음 필요한 복장·표정 생성 시 비용 발생). 중요한 공격·충돌·사물의 변화는 사건 장면으로 보여줍니다. 이미 공개된 가까운 문단에서 미리 준비하며, 해당 순간부터 배경 자체를 사건이 담긴 이미지로 교체합니다. 사건 배경에 그려진 참여 인물의 입상만 숨기고 목격자 입상은 유지합니다. 사건 연출은 기본 꺼짐이며 기존 선택을 유지합니다. 평범한 대화에는 생성하지 않고 문단당 최대 1장만 생성·재사용합니다(이미지 비용 추가).</p>';
+readingFields.innerHTML = '<legend>읽기·연출</legend><div class="vn-settings-fields"><div class="vn-settings-row"><label>본문 배치<select id="vn-reading-layout"><option value="nvl">NVL · 화면 위에 누적</option><option value="adv">ADV · 하단 대화창</option></select></label><label>자동 읽기 간격<select id="vn-auto-pace"><option value="normal">보통</option><option value="slow">여유롭게</option><option value="fast">빠르게</option></select></label></div><div class="vn-settings-row"><label>본문 크기<select id="vn-font-size"><option value="normal">기본</option><option value="large">크게</option></select></label><label>본문 글꼴<select id="vn-typeface">' + Object.entries(TYPEFACES).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('') + '</select></label><label>화면 움직임<select id="vn-motion"><option value="full">장면에 맞게</option><option value="reduced">최소화</option></select></label></div><div class="vn-settings-row"><label>조작 효과음<select id="vn-sound"><option value="off">끔</option><option value="on">켬</option></select></label><label>환경음·분위기음<select id="vn-ambience"><option value="off">끔</option><option value="on">켬</option></select></label></div><div class="vn-settings-row"><label>사건 장면 연출<select id="vn-cg-setting"><option value="on">자동 · 중요한 동작과 사건</option><option value="off">끔 · 풍경과 인물만</option></select></label></div><label>이 작품의 그림체 지침 <small>비워 두면 기본 그림체를 사용합니다. 입력하면 이 작품의 배경·인물을 새 그림체로 다시 만듭니다(이미지 비용 발생).</small><textarea id="vn-art-style" rows="2" maxlength="600" placeholder="예: 수채화 질감, 가는 선, 채도 낮은 파스텔 톤"></textarea></label></div><p class="vn-settings-help">클릭·Space 다음 / ← 이전 / A 자동 / S 읽은 부분 / L 기록 / H 본문 숨김 / F 전체 화면. 자동 읽기는 선택지와 새 장면 생성 앞에서 멈춥니다. 표정은 뚜렷한 감정 변화 때만 본문 상황을 읽고 자연스럽게 새로 그리며, 풍경은 장소·시간대·날씨가 바뀔 때 재사용 여부를 확인합니다. 같은 인물의 적합한 표정은 저장된 이미지를 먼저 재사용합니다. 인물은 세밀한 선·눈·머리카락·재질 묘사를 글로 지정하며, 다른 작품의 인물 이미지는 보내지 않습니다. 이미 저장된 기본 입상은 유지합니다. 만난 인물에서 기본 입상을 고정할 수 있고, 같은 인물·표정은 재사용합니다. 평소에는 기본 복장을 유지하며, 실제 물놀이·취침·행사 등 본문 상황에 맞춰 복장을 바꿉니다. 복장별 입상과 표정을 저장해 다시 쓰고, 일상으로 돌아오면 기본 복장을 재사용합니다(처음 필요한 복장·표정 생성 시 비용 발생). 중요한 공격·충돌·사물의 변화는 사건 장면으로 보여줍니다. 이미 공개된 가까운 문단에서 미리 준비하며, 해당 순간부터 배경 자체를 사건이 담긴 이미지로 교체합니다. 사건 배경에 그려진 참여 인물의 입상만 숨기고 목격자 입상은 유지합니다. 사건 연출은 모든 작품에서 기본 켜짐이며, 직접 변경한 설정은 유지합니다. 평범한 대화에는 생성하지 않고 문단당 최대 1장만 생성·재사용합니다(이미지 비용 추가).</p>';
 connectionPanel.querySelector('.vn-settings-help').before(readingFields);
 const guideField = document.createElement('label');
 guideField.textContent = '이 작품의 인물 묘사 기준 이미지';
@@ -196,7 +196,7 @@ presentationFields.innerHTML = `<legend>추가 연출 · 베타</legend><div cla
   <div class="vn-settings-row"><label>추가 구도·자세 생성<select id="vn-drawn-shots"><option value="off">끔</option><option value="on">켬 · 구도 / 자세 / 시선 · 추가 비용</option></select></label><label>눈 깜빡임·입 움직임<select id="vn-actor-motion"><option value="off">끔</option><option value="masked">실험 · OpenAI 눈·입 마스크 편집</option></select></label></div>
   <label>표정이 바뀔 때<select id="vn-face-compose"><option value="off">그림 전체 교체 · 기본</option><option value="on">얼굴만 합성 · 실험 (몸·옷이 정확히 겹칠 때만)</option></select></label>
   <small>얼굴만 합성은 새 표정 그림이 기본 입상과 몸·옷·윤곽이 거의 같을 때만 얼굴 부분을 기본 입상 위에 부드럽게 합칩니다. 겹치지 않거나 경계가 드러날 것 같으면 새 그림을 그대로 보여 줍니다. 추가 비용은 없습니다.</small>
-  <small>추가 이미지는 기본 꺼짐입니다. 구도는 중요한 순간에 문단당 최대 1장, 움직임은 인물·복장·표정당 최대 2장을 만들고 재사용합니다. 움직임은 OpenAI 인물 모델에서만 실험할 수 있습니다. 눈·입 위치가 불확실하면 생성하지 않으며, 기존 프레임도 정렬을 다시 검사합니다. 움직임 첫 사용 시 윤곽 검사 파일을 내려받습니다. 생성된 이미지 비용은 발생합니다.</small>
+  <small>추가 구도·자세 생성은 모든 작품에서 기본 켜짐이며, 눈 깜빡임·입 움직임은 기본 꺼짐입니다. 직접 변경한 설정은 유지합니다. 구도는 중요한 순간에 문단당 최대 1장, 움직임은 인물·복장·표정당 최대 2장을 만들고 재사용합니다. 움직임은 OpenAI 인물 모델에서만 실험할 수 있습니다. 눈·입 위치가 불확실하면 생성하지 않으며, 기존 프레임도 정렬을 다시 검사합니다. 움직임 첫 사용 시 윤곽 검사 파일을 내려받습니다. 생성된 이미지 비용은 발생합니다.</small>
   <div class="vn-settings-row"><label>장면 배경음악·효과음<select id="vn-music"><option value="off">끔</option><option value="tracks">켬 · 작품 음원</option><option value="on">켬 · 기기에서 합성</option></select></label><label>음악 크기<input id="vn-music-volume" type="range" min="0" max="100" step="1"></label></div>
   <div class="vn-settings-row"><label>AI 대사 음성<select id="vn-voice-setting"><option value="off">OFF · 끔</option><option value="on">ON · 음성 생성</option></select></label><label>음성 모델<select id="vn-voice-provider">${Object.entries(TTS_PROVIDERS).map(([id, row]) => `<option value="${id}">${row.label}</option>`).join('')}</select></label></div>
   <div class="vn-settings-row"><label>음성 크기<input id="vn-voice-volume" type="range" min="0" max="100" step="1"></label><label>다음 문장으로 넘길 때<select id="vn-voice-continue"><option value="off">음성 멈춤</option><option value="on">끝까지 재생 · 다음 음성이 나오면 교체</option></select></label></div>
@@ -310,7 +310,7 @@ const readingPrefsKey = 'dancheong-vn-reading-prefs-v1';
 let storedReading = {}; try { storedReading = JSON.parse(localStorage.getItem(readingPrefsKey) || '{}'); } catch { /* Defaults remain usable. */ }
 state.reading = { layout: storedReading?.layout === 'adv' ? 'adv' : 'nvl', pace: ['slow', 'fast'].includes(storedReading?.pace) ? storedReading.pace : 'normal', font: storedReading?.font === 'large' ? 'large' : 'normal', typeface: TYPEFACES[storedReading?.typeface] ? storedReading.typeface : 'auto', motion: storedReading?.motion === 'reduced' ? 'reduced' : 'full', sound: storedReading?.sound === 'on' ? 'on' : 'off',
   ambience: storedReading?.ambience === 'on' ? 'on' : 'off', cg: eventSceneSetting(storedReading),
-  shots: storedReading?.shots === 'on' ? 'on' : 'off', cinema: storedReading?.cinema === 'off' ? 'off' : 'on', actorMotion: storedReading?.actorMotion === 'masked' ? 'masked' : 'off', faceCompose: storedReading?.faceCompose === 'on' ? 'on' : 'off', music: ['on', 'tracks'].includes(storedReading?.music) ? storedReading.music : 'off', voice: storedReading?.voice === 'on' ? 'on' : 'off', voiceProvider: TTS_PROVIDERS[storedReading?.voiceProvider] ? storedReading.voiceProvider : 'openai', narratorVoice: typeof storedReading?.narratorVoice === 'string' ? storedReading.narratorVoice.slice(0, 40) : '', voiceContinue: storedReading?.voiceContinue === 'on' ? 'on' : 'off', typecastTransport: storedReading?.typecastTransport === 'direct' ? 'direct' : 'relay', voiceVolume: Number.isFinite(storedReading?.voiceVolume) ? Math.max(0, Math.min(1, storedReading.voiceVolume)) : 1, musicVolume: Number.isFinite(storedReading?.musicVolume) ? Math.max(0, Math.min(1, storedReading.musicVolume)) : .22 };
+  shots: storedReading?.shots === 'off' ? 'off' : 'on', cinema: storedReading?.cinema === 'off' ? 'off' : 'on', actorMotion: storedReading?.actorMotion === 'masked' ? 'masked' : 'off', faceCompose: storedReading?.faceCompose === 'on' ? 'on' : 'off', music: ['on', 'tracks'].includes(storedReading?.music) ? storedReading.music : 'off', voice: storedReading?.voice === 'on' ? 'on' : 'off', voiceProvider: TTS_PROVIDERS[storedReading?.voiceProvider] ? storedReading.voiceProvider : 'openai', narratorVoice: typeof storedReading?.narratorVoice === 'string' ? storedReading.narratorVoice.slice(0, 40) : '', voiceContinue: storedReading?.voiceContinue === 'on' ? 'on' : 'off', typecastTransport: storedReading?.typecastTransport === 'direct' ? 'direct' : 'relay', voiceVolume: Number.isFinite(storedReading?.voiceVolume) ? Math.max(0, Math.min(1, storedReading.voiceVolume)) : 1, musicVolume: Number.isFinite(storedReading?.musicVolume) ? Math.max(0, Math.min(1, storedReading.musicVolume)) : .22 };
 const artStyleKey = slug => `dancheong-vn-art-style-v1:${slug}`;
 function loadArtStyle(slug) { try { return localStorage.getItem(artStyleKey(slug)) || ''; } catch { return ''; } }
 state.artStyle = loadArtStyle(state.activeSlug);
@@ -364,7 +364,7 @@ const portraitContinuity=createPortraitContinuity();
 const sceneBlocking=createStageBlocking();
 const foleyEnabled=()=>state.reading.sound==='on'&&state.screen==='stage'&&!document.hidden&&!document.querySelector('dialog[open]');
 const foley=createSampleFoley({createContext:stageAudioContext,enabled:foleyEnabled,speaking:()=>voiceBusy(),mode:()=>stagecraftPrefs.sfx,fallback:createFoley({createContext:stageAudioContext,enabled:foleyEnabled,speaking:()=>voiceBusy()})});
-const stageSound=createStageSound({createContext:stageAudioContext,musicEnabled:()=>state.reading.music!=='off'&&state.screen==='stage'&&!document.hidden,sfxEnabled:()=>state.reading.sound==='on'&&state.screen==='stage'&&!document.hidden,volume:()=>state.reading.musicVolume,speaking:()=>voiceBusy(),duck:stageDuck});
+const stageSound=createStageSound({createContext:stageAudioContext,musicEnabled:()=>state.reading.music!=='off'&&state.reading.musicVolume>0&&state.screen==='stage'&&!document.hidden&&!document.querySelector('dialog[open]')&&$('vn-stage').dataset.stageMusic!=='silence',sfxEnabled:foleyEnabled,volume:()=>state.reading.musicVolume,speaking:()=>voiceBusy(),duck:stageDuck});
 const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionReduced,prefs:()=>stagecraftPrefs,palette:()=>readArtRule(state.activeSlug).palette,crop:stagecraftCrop,sound:stageSound,foley});
 const performancePlayer=createCuePlayer({release:()=>{if(state.screen==='stage'){requestRender();schedulePlayback();}},fire:(cue,frame)=>{
   stagecraft.fire(cue,frame);if(musicSync.release())requestRender();
@@ -1564,6 +1564,7 @@ function renderPage() {
     provisional: page.isLive || ['publishing', 'checking', 'pending'].includes(view?.castStatus) });
   const syncedMusic=musicSync.select({pageKey:pageKey(page),music,cueBound:state.reading.cinema==='on'&&state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip'&&stagecraftCuePlan(view?.direction||{},typeset(page.rawText||page.text).visible).length>0});
   score.update(syncedMusic);
+  $('vn-stage').dataset.stageMusic=syncedMusic;
   void workMusic.update(state.activeSlug, syncedMusic, scenario?.runtime?.packageContract?.presentation?.music);
   $('vn-stage').dataset.drawnShot = view?.shotKind || '';
   const voiceChoice = speakerVoice(view);
@@ -1594,7 +1595,7 @@ function renderPage() {
     paused:document.hidden||!$('vn-history').hidden||state.hideText||Boolean(document.querySelector('dialog[open]'))});
   cinematicFrame={ pageKey: pageKey(page), sceneKey: JSON.stringify([sceneScope(), scene?.world?.location, lightFor(scene?.world?.time || '')]), cueOpen: state.cueOpen, composition, background: view?.environment || '', turnId: page.turnId, turnIndex: page.turnIndex, title: scene?.world?.location || scenario?.event?.title, direction: view?.direction || {}, portraits: view?.portraits || [], fresh: state.cursor > state.readThrough && !page.isLive && state.playback !== 'skip', enabled: state.reading.cinema === 'on' && state.screen === 'stage', waiting: state.dialogueWaiting, eventArt: Boolean(view?.eventBackground || view?.shotKind) };
   cinema.update(cinematicFrame);
-  stagecraft.update({pageKey:pageKey(page),scope:sceneScope(),direction:view?.direction||{},kind:page.kind,composition,fresh:state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip',
+  stagecraft.update({pageKey:pageKey(page),scope:sceneScope(),sceneKey:cinematicFrame.sceneKey,paused:document.hidden||!$('vn-history').hidden||state.hideText||Boolean(document.querySelector('dialog[open]'))||root.classList.contains('vn-menu-open'),direction:view?.direction||{},kind:page.kind,composition,fresh:state.cursor>state.readThrough&&!page.isLive&&state.playback!=='skip',
     enabled:state.reading.cinema==='on'&&state.screen==='stage',waiting:state.dialogueWaiting,loading:Boolean(state.awaitingTurn||state.pages.some(row=>row.isLive)),background:state.backgroundDisplayedUrl||'',
     eventArt:view?.eventBackground||'',eventCharacterIds:view?.eventCharacterIds||[],portraits:view?.portraits||[],focusId:state.focusId||view?.speakerId||''});
   const selectedTurn = turns[page.turnIndex];
@@ -2054,7 +2055,7 @@ $('vn-stage').addEventListener('click', event => {
   nextPage();
 });
 $('vn-stage').addEventListener('contextmenu', event => { if (!event.target.closest('input, textarea')) { event.preventDefault(); setTextHidden(!state.hideText); } });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { performancePlayer.reset();foley.stop();stageSound.stop(); stopPlayback(); cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.stop(); stopReleasedVoice(); } else if (state.screen === 'stage') { ambience.update(state.ambienceTarget); renderPage(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { performancePlayer.reset();foley.stop();stageSound.stop();stagecraft.reset(); stopPlayback(); cinema.reset(); workMusic.stop(); ambience.stop(); score.stop(); voice.stop(); stopReleasedVoice(); } else if (state.screen === 'stage') { ambience.update(state.ambienceTarget); renderPage(); } });
 
 // Blink and mouth frames (when prepared): irregular blinks, and a mouth that
 // follows the level of the voice actually playing for this person.
@@ -2134,7 +2135,7 @@ function multiplayerApi(api){
 }
 async function setupMultiplayer(){
   const [{createSharedAssets},multiplayer,timeline]=await Promise.all([
-    import('../cortex-vn-shared.mjs?v=a63fa2266034'),import('../cortex-vn-multiplayer.mjs?v=a63fa2266034'),import('../cortex-vn-timeline.mjs?v=a63fa2266034')]);
+    import('../cortex-vn-shared.mjs?v=4a6fe5d540c6'),import('../cortex-vn-multiplayer.mjs?v=4a6fe5d540c6'),import('../cortex-vn-timeline.mjs?v=4a6fe5d540c6')]);
   roomTimeline=timeline.createRoomTimeline();roomGlyphSchedule=timeline.glyphSchedule;roomRevealCount=timeline.revealCount;roomHold=timeline.paragraphHold;
   const {createMultiplayerProjection,createInputNotice}=multiplayer;multiplayerReadStep=multiplayer.multiplayerReadStep;
   multiplayerProjection=createMultiplayerProjection(host.api());

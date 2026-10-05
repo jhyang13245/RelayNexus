@@ -1,5 +1,5 @@
 // Lazy, local-only detector. A worker keeps model loading/inference off the reader.
-import { createByteLru } from './vn-byte-lru.mjs?v=a63fa2266034';
+import { createByteLru } from './vn-byte-lru.mjs?v=4a6fe5d540c6';
 let worker, sequence = 0, idle, unavailable = false;
 const pending = new Map(), cache = createByteLru({ maxBytes: 8 * 1024 * 1024, maxEntries: 16 });
 function stop(failed = false) {
@@ -13,7 +13,7 @@ function request(bitmap, referenceBitmap = null, referenceCamera = null) {
     try {
       if (unavailable || typeof Worker === 'undefined') { bitmap.close(); referenceBitmap?.close(); return resolve(null); }
       if (!worker) {
-        worker = new Worker(new URL('./vn-motion-worker.mjs?v=a63fa2266034', import.meta.url), { type: 'module' });
+        worker = new Worker(new URL('./vn-motion-worker.mjs?v=4a6fe5d540c6', import.meta.url), { type: 'module' });
         worker.onmessage = ({ data }) => {
           const row = pending.get(data.id); if (!row) return;
           clearTimeout(row.timer); pending.delete(data.id); row.resolve({motion:data.geometry || null,camera:data.camera || null}); scheduleIdle();

@@ -9,7 +9,7 @@ export function analyzeInWorker(buffer, bpmHint) {
   if (unavailable || typeof Worker === 'undefined') return Promise.resolve(null);
   try {
     if (!worker) {
-      worker = new Worker(new URL('./vn-audio-worker.mjs?v=a63fa2266034', import.meta.url), { type: 'module' });
+      worker = new Worker(new URL('./vn-audio-worker.mjs?v=4a6fe5d540c6', import.meta.url), { type: 'module' });
       worker.onmessage = ({ data }) => { const job = pending.get(data.id); if (!job) return; clearTimeout(job.timer); pending.delete(data.id); job.resolve(data.result); };
       worker.onerror = disable; worker.onmessageerror = disable;
     }

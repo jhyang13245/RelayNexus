@@ -1,6 +1,10 @@
 # Dancheong
 
-Current release: **v1.26.0** (source version; deployment status is tracked by Sites)
+Current release: **v1.26.2** (source version; deployment status is tracked by Sites)
+
+1.26.2 sets the shared VN presentation defaults to the requested preset: automatic event scenes and additional composition/pose art on; eye/mouth animation and face compositing off. NVL, normal reading interval/text size, automatic font, scene motion, cinema and stagecraft remain enabled as specified, with subtle grading, recorded CC0 foley and automatic art rules. Explicit saved preferences remain respected. New image generation can incur provider charges; changing defaults does not regenerate saved artwork.
+
+1.26.1 reviews the supplied 1.26.0 release and fixes stage-effect cancellation, evidence boundaries, reduced-motion/depth handling, music deadlines and silence, CG checks and memory scope, bounded image analysis, and sample peak levels. See `docs/VN_REVIEW_1.26.1.md` for executed checks and limits.
 
 1.26.0 extends VN staging: inline word colour/size/tremble, a single centred line on black and slow typing; speed/focus lines, manga panel splits, negative and red-strobe impact frames, slow motion and rapid cuts from existing art; heuristic 2.5D background depth with dialogue depth-of-field; Ken Burns and face/hand close-ups on event CGs; a per-work art rule, a shared colour grade and a CG/sprite colour check; character motifs, a battle cue, stingers and cue-synced music; recorded CC0 foley; and presentation during AI waits. Directions arrive in the existing cast call (no new paid calls). See `docs/VN_STAGECRAFT_1.26.0.md`.
 

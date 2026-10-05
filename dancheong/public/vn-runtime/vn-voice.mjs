@@ -1,7 +1,7 @@
-import {deliveryNotes} from '../cortex-vn-performance.mjs?v=a63fa2266034';
-import { withMediaTask } from './vn-storage.mjs?v=a63fa2266034';
-import { createByteLru } from './vn-byte-lru.mjs?v=a63fa2266034';
-import { speakableKorean, actingNotes } from './vn-speech-ko.mjs?v=a63fa2266034';
+import {deliveryNotes} from '../cortex-vn-performance.mjs?v=4a6fe5d540c6';
+import { withMediaTask } from './vn-storage.mjs?v=4a6fe5d540c6';
+import { createByteLru } from './vn-byte-lru.mjs?v=4a6fe5d540c6';
+import { speakableKorean, actingNotes } from './vn-speech-ko.mjs?v=4a6fe5d540c6';
 export const VOICE_MODEL = 'gpt-4o-mini-tts-2025-12-15';
 export const VOICE_CACHE_LIMIT = 48;
 export const voices = ['marin', 'cedar', 'coral', 'sage', 'ash', 'verse'];

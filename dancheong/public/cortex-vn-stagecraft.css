@@ -6,6 +6,7 @@
 #vn-stage .vn-cutin{filter:var(--vn-grade-filter,none);}
 #vn-stage .vn-stagecraft{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden;}
 #vn-stage .vn-stagecraft>div{position:absolute;inset:0;}
+#vn-stage[data-stagecraft-paused="true"] .vn-stagecraft *,#vn-stage[data-stagecraft-paused="true"] .vn-depth{animation-play-state:paused!important;}
 
 /* 2.5D depth: far = whole plate, mid/near = soft depth masks of the same plate. */
 #vn-stage .vn-background>.vn-depth{position:absolute;inset:0;background:inherit;pointer-events:none;transition:filter .8s ease;will-change:transform;}

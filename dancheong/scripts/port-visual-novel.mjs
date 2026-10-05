@@ -63,6 +63,11 @@ export async function buildVN(){
     // All providers run under the main site's own authenticated routes.
     if(/\.(?:m?js)$/.test(name))code=code.replaceAll('/api/openai','/api/vn/openai').replaceAll('/api/go','/api/vn/go').replaceAll('/api/gemini','/api/vn/gemini').replaceAll('/api/typecast','/api/vn/typecast').replaceAll('/api/voice','/api/vn/voice').replaceAll('/api/image','/api/vn/image').replaceAll('/work-presentation.json','/vn-runtime/work-presentation.json');
     if(name==='vn.js'){
+      // Shared reading defaults apply to every work. Explicit saved choices,
+      // including off, survive updates; eye/mouth animation stays opt-in.
+      code=replace(code,"shots: storedReading?.shots === 'on' ? 'on' : 'off'", "shots: storedReading?.shots === 'off' ? 'off' : 'on'");
+      code=replace(code,'사건 연출은 기본 꺼짐이며 기존 선택을 유지합니다.','사건 연출은 모든 작품에서 기본 켜짐이며, 직접 변경한 설정은 유지합니다.');
+      code=replace(code,'추가 이미지는 기본 꺼짐입니다.','추가 구도·자세 생성은 모든 작품에서 기본 켜짐이며, 눈 깜빡임·입 움직임은 기본 꺼짐입니다. 직접 변경한 설정은 유지합니다.');
       code=replace(code,"model: state.provider === 'muse' ? providerModels.muse : 'gpt-5.6-luna'", "model: state.provider === 'muse' ? providerModels.muse : 'gpt-6-luna'");
       code=replace(code,'인물 배치 확인에는 GPT 5.6 Luna','인물 배치 확인에는 GPT 6 Luna');
       code=replace(code,'import { loadDeviceKeys, storeDeviceKeys }', 'import { loadDeviceKeys, storeDeviceKeys, changedDeviceKeys }');
@@ -184,6 +189,7 @@ export async function buildVN(){
     if(name==='vn-character-art.mjs')code=replace(code,"MANDATORY SHARED STAGE FRAMING:","MANDATORY SHARED STAGE FRAMING: Use coherent head, neck, shoulders, ribcage, waist and pelvis anatomy at one camera distance. Include the complete torso, both hip joints and upper thighs. Preserve the individual build and natural shoulder-to-pelvis proportions. Never lengthen the torso to fill the canvas or compensate for missing legs by enlarging a bust. For later expressions and costumes preserve the base head-to-body ratio, shoulder height and hip height. ");
     if(name==='vn-diagnostics.mjs')code=replace(code,"cast: '인물 판정 API'","cast: '인물·연출 판정 API'");
     if(name==='vn-assets.mjs'){
+      code=replace(code,"prefs?.cg === 'on' ? 'on' : 'off'", "prefs?.cg === 'off' ? 'off' : 'on'");
       // Capture origin explicitly at every call; concurrent scene lookahead must
       // never read a mutable "current turn" after an await.
       code=code.replaceAll('ensure(', 'ensure(scene, ');
