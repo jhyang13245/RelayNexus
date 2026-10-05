@@ -314,11 +314,11 @@ export function gradeFor(palette = 'auto', strength = 'subtle') {
   return { filter:k ? `contrast(${mix(contrast).toFixed(3)}) saturate(${mix(saturate).toFixed(3)}) brightness(${mix(brightness).toFixed(3)})${hue ? ` hue-rotate(${(hue * k).toFixed(1)}deg)` : ''}` : 'none', shadow:alpha(grade.shadow), highlight:alpha(grade.highlight) };
 }
 
-export const STAGECRAFT_DEFAULTS = { textfx:'on', action:'on', depth:'on', cgcamera:'on', waitmask:'on', grade:'subtle', stingers:'on', leitmotif:'on', sfx:'recorded', facecheck:'on' };
+export const STAGECRAFT_DEFAULTS = { textfx:'on', action:'on', depth:'on', cgcamera:'on', waitmask:'on', grade:'subtle', stingers:'on', leitmotif:'on', sfx:'recorded', facecheck:'on', actorcamera:'presence' };
 export function normalizeStagecraftPrefs(value) {
   const prefs = value && typeof value === 'object' ? value : {}, out = {};
   for (const [name, fallback] of Object.entries(STAGECRAFT_DEFAULTS)) {
-    const allowed = name === 'grade' ? ['off','subtle','strong'] : name === 'sfx' ? ['recorded','synth'] : ['on','off'];
+    const allowed = name === 'grade' ? ['off','subtle','strong'] : name === 'sfx' ? ['recorded','synth'] : name === 'actorcamera' ? ['presence','standard'] : ['on','off'];
     out[name] = allowed.includes(prefs[name]) ? prefs[name] : fallback;
   }
   return out;

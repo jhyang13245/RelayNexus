@@ -1,5 +1,5 @@
-import { checkWorkManifest } from './vn-manifest-check.mjs?v=4a6fe5d540c6';
-import { presentationScenario, visualCharacter, publicAppearance } from './vn-public-cast.mjs?v=4a6fe5d540c6';
+import { checkWorkManifest } from './vn-manifest-check.mjs?v=620ff060ab90';
+import { presentationScenario, visualCharacter, publicAppearance } from './vn-public-cast.mjs?v=620ff060ab90';
 const list = value => Array.isArray(value) ? value : [];
 export const issueLabels = { 'duplicate-id': '인물 ID 중복', 'ambiguous-alias': '다른 인물이 같은 호칭 사용', 'missing-participant': '사건 참여 인물 연결 누락', 'missing-public-name': '첫 등장용 공개 호칭 누락', 'missing-appearance': '공개 외형·참조 이미지 없음' };
 // Inspect authored metadata without invoking a model or mutating the engine.

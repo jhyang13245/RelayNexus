@@ -83,3 +83,14 @@
 .vn-stagecraft-settings .vn-settings-row{flex-wrap:wrap;}
 .vn-stagecraft-settings label small{display:block;opacity:.7;font-size:11px;margin-top:3px;}
 .vn-stagecraft-settings .vn-art-rule-help{display:block;opacity:.72;font-size:12px;margin-top:8px;line-height:1.5;}
+
+/* Actor camera (1.26.3): landscape phones frame actors closer, like commercial
+   VNs. One uniform zoom for the whole cast, so relative stature and the shared
+   ground plane (--hs, --stature-lift) are untouched. The tallest public cast
+   member's crown stays inside the frame; legs below mid-thigh are cropped. */
+@media (max-height:600px) and (orientation:landscape) {
+  #vn-stage:not([data-actor-camera="standard"]) .vn-characters { --camera-height:118%; --camera-bottom:-18.5%; }
+  /* Push in from chest height instead of the feet so a close shot keeps the head. */
+  #vn-stage:not([data-actor-camera="standard"])[data-shot="close"] .vn-characters { transform:scale(1.05); transform-origin:65% 55%; }
+  #vn-stage:not([data-actor-camera="standard"])[data-shot="wide"] .vn-characters { transform:scale(.9); }
+}

@@ -1,5 +1,5 @@
-import { alphaBounds, faceFrame, normalisedFrame, headCentre, portraitFrameCheck, portraitLandmarks, drawFramedSprite, cameraLandmarks } from './vn-sprite.mjs?v=4a6fe5d540c6';
-import { cropBox } from './vn-cinema.mjs?v=4a6fe5d540c6';
+import { alphaBounds, faceFrame, normalisedFrame, headCentre, portraitFrameCheck, portraitLandmarks, drawFramedSprite, cameraLandmarks } from './vn-sprite.mjs?v=620ff060ab90';
+import { cropBox } from './vn-cinema.mjs?v=620ff060ab90';
 
 async function bitmap(url) {
   const response = await fetch(url);

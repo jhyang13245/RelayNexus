@@ -1,4 +1,4 @@
-import { resolveWorkPresentation, publishedEventTurns } from '../cortex-vn-presentation.mjs?v=4a6fe5d540c6';
+import { resolveWorkPresentation, publishedEventTurns } from '../cortex-vn-presentation.mjs?v=620ff060ab90';
 const workIdentities = {
   "fate-seoul": {
     "requiredCharacterIds": ["NPC_SERVANT_SABER_JEONGJO_TS", "NPC_SERVANT_LANCER_SCATHACH", "NPC_SERVANT_ARCHER_TESLA"],
@@ -9,7 +9,7 @@ const workIdentities = {
 // Package-authored public aliases take precedence. Old published packages can
 // use the small work-keyed compatibility data file until their author updates
 // the package; generic directing code contains no work or character IDs.
-import { resolveEventAliases, identityLabel, labelOccurrences } from './vn-identity.mjs?v=4a6fe5d540c6';
+import { resolveEventAliases, identityLabel, labelOccurrences } from './vn-identity.mjs?v=620ff060ab90';
 const compatibility = {
   "fate-seoul": {
     "publicAliases": {

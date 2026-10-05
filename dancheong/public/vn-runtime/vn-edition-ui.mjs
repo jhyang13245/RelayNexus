@@ -1,5 +1,5 @@
-import { revisionDescriptor } from './vn-editions.mjs?v=4a6fe5d540c6';
-import { editionId } from './vn-edition-key.mjs?v=4a6fe5d540c6';
+import { revisionDescriptor } from './vn-editions.mjs?v=620ff060ab90';
+import { editionId } from './vn-edition-key.mjs?v=620ff060ab90';
 
 export function createEditionDialog({ root, getWork, getCurrent, list, install, restore, exportRecord }) {
   const dialog = document.createElement('dialog'); dialog.id = 'vn-edition-dialog'; dialog.className = 'vn-edition-dialog';

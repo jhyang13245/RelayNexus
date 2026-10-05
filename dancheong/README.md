@@ -1,6 +1,8 @@
 # Dancheong
 
-Current release: **v1.26.2** (source version; deployment status is tracked by Sites)
+Current release: **v1.26.3** (source version; deployment status is tracked by Sites)
+
+1.26.3 frames VN actors closer on landscape phones with one uniform camera zoom (about 37% larger for a 162 cm character); relative stature and the shared ground plane are unchanged, and the tallest cast member stays in frame. The previous size remains available under Stage extensions → Actor camera. See `docs/VN_ACTOR_CAMERA_1.26.3.md`.
 
 1.26.2 sets the shared VN presentation defaults to the requested preset: automatic event scenes and additional composition/pose art on; eye/mouth animation and face compositing off. NVL, normal reading interval/text size, automatic font, scene motion, cinema and stagecraft remain enabled as specified, with subtle grading, recorded CC0 foley and automatic art rules. Explicit saved preferences remain respected. New image generation can incur provider charges; changing defaults does not regenerate saved artwork.
 

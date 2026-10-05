@@ -295,3 +295,21 @@ test('review: CG camera survives page turns; motif met only when heard; check wa
  heard=true;craft.update({...base,pageKey:'p3',kind:'dialogue',eventArt:'',background:'bg.png',portraits:[{id:'a',name:'가',url:'a.png'}]});
  assert.equal(storage.size,1);void canvas;
 });
+
+test('actor camera: closer by default on landscape phones, uniform zoom, opt-out kept',async()=>{
+ assert.equal(normalizeStagecraftPrefs({}).actorcamera,'presence');
+ assert.equal(normalizeStagecraftPrefs({actorcamera:'standard'}).actorcamera,'standard');
+ assert.equal(normalizeStagecraftPrefs({actorcamera:'huge'}).actorcamera,'presence');
+ const css=fs.readFileSync('public/cortex-vn-stagecraft.css','utf8');
+ const block=css.slice(css.indexOf('/* Actor camera')).replace(/\/\*[\s\S]*?\*\//gu,'');
+ assert.match(css.slice(css.indexOf('/* Actor camera')),/@media \(max-height:600px\) and \(orientation:landscape\)/u);
+ assert.match(block,/:not\(\[data-actor-camera="standard"\]\) \.vn-characters \{ --camera-height:118%; --camera-bottom:-18\.5%; \}/u);
+ assert.doesNotMatch(block,/--hs|--stature-lift/u,'stature ratios are never overridden');
+ const dom=new JSDOM('<div id="vn-stage"><div class="vn-scene-visual"></div></div>');
+ for(const name of ['document','getComputedStyle','requestAnimationFrame','Image'])globalThis[name]=dom.window[name];
+ const {createStagecraft}=await import('../../public/cortex-vn-stagecraft-dom.mjs');
+ const stage=dom.window.document.getElementById('vn-stage');let prefs=normalizeStagecraftPrefs({});
+ const craft=createStagecraft({stage,visual:stage.firstElementChild,prefs:()=>prefs,storage:null});
+ craft.update({pageKey:'a',enabled:false});assert.equal(stage.dataset.actorCamera,'presence');
+ prefs={...prefs,actorcamera:'standard'};craft.update({pageKey:'b',enabled:false});assert.equal(stage.dataset.actorCamera,'standard');
+});

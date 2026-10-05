@@ -1,6 +1,6 @@
 // Procedural ambience: environment beds and mood pads synthesised with Web
 // Audio, so no third-party recordings or music files ship with the site.
-import { createPlaybackContext, resumePlayback } from './vn-media-session.mjs?v=4a6fe5d540c6';
+import { createPlaybackContext, resumePlayback } from './vn-media-session.mjs?v=620ff060ab90';
 const indoor = /실내|방|교실|복도|집|거실|부엌|카페|사무실|도서관|병원|병실|강당|체육관|식당|호텔|지하|열차|기차|차 안|엘리베이터|상점|가게|교회|성당|회의실|연구실|기숙사|room|hall|office|cafe|house|library|indoor|inside/iu;
 
 export function ambienceFor(world = {}, { mood = 'normal', memory = false, light = 'day', weather = 'clear' } = {}) {
