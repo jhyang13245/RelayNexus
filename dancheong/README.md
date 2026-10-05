@@ -1,6 +1,8 @@
 # Dancheong
 
-Current release: **v1.26.3** (source version; deployment status is tracked by Sites)
+Current release: **v1.26.4** (source version; deployment status is tracked by Sites)
+
+1.26.4 restages VN actors on landscape phones after the Tsukihime remake: the scale reference is the median public cast height (excluding the POV protagonist), so a typical member stands waist-up with the crown near 8% and the eye line on the upper third; solo actors are centred, groups spread across the frame, text overlays them with an outline, and the camera only tilts when someone taller is on stage. Relative stature is unchanged. See `docs/VN_TSUKIHIME_STAGE_1.26.4.md`.
 
 1.26.3 frames VN actors closer on landscape phones with one uniform camera zoom (about 37% larger for a 162 cm character); relative stature and the shared ground plane are unchanged, and the tallest cast member stays in frame. The previous size remains available under Stage extensions → Actor camera. See `docs/VN_ACTOR_CAMERA_1.26.3.md`.
 

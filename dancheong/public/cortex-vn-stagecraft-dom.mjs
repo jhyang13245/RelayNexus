@@ -53,7 +53,7 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
   let gradeKey = '';
   function applyGrade() {
     // Actor camera is a uniform zoom (CSS): relative stature is unchanged.
-    stage.dataset.actorCamera = prefs().actorcamera || 'presence';
+    stage.dataset.actorCamera = prefs().actorcamera || 'tsukihime';
     const value = gradeFor(palette(), prefs().grade), next = JSON.stringify(value);
     if (next === gradeKey) return; gradeKey = next;
     stage.style.setProperty('--vn-grade-filter', value.filter);
@@ -61,6 +61,8 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
     stage.style.setProperty('--vn-grade-highlight', value.highlight);
     stage.dataset.grade = prefs().grade;
   }
+
+  stage.dataset.actorCamera = prefs().actorcamera || 'tsukihime';
 
   // ---------- 2.5D depth ----------
   function depthLayers(background) {
@@ -324,7 +326,7 @@ export function createStagecraft({ stage, visual, reduced = () => false, prefs =
         + `<div class="vn-settings-row">${select('vn-sc-waitmask', '대기 연출', onOff, 'AI 응답·이미지 대기 중 화면 이동과 이전 CG 회상')}${select('vn-sc-grade', '공통 색보정', [['subtle', '약하게'], ['strong', '강하게'], ['off', '끔']], '배경·입상·CG에 같은 색 등급 적용')}</div>`
         + `<div class="vn-settings-row">${select('vn-sc-stingers', '음악 스팅어', onOff, '충격·폭로·상실·결의 순간의 짧은 음악')}${select('vn-sc-leitmotif', '캐릭터 테마', onOff, '첫 만남과 결정적 순간의 인물 모티프')}</div>`
         + `<div class="vn-settings-row">${select('vn-sc-sfx', '효과음 음원', [['recorded', '녹음 CC0'], ['synth', '합성음']], '녹음 음원이 없거나 재생할 수 없는 종류는 합성음으로 재생')}${select('vn-sc-facecheck', 'CG·입상 일관성 점검', onOff, '이벤트 CG 인물의 머리색이 입상과 다르면 알림')}</div>`
-        + `<div class="vn-settings-row">${select('vn-sc-actorcamera', '입상 카메라', [['presence', '가깝게 (권장)'], ['standard', '기존 크기']], '가로 휴대폰에서 입상을 크게 비춥니다. 인물 간 키 비율과 발 위치는 그대로입니다')}</div>`
+        + `<div class="vn-settings-row">${select('vn-sc-actorcamera', '입상 카메라', [['tsukihime', '월희식 · 중앙 구도 (권장)'], ['presence', '크게 · 오른쪽 (본문 피함)'], ['standard', '기존 크기']], '가로 휴대폰 기준. 월희식은 인물을 가운데 크게 두고 본문이 인물 위에 겹치며, 키 비율과 발 위치는 그대로입니다')}</div>`
         + `<div class="vn-settings-row">${select('vn-art-palette', '작품 아트 규칙 · 팔레트', Object.entries(ART_RULES.palette).map(([v, [t]]) => [v, t]))}${select('vn-art-line', '선', Object.entries(ART_RULES.line).map(([v, [t]]) => [v, t]))}${select('vn-art-shading', '음영', Object.entries(ART_RULES.shading).map(([v, [t]]) => [v, t]))}</div>`
         + '<small class="vn-art-rule-help">아트 규칙은 이 작품의 모든 배경·입상·CG 프롬프트에 같은 팔레트·선·음영 지시로 들어갑니다. 저장하면 스타일 메모처럼 새 규칙으로 이미지를 다시 그리며(이미지 비용 발생), 기존 이미지는 이전 규칙으로 보관됩니다. 공통 색보정은 비용 없이 화면에서만 적용됩니다.</small></div>';
       panel.append(box);

@@ -1,5 +1,5 @@
-import { editionId, snapshotEdition } from './vn-edition-key.mjs?v=620ff060ab90';
-import { validateSlot, slotSummary } from './vn-saves.mjs?v=620ff060ab90';
+import { editionId, snapshotEdition } from './vn-edition-key.mjs?v=889f2cc97573';
+import { validateSlot, slotSummary } from './vn-saves.mjs?v=889f2cc97573';
 
 export function revisionDescriptor(row) {
   const revision = row?.revision ?? row?.currentRevision, sha256 = String(row?.packageSha256 || '').toLowerCase();

@@ -4,7 +4,7 @@
 // base outside the face, only a feathered face oval from the expression is
 // laid over the base, and the costume and silhouette stay identical.
 // Anything that fails the alignment or seam checks is shown as generated.
-import { alphaBounds, portraitLandmarks } from './vn-sprite.mjs?v=620ff060ab90';
+import { alphaBounds, portraitLandmarks } from './vn-sprite.mjs?v=889f2cc97573';
 
 export function faceOval(face) {
   if (!face) return null;

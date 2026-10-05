@@ -25,7 +25,13 @@ export function adaptStagecraft(name, code, version){
     // A low pulse on every beat gives the battle pattern percussion.
     code=once(code,'    for (const b of slot.bass) {','    if (pattern.mood === "battle" && idx % 2 === 0) playTone({ freq: 62, time, dur: 0.11, type: "sine", peak: 0.26 * (0.4 + vol) });\n    for (const b of slot.bass) {');
   }
-  if(name==='vn-assets.mjs')code=exactly(code,"String(style || '').trim().slice(0, 600)","String(style || '').trim().slice(0, 820)",2);
+  if(name==='vn-assets.mjs'){
+    code=exactly(code,"String(style || '').trim().slice(0, 600)","String(style || '').trim().slice(0, 820)",2);
+    // Public heights of the cast who can stand on stage (the POV protagonist is
+    // the camera) for the Tsukihime-style framing reference. Presentation only.
+    code=once(code,'        referenceHeightCm: stageReferenceHeight(scene.candidates || scene.characters || []),',`        referenceHeightCm: stageReferenceHeight(scene.candidates || scene.characters || []),
+        castHeightsCm: (scene.candidates || scene.characters || []).filter(person => person && person.id !== scene.protagonistId).map(person => characterHeight(person)),`);
+  }
   if(name==='vn-music-ai.mjs')code=once(code,"  eerie: { bpm: 60,","  battle: { bpm: 152, text: 'full-scale battle; fast driving percussion ostinato, aggressive low strings and brass stabs, heroic and violent, relentless forward momentum' },\n  eerie: { bpm: 60,");
   if(name==='vn-work-music.mjs'){
     code=once(code,"tense: '긴장·전투', eerie:","tense: '긴장·대치', battle: '전투', eerie:");
@@ -52,7 +58,7 @@ export function adaptStagecraft(name, code, version){
   if(name==='vn.js'){
     code=`import {createStagecraft} from '${'../cortex-vn-stagecraft-dom.mjs?v='+version}';
 import {createStageSound,createSampleFoley,createDuck} from '${from('sound')}';
-import {createMusicSync,composeArtStyle,normalizeArtRule,normalizeStagecraftPrefs} from '${from('stagecraft')}';
+import {createMusicSync,composeArtStyle,normalizeArtRule,normalizeStagecraftPrefs,framingReferenceCm,tsukihimePositions,stageTilt} from '${from('stagecraft')}';
 import {cuePlan as stagecraftCuePlan} from '${from('performance')}';
 import {portraitCutin as stagecraftCrop} from './vn-cinema.mjs';
 const stageDuck=createDuck();
@@ -77,6 +83,21 @@ const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionRedu
   if(cue.sound!=='none')foley.play(cue.sound==='impact'&&['heavy_shake','flash_red'].includes(frame.direction.fx)?'heavy':cue.sound,frame.key+cue.at,{weather:$('vn-stage').dataset.weather});`);
     // Impact flashes share one budget with stagecraft's invert/strobe.
     code=once(code,"if(cue.kind==='impact'&&!motionReduced())playEffect(frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake');","if(cue.kind==='impact'&&!motionReduced()){const fx=frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake';playEffect(String(fx).startsWith('flash')&&!stagecraft.flashGate()?'shake':fx);}");
+    // Tsukihime-style stage on landscape phones: median-cast scale reference,
+    // centre-weighted blocking and a tilt for a taller person on stage. The
+    // other cameras keep the original reference and placement exactly.
+    code=once(code,'const positions = stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow, compactLandscape })',"const tsukihimeStage = compactLandscape && stagecraftPrefs.actorcamera === 'tsukihime', stageReferenceCm = tsukihimeStage && framingReferenceCm(view?.castHeightsCm) || view?.referenceHeightCm || 178, positions = tsukihimeStage ? tsukihimePositions(state.stageOrder.length) : stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow, compactLandscape })");
+    code=once(code,'  container.dataset.count = String(people.length);',`  container.dataset.count = String(people.length);
+  if (tsukihimeStage) {
+    const hiddenIds = [...(state.eventCharacterIds || []), ...(state.fadingEventIds || [])];
+    const tallest = Math.max(1, ...people.filter(person => !hiddenIds.includes(person.id)).map(person => projectStature(person, stageReferenceCm).scale));
+    container.style.setProperty('--stage-tilt', (stageTilt(tallest) * 100).toFixed(2) + '%');
+    const focus = state.stageOrder.indexOf(state.focusId || speakerId);
+    container.style.setProperty('--focus-x', ((focus >= 0 ? blocking[focus]?.x ?? positions[focus] : positions[0] ?? .54) * 100).toFixed(1) + '%');
+  } else { container.style.removeProperty('--stage-tilt'); container.style.removeProperty('--focus-x'); }`);
+    code=once(code,'const stature = projectStature(person, view.referenceHeightCm || 178);','const stature = projectStature(person, stageReferenceCm);');
+    // The wider Tsukihime text column holds more characters per NVL line.
+    code=once(code,'compactLandscape ? innerWidth * .54 :',"compactLandscape ? innerWidth * (stagecraftPrefs.actorcamera === 'tsukihime' ? .66 : .54) :");
     code=once(code,'getStyle: () => state.artStyle,','getStyle: () => composeArtStyle(state.artStyle, readArtRule(state.activeSlug)),');
     code=once(code,'state.artStyle, state.reading.cg','composeArtStyle(state.artStyle, readArtRule(state.activeSlug)), state.reading.cg');
     // A music change on a beat with a text cue enters with that cue.

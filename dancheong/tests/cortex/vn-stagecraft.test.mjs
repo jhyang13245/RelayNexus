@@ -296,20 +296,50 @@ test('review: CG camera survives page turns; motif met only when heard; check wa
  assert.equal(storage.size,1);void canvas;
 });
 
-test('actor camera: closer by default on landscape phones, uniform zoom, opt-out kept',async()=>{
- assert.equal(normalizeStagecraftPrefs({}).actorcamera,'presence');
- assert.equal(normalizeStagecraftPrefs({actorcamera:'standard'}).actorcamera,'standard');
- assert.equal(normalizeStagecraftPrefs({actorcamera:'huge'}).actorcamera,'presence');
+test('actor camera: Tsukihime-style by default on landscape phones, other cameras kept',async()=>{
+ assert.equal(normalizeStagecraftPrefs({}).actorcamera,'tsukihime');
+ for(const value of ['tsukihime','presence','standard'])assert.equal(normalizeStagecraftPrefs({actorcamera:value}).actorcamera,value);
+ assert.equal(normalizeStagecraftPrefs({actorcamera:'huge'}).actorcamera,'tsukihime');
  const css=fs.readFileSync('public/cortex-vn-stagecraft.css','utf8');
- const block=css.slice(css.indexOf('/* Actor camera')).replace(/\/\*[\s\S]*?\*\//gu,'');
- assert.match(css.slice(css.indexOf('/* Actor camera')),/@media \(max-height:600px\) and \(orientation:landscape\)/u);
- assert.match(block,/:not\(\[data-actor-camera="standard"\]\) \.vn-characters \{ --camera-height:118%; --camera-bottom:-18\.5%; \}/u);
- assert.doesNotMatch(block,/--hs|--stature-lift/u,'stature ratios are never overridden');
+ const block=css.slice(css.indexOf('/* Actor cameras')).replace(/\/\*[\s\S]*?\*\//gu,'');
+ assert.match(block,/@media \(max-height:600px\) and \(orientation:landscape\)/u);
+ assert.match(block,/\[data-actor-camera="presence"\] \.vn-characters \{ --camera-height:118%; --camera-bottom:-18\.5%; \}/u);
+ const {TSUKIHIME_CAMERA}=await import('../../public/cortex-vn-stagecraft.mjs');
+ assert.ok(block.includes(`[data-actor-camera="tsukihime"] .vn-characters { --camera-height:${TSUKIHIME_CAMERA.height*100}%; --camera-bottom:${+(TSUKIHIME_CAMERA.bottom*100).toFixed(1)}%; }`),'CSS camera matches the tilt constants');
+ assert.match(block,/var\(--stature-lift,0\) - var\(--stage-tilt,0%\)/u);
+ assert.doesNotMatch(block,/--hs\s*:|--stature-lift\s*:/u,'stature ratios are never overridden');
  const dom=new JSDOM('<div id="vn-stage"><div class="vn-scene-visual"></div></div>');
  for(const name of ['document','getComputedStyle','requestAnimationFrame','Image'])globalThis[name]=dom.window[name];
  const {createStagecraft}=await import('../../public/cortex-vn-stagecraft-dom.mjs');
  const stage=dom.window.document.getElementById('vn-stage');let prefs=normalizeStagecraftPrefs({});
  const craft=createStagecraft({stage,visual:stage.firstElementChild,prefs:()=>prefs,storage:null});
- craft.update({pageKey:'a',enabled:false});assert.equal(stage.dataset.actorCamera,'presence');
+ assert.equal(stage.dataset.actorCamera,'tsukihime','set before the first render');
  prefs={...prefs,actorcamera:'standard'};craft.update({pageKey:'b',enabled:false});assert.equal(stage.dataset.actorCamera,'standard');
+});
+
+test('Tsukihime framing: median cast reference, centre blocking, tilt only for a taller person',async()=>{
+ const {framingReferenceCm,tsukihimePositions,stageTilt,TSUKIHIME_CAMERA}=await import('../../public/cortex-vn-stagecraft.mjs');
+ assert.equal(framingReferenceCm([162,156,160,170,180]),162);
+ assert.equal(framingReferenceCm([150,160]),155);
+ assert.equal(framingReferenceCm([190,195]),178,'very tall casts are capped');
+ assert.equal(framingReferenceCm([120,130]),150);
+ assert.equal(framingReferenceCm([]),0);assert.equal(framingReferenceCm([NaN,'x']),0);
+ assert.deepEqual(tsukihimePositions(1),[.54]);assert.deepEqual(tsukihimePositions(3),[.2,.5,.8]);assert.deepEqual(tsukihimePositions(5),[.2,.5,.8]);
+ assert.equal(stageTilt(1),0);assert.equal(stageTilt(.9),0);
+ // A person up to ~2.3% taller than the reference still fits without a tilt.
+ assert.equal(stageTilt(1.02),0);
+ const tilt=stageTilt(180/162),crown=TSUKIHIME_CAMERA.crownTop-TSUKIHIME_CAMERA.height*TSUKIHIME_CAMERA.crownPerScale*(180/162-1)+tilt;
+ assert.ok(Math.abs(crown-TSUKIHIME_CAMERA.minCrownTop)<1e-9,'the tallest crown lands just inside the frame');
+ const {projectStature}=await import('../../public/vn-runtime/vn-stature.mjs');
+ const a=projectStature({heightCm:156},162),b=projectStature({heightCm:180},162);
+ assert.ok(Math.abs(a.scale/b.scale-156/180)<1e-12,'relative stature stays exact');
+});
+
+test('the built reader uses the Tsukihime stage only on landscape phones with that camera',()=>{
+ const vn=fs.readFileSync('public/vn-runtime/vn.js','utf8'),assets=fs.readFileSync('public/vn-runtime/vn-assets.mjs','utf8');
+ assert.ok(vn.includes("const tsukihimeStage = compactLandscape && stagecraftPrefs.actorcamera === 'tsukihime'"));
+ assert.ok(vn.includes('projectStature(person, stageReferenceCm)'));
+ assert.ok(vn.includes("positions = tsukihimeStage ? tsukihimePositions(state.stageOrder.length) : stagePositions("));
+ assert.ok(vn.includes("container.style.removeProperty('--stage-tilt')"),'other cameras keep the original layout');
+ assert.ok(assets.includes('castHeightsCm: (scene.candidates || scene.characters || []).filter(person => person && person.id !== scene.protagonistId)'),'the POV protagonist never sets the scale');
 });

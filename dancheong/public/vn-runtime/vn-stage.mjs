@@ -1,6 +1,6 @@
 // Stage layout and direction rules. Pure functions only; vn.js applies them.
-import { lightFor } from './vn-scene.mjs?v=620ff060ab90';
-export { heightScale } from './vn-stature.mjs?v=620ff060ab90';
+import { lightFor } from './vn-scene.mjs?v=889f2cc97573';
+export { heightScale } from './vn-stature.mjs?v=889f2cc97573';
 
 // People keep their place on stage while they remain present. Newcomers join on
 // the right; when someone leaves, the rest slide instead of jumping slots.

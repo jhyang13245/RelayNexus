@@ -1,5 +1,5 @@
 // Manual saves are independent of the engine's autosave and the usage ledger.
-import { editionScope, snapshotEdition } from './vn-edition-key.mjs?v=620ff060ab90';
+import { editionScope, snapshotEdition } from './vn-edition-key.mjs?v=889f2cc97573';
 export const SLOT_COUNT = 10;
 // Quick save (F5 / F9) has its own slot next to the ten numbered ones.
 export const QUICK_SLOT = 11;

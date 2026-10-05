@@ -1,5 +1,5 @@
-import { capturePresentation, makeSlot } from './vn-saves.mjs?v=620ff060ab90';
-import { verifiedPackage, stampEdition } from './vn-editions.mjs?v=620ff060ab90';
+import { capturePresentation, makeSlot } from './vn-saves.mjs?v=889f2cc97573';
+import { verifiedPackage, stampEdition } from './vn-editions.mjs?v=889f2cc97573';
 
 // Prepare the package's initial canonical state without changing the live game.
 // The activation journal shares the save loader's format, but this record is

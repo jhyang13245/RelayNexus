@@ -1,16 +1,16 @@
-import {poseAssetKey,posePrompt} from '../cortex-vn-performance.mjs?v=620ff060ab90';
-import { expressionsAt, portraitKey, stageCast, locationAnchorKey, environmentKey } from './vn-scene.mjs?v=620ff060ab90';
-import { matteForReferences, transparentSprite, cleanSpriteEdges, chromaVersion } from './vn-chroma.mjs?v=620ff060ab90';
-import { CHARACTER_FINISH, portraitPrompt, workPortrait, STAGE_FRAME_VERSION, STAGE_FRAME_DIRECTION } from './vn-character-art.mjs?v=620ff060ab90';
-import { characterHeight, stageReferenceHeight } from './vn-stature.mjs?v=620ff060ab90';
-import { checkSpriteFrame } from './vn-sprite.mjs?v=620ff060ab90';
-import { outfitKey } from './vn-wardrobe.mjs?v=620ff060ab90';
-import { shotAssetKey, shotPrompt } from './vn-shots.mjs?v=620ff060ab90';
-import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs?v=620ff060ab90';
-import { withMediaTask } from './vn-storage.mjs?v=620ff060ab90';
-import { optimizeImageRecord } from './vn-image-codec.mjs?v=620ff060ab90';
-import { createImageReuseIndex } from './vn-image-reuse.mjs?v=620ff060ab90';
-import { savedCamera } from './vn-camera-store.mjs?v=620ff060ab90';
+import {poseAssetKey,posePrompt} from '../cortex-vn-performance.mjs?v=889f2cc97573';
+import { expressionsAt, portraitKey, stageCast, locationAnchorKey, environmentKey } from './vn-scene.mjs?v=889f2cc97573';
+import { matteForReferences, transparentSprite, cleanSpriteEdges, chromaVersion } from './vn-chroma.mjs?v=889f2cc97573';
+import { CHARACTER_FINISH, portraitPrompt, workPortrait, STAGE_FRAME_VERSION, STAGE_FRAME_DIRECTION } from './vn-character-art.mjs?v=889f2cc97573';
+import { characterHeight, stageReferenceHeight } from './vn-stature.mjs?v=889f2cc97573';
+import { checkSpriteFrame } from './vn-sprite.mjs?v=889f2cc97573';
+import { outfitKey } from './vn-wardrobe.mjs?v=889f2cc97573';
+import { shotAssetKey, shotPrompt } from './vn-shots.mjs?v=889f2cc97573';
+import { motionKey, motionPrompt, prepareMotionEdit, finishMotionEdit } from './vn-motion.mjs?v=889f2cc97573';
+import { withMediaTask } from './vn-storage.mjs?v=889f2cc97573';
+import { optimizeImageRecord } from './vn-image-codec.mjs?v=889f2cc97573';
+import { createImageReuseIndex } from './vn-image-reuse.mjs?v=889f2cc97573';
+import { savedCamera } from './vn-camera-store.mjs?v=889f2cc97573';
 
 // One art direction for every generated asset, so backgrounds, sprites,
 // expressions and event CG read as the same work. A per-work note refines it.
@@ -152,8 +152,8 @@ export async function replaceAssetEncoding(original, optimized) {
   } finally { db.close(); }
 }
 
-import { createPriorityPool } from './vn-priority.mjs?v=620ff060ab90';
-import { diagnostics } from './vn-diagnostics.mjs?v=620ff060ab90';
+import { createPriorityPool } from './vn-priority.mjs?v=889f2cc97573';
+import { diagnostics } from './vn-diagnostics.mjs?v=889f2cc97573';
 // Jobs are keyed by reusable assets, not turns. Failed jobs require explicit retry.
 export function createStageAssets({ getKey, getQuality, getReferences, getQualityReference = async () => '', getLockedPortraitKey = () => '', getPortraitReplacement = () => '', getProvider = () => 'openai', getStyle = () => '', getCgEnabled = () => false, getShotsEnabled = () => false, getMotionEnabled = () => false, castDirector, onChange, onSpriteReady = () => {}, onError, fetchImage = fetch, read = readAsset, write = writeAsset, listKeys = readImageKeys, chooseMatte = matteForReferences, removeMatte = transparentSprite, maxConcurrent = Infinity, cleanEdges = cleanSpriteEdges, prepareMaskedEdit = prepareMotionEdit, finishMaskedEdit = finishMotionEdit, reviewFrame = checkSpriteFrame }) {
   const cache = new Map(), loads = new Map(), jobs = new Map(), failures = new Map();
@@ -560,6 +560,7 @@ export function createStageAssets({ getKey, getQuality, getReferences, getQualit
       // the participants drawn in this event (including its held reaction beat).
       return { background: cg || shotBackground || environment, environment, eventKey: cg ? cgAt : shotBackground ? shot.key : '', eventStart: cg ? beat.start : shotBackground ? page?.start : null, eventBackground: cg || shotBackground, eventCharacterIds: cg ? beat.characters.map(person => person.id) : shotBackground ? cast.map(person => person.id) : [], cgStatus, shotStatus: shot ? status(shot.key) : 'none', shotKind: shotBackground ? shot.kind : '', missingKeys, direction: scene.direction || null, readyCount, totalCount: requested.length, castStatus: scene.castStatus, identityIssue: scene.identityIssue || null, speakerOffScene: scene.speakerOffScene === true, speakerId: scene.speakerId || '', speakerName: scene.speakerName || cast.find(person => person.id === scene.speakerId)?.name || '', speakerProfile: cast.find(person => person.id === scene.speakerId)?.publicProfile || '',
         referenceHeightCm: stageReferenceHeight(scene.candidates || scene.characters || []),
+        castHeightsCm: (scene.candidates || scene.characters || []).filter(person => person && person.id !== scene.protagonistId).map(person => characterHeight(person)),
         status: keys.some(key => status(key) === 'generating') ? 'generating' : keys.some(key => status(key) === 'error') ? 'error' : readyCount === requested.length ? 'ready' : 'idle',
         portraits: cast.map(person => {
           const expression = emotions[person.id] || 'neutral';

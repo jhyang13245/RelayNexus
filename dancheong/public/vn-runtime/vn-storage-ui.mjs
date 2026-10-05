@@ -1,4 +1,4 @@
-import { storageStatus, requestDurableStorage, formatBytes, mediaInventory, mediaPaused } from './vn-storage.mjs?v=620ff060ab90';
+import { storageStatus, requestDurableStorage, formatBytes, mediaInventory, mediaPaused } from './vn-storage.mjs?v=889f2cc97573';
 
 export function storageDescription(info) {
   const usage = Number.isFinite(info.usage) && Number.isFinite(info.quota)

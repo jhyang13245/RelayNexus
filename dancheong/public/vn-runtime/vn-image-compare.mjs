@@ -1,9 +1,9 @@
-import { expressionPrompt, imageProviders } from './vn-assets.mjs?v=620ff060ab90';
-import { loadDeviceKeys } from './vn-key-vault.mjs?v=620ff060ab90';
-import { matteForReferences, transparentSprite } from './vn-chroma.mjs?v=620ff060ab90';
-import { displaySprite } from './vn-sprite.mjs?v=620ff060ab90';
-import { estimateCost } from './vn-cost-core.mjs?v=620ff060ab90';
-import { installCostMeter } from './vn-costs.mjs?v=620ff060ab90';
+import { expressionPrompt, imageProviders } from './vn-assets.mjs?v=889f2cc97573';
+import { loadDeviceKeys } from './vn-key-vault.mjs?v=889f2cc97573';
+import { matteForReferences, transparentSprite } from './vn-chroma.mjs?v=889f2cc97573';
+import { displaySprite } from './vn-sprite.mjs?v=889f2cc97573';
+import { estimateCost } from './vn-cost-core.mjs?v=889f2cc97573';
+import { installCostMeter } from './vn-costs.mjs?v=889f2cc97573';
 
 const $ = id => document.getElementById(id);
 const emotion = $('emotion'), button = $('generate'), selection = $('provider-selection');

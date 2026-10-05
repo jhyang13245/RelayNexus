@@ -84,13 +84,35 @@
 .vn-stagecraft-settings label small{display:block;opacity:.7;font-size:11px;margin-top:3px;}
 .vn-stagecraft-settings .vn-art-rule-help{display:block;opacity:.72;font-size:12px;margin-top:8px;line-height:1.5;}
 
-/* Actor camera (1.26.3): landscape phones frame actors closer, like commercial
-   VNs. One uniform zoom for the whole cast, so relative stature and the shared
-   ground plane (--hs, --stature-lift) are untouched. The tallest public cast
-   member's crown stays inside the frame; legs below mid-thigh are cropped. */
+/* Actor cameras for landscape phones (data-actor-camera, set before the first
+   render). Each is one uniform zoom for the whole cast: relative stature and the
+   shared ground plane (--hs, --stature-lift) are untouched.
+   presence (1.26.3): closer, still framed for the tallest public person. */
 @media (max-height:600px) and (orientation:landscape) {
-  #vn-stage:not([data-actor-camera="standard"]) .vn-characters { --camera-height:118%; --camera-bottom:-18.5%; }
+  #vn-stage[data-actor-camera="presence"] .vn-characters { --camera-height:118%; --camera-bottom:-18.5%; }
   /* Push in from chest height instead of the feet so a close shot keeps the head. */
-  #vn-stage:not([data-actor-camera="standard"])[data-shot="close"] .vn-characters { transform:scale(1.05); transform-origin:65% 55%; }
-  #vn-stage:not([data-actor-camera="standard"])[data-shot="wide"] .vn-characters { transform:scale(.9); }
+  #vn-stage[data-actor-camera="presence"][data-shot="close"] .vn-characters { transform:scale(1.05); transform-origin:65% 55%; }
+  #vn-stage[data-actor-camera="presence"][data-shot="wide"] .vn-characters { transform:scale(.9); }
+}
+/* tsukihime (1.26.4, default): framed like the Tsukihime remake. The scale
+   reference is the cast's median height (vn.js adapter), so a typical member
+   stands waist-up with the crown ~8% and the eye line on the upper third.
+   --stage-tilt (JS, TSUKIHIME_CAMERA) lowers the line-up only while someone
+   taller is on stage. Keep 118% / -22.5% in sync with TSUKIHIME_CAMERA. */
+@media (max-height:600px) and (orientation:landscape) {
+  #vn-stage[data-actor-camera="tsukihime"] .vn-characters { --camera-height:118%; --camera-bottom:-22.5%; }
+  #vn-stage[data-actor-camera="tsukihime"] .vn-character { bottom:calc(var(--camera-bottom) + var(--camera-height) * var(--stature-lift,0) - var(--stage-tilt,0%)); }
+  /* Close: a real face close-up on the focused person (Tsukihime ~45% face). */
+  #vn-stage[data-actor-camera="tsukihime"][data-shot="close"] .vn-characters { transform:scale(1.4); transform-origin:var(--focus-x,54%) 16%; }
+  #vn-stage[data-actor-camera="tsukihime"][data-shot="wide"] .vn-characters { transform:scale(.88); transform-origin:50% 4%; }
+  /* Text runs over the actors as in the reference: wider column, outlined
+     glyphs, earlier lines greyed, an even dim on the backdrop only. */
+  #vn-stage[data-actor-camera="tsukihime"].is-nvl:not(.has-actions) .vn-play-area { width:66%; }
+  #vn-stage[data-actor-camera="tsukihime"].is-nvl #vn-dialogue-text { text-shadow:0 0 1px #000,0 0 2px #000,0 1px 3px #000,0 0 9px #000c; }
+  #vn-stage[data-actor-camera="tsukihime"].is-nvl .vn-read-line { color:#b9b9c2; }
+  #vn-stage[data-actor-camera="tsukihime"].is-nvl:not(.has-actions):not(.is-text-hidden) .vn-background-shade { background:linear-gradient(#03060b70,#03060b4d 40%,#03060b5c); }
+  #vn-stage[data-actor-camera="tsukihime"].is-nvl:not(.is-text-hidden) .vn-scene-visual .vn-characters { opacity:1; }
+  /* Feathered cinema bars, as in the reference close two-shot. */
+  #vn-stage[data-actor-camera="tsukihime"] .vn-letterbox::before { height:9vh; background:linear-gradient(#000 55%,#0000); }
+  #vn-stage[data-actor-camera="tsukihime"] .vn-letterbox::after { height:9vh; background:linear-gradient(#0000,#000 45%); }
 }

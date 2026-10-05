@@ -314,12 +314,41 @@ export function gradeFor(palette = 'auto', strength = 'subtle') {
   return { filter:k ? `contrast(${mix(contrast).toFixed(3)}) saturate(${mix(saturate).toFixed(3)}) brightness(${mix(brightness).toFixed(3)})${hue ? ` hue-rotate(${(hue * k).toFixed(1)}deg)` : ''}` : 'none', shadow:alpha(grade.shadow), highlight:alpha(grade.highlight) };
 }
 
-export const STAGECRAFT_DEFAULTS = { textfx:'on', action:'on', depth:'on', cgcamera:'on', waitmask:'on', grade:'subtle', stingers:'on', leitmotif:'on', sfx:'recorded', facecheck:'on', actorcamera:'presence' };
+export const STAGECRAFT_DEFAULTS = { textfx:'on', action:'on', depth:'on', cgcamera:'on', waitmask:'on', grade:'subtle', stingers:'on', leitmotif:'on', sfx:'recorded', facecheck:'on', actorcamera:'tsukihime' };
 export function normalizeStagecraftPrefs(value) {
   const prefs = value && typeof value === 'object' ? value : {}, out = {};
   for (const [name, fallback] of Object.entries(STAGECRAFT_DEFAULTS)) {
-    const allowed = name === 'grade' ? ['off','subtle','strong'] : name === 'sfx' ? ['recorded','synth'] : name === 'actorcamera' ? ['presence','standard'] : ['on','off'];
+    const allowed = name === 'grade' ? ['off','subtle','strong'] : name === 'sfx' ? ['recorded','synth'] : name === 'actorcamera' ? ['tsukihime','presence','standard'] : ['on','off'];
     out[name] = allowed.includes(prefs[name]) ? prefs[name] : fallback;
   }
   return out;
+}
+
+// ---------- Tsukihime-style actor stage (landscape phones) ----------
+// Commercial VNs (e.g. the Tsukihime remake) keep one fixed sprite scale and
+// frame the TYPICAL cast member waist-up with the eye line on the upper third;
+// taller people come closer to the top edge. The previous camera instead framed
+// max(178 cm, tallest public person incl. the POV protagonist), so ordinary
+// heroines stood small and low. The scale reference here is the median public
+// height of the cast who can appear on stage (the protagonist is the camera).
+// Relative stature stays exact: every --hs is still height / reference.
+export function framingReferenceCm(heights = []) {
+  const valid = (Array.isArray(heights) ? heights : []).map(Number).filter(cm => Number.isFinite(cm) && cm >= 60 && cm <= 300).sort((a, b) => a - b);
+  if (!valid.length) return 0;
+  const mid = valid.length >> 1, median = valid.length % 2 ? valid[mid] : (valid[mid - 1] + valid[mid]) / 2;
+  return Math.min(178, Math.max(150, median));
+}
+// Centre-weighted blocking: a lone speaker stands just right of centre, two
+// share the frame, three spread edge to edge (the outer ones may be cropped).
+export function tsukihimePositions(count) {
+  return count < 1 ? [] : [[.54], [.33, .69], [.2, .5, .8]][Math.min(count, 3) - 1];
+}
+// A camera tilt (not a zoom) for the tallest person actually on stage, in
+// screen fractions. The CSS camera puts a reference-height crown at 8% from
+// the top; anyone taller pushes the whole line-up down until their crown is
+// at least 2% inside the frame. 1.492 = 1 + below-frame leg ratio - crown.
+export const TSUKIHIME_CAMERA = Object.freeze({ height:1.18, bottom:-.225, crownTop:.08, minCrownTop:.02, crownPerScale:1.492 });
+export function stageTilt(maxScale = 1, camera = TSUKIHIME_CAMERA) {
+  const scale = Number.isFinite(maxScale) ? maxScale : 1;
+  return Math.max(0, camera.height * camera.crownPerScale * (scale - 1) - (camera.crownTop - camera.minCrownTop));
 }
