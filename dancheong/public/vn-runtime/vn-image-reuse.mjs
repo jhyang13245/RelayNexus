@@ -1,5 +1,5 @@
-import { placeIdentity, weatherIdentity } from './vn-environment.mjs?v=889f2cc97573';
-import { garmentIdentity } from './vn-wardrobe.mjs?v=889f2cc97573';
+import { placeIdentity, weatherIdentity } from './vn-environment.mjs?v=ef485ae04925';
+import { garmentIdentity } from './vn-wardrobe.mjs?v=ef485ae04925';
 
 // Match only known equivalent descriptions. Preserve every identity, edition,
 // style, framing, expression and reference field in the rest of the key.

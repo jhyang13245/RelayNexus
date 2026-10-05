@@ -83,10 +83,10 @@ const stagecraft=createStagecraft({stage:$('vn-stage'),visual,reduced:motionRedu
   if(cue.sound!=='none')foley.play(cue.sound==='impact'&&['heavy_shake','flash_red'].includes(frame.direction.fx)?'heavy':cue.sound,frame.key+cue.at,{weather:$('vn-stage').dataset.weather});`);
     // Impact flashes share one budget with stagecraft's invert/strobe.
     code=once(code,"if(cue.kind==='impact'&&!motionReduced())playEffect(frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake');","if(cue.kind==='impact'&&!motionReduced()){const fx=frame.direction.fx&&frame.direction.fx!=='none'?frame.direction.fx:'shake';playEffect(String(fx).startsWith('flash')&&!stagecraft.flashGate()?'shake':fx);}");
-    // Tsukihime-style stage on landscape phones: median-cast scale reference,
+    // Tsukihime-style stage on every landscape screen (PC and phones): median-cast scale reference,
     // centre-weighted blocking and a tilt for a taller person on stage. The
     // other cameras keep the original reference and placement exactly.
-    code=once(code,'const positions = stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow, compactLandscape })',"const tsukihimeStage = compactLandscape && stagecraftPrefs.actorcamera === 'tsukihime', stageReferenceCm = tsukihimeStage && framingReferenceCm(view?.castHeightsCm) || view?.referenceHeightCm || 178, positions = tsukihimeStage ? tsukihimePositions(state.stageOrder.length) : stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow, compactLandscape })");
+    code=once(code,'const positions = stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow, compactLandscape })',"const tsukihimeStage = innerWidth > innerHeight && stagecraftPrefs.actorcamera === 'tsukihime', stageReferenceCm = tsukihimeStage && framingReferenceCm(view?.castHeightsCm) || view?.referenceHeightCm || 178, positions = tsukihimeStage ? tsukihimePositions(state.stageOrder.length) : stagePositions(state.stageOrder.length, { layout: state.reading.layout, narrow, compactLandscape })");
     code=once(code,'  container.dataset.count = String(people.length);',`  container.dataset.count = String(people.length);
   if (tsukihimeStage) {
     const hiddenIds = [...(state.eventCharacterIds || []), ...(state.fadingEventIds || [])];

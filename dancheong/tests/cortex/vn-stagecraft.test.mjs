@@ -307,6 +307,10 @@ test('actor camera: Tsukihime-style by default on landscape phones, other camera
  const {TSUKIHIME_CAMERA}=await import('../../public/cortex-vn-stagecraft.mjs');
  assert.ok(block.includes(`[data-actor-camera="tsukihime"] .vn-characters { --camera-height:${TSUKIHIME_CAMERA.height*100}%; --camera-bottom:${+(TSUKIHIME_CAMERA.bottom*100).toFixed(1)}%; }`),'CSS camera matches the tilt constants');
  assert.match(block,/var\(--stature-lift,0\) - var\(--stage-tilt,0%\)/u);
+ const landscape=block.slice(block.indexOf('@media (orientation:landscape) {'));
+ assert.ok(landscape.indexOf('[data-actor-camera="tsukihime"] .vn-characters { --camera-height:118%')>0,'PC and phones share the Tsukihime camera');
+ assert.match(block,/#vn-root\.is-playing\[data-actor-camera="tsukihime"\] \.vn-story-clock \{ justify-self:end;/u,'the clock leaves the centre of the frame');
+ assert.match(block,/@media \(max-height:600px\) and \(orientation:landscape\) \{\n  #vn-stage\[data-actor-camera="tsukihime"\]\.is-nvl:not\(\.has-actions\) \.vn-play-area \{ width:66%; \}/u,'only phones widen the text column');
  assert.doesNotMatch(block,/--hs\s*:|--stature-lift\s*:/u,'stature ratios are never overridden');
  const dom=new JSDOM('<div id="vn-stage"><div class="vn-scene-visual"></div></div>');
  for(const name of ['document','getComputedStyle','requestAnimationFrame','Image'])globalThis[name]=dom.window[name];
@@ -335,9 +339,9 @@ test('Tsukihime framing: median cast reference, centre blocking, tilt only for a
  assert.ok(Math.abs(a.scale/b.scale-156/180)<1e-12,'relative stature stays exact');
 });
 
-test('the built reader uses the Tsukihime stage only on landscape phones with that camera',()=>{
+test('the built reader uses the Tsukihime stage on every landscape screen (PC and phones) with that camera',()=>{
  const vn=fs.readFileSync('public/vn-runtime/vn.js','utf8'),assets=fs.readFileSync('public/vn-runtime/vn-assets.mjs','utf8');
- assert.ok(vn.includes("const tsukihimeStage = compactLandscape && stagecraftPrefs.actorcamera === 'tsukihime'"));
+ assert.ok(vn.includes("const tsukihimeStage = innerWidth > innerHeight && stagecraftPrefs.actorcamera === 'tsukihime'"));
  assert.ok(vn.includes('projectStature(person, stageReferenceCm)'));
  assert.ok(vn.includes("positions = tsukihimeStage ? tsukihimePositions(state.stageOrder.length) : stagePositions("));
  assert.ok(vn.includes("container.style.removeProperty('--stage-tilt')"),'other cameras keep the original layout');

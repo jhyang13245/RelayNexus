@@ -1,5 +1,5 @@
 // Conservative direction from visible narration only. Quoted speech is not a cue.
-import { createPlaybackContext, resumePlayback } from './vn-media-session.mjs?v=889f2cc97573';
+import { createPlaybackContext, resumePlayback } from './vn-media-session.mjs?v=ef485ae04925';
 function narration(text) { return String(text || '').replace(/[“「『‘][^”」』’]*[”」』’]|"[^"\n]*"/gu, ''); }
 export function directionFor(page, scene) {
   const text = page?.kind === 'dialogue' ? '' : narration(page?.text);

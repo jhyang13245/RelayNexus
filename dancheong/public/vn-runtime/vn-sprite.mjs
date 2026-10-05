@@ -1,12 +1,12 @@
 // Sprite framing and expression stability. Pixel rules are pure and tested;
 // the canvas helpers at the end only run in the browser.
-import { rasterTask } from './vn-raster.mjs?v=889f2cc97573';
-import { STAGE_ANATOMY } from './vn-stature.mjs?v=889f2cc97573';
-import { detectCameraGeometry } from './vn-motion-landmarks.mjs?v=889f2cc97573';
-import { calibrateStageFace, measureStageBody } from '../cortex-vn-camera.mjs?v=889f2cc97573';
-import { createByteLru } from './vn-byte-lru.mjs?v=889f2cc97573';
-import { savedCamera, saveCamera, cameraIdentity } from './vn-camera-store.mjs?v=889f2cc97573';
-import { displayUrl, retireDisplay } from './vn-display-memory.mjs?v=889f2cc97573';
+import { rasterTask } from './vn-raster.mjs?v=ef485ae04925';
+import { STAGE_ANATOMY } from './vn-stature.mjs?v=ef485ae04925';
+import { detectCameraGeometry } from './vn-motion-landmarks.mjs?v=ef485ae04925';
+import { calibrateStageFace, measureStageBody } from '../cortex-vn-camera.mjs?v=ef485ae04925';
+import { createByteLru } from './vn-byte-lru.mjs?v=ef485ae04925';
+import { savedCamera, saveCamera, cameraIdentity } from './vn-camera-store.mjs?v=ef485ae04925';
+import { displayUrl, retireDisplay } from './vn-display-memory.mjs?v=ef485ae04925';
 const ALPHA = 24;
 
 export function alphaBounds(data, width, height) {

@@ -2,9 +2,9 @@
 // loudness, a gentle voice EQ and a small room matched to the scene. Exposes
 // the subset of HTMLAudioElement that vn-voice.mjs uses, with a plain <audio>
 // fallback when Web Audio or decoding is unavailable.
-import { integratedLoudness, normalizationGain, peakOf, speechBounds } from './vn-loudness.mjs?v=889f2cc97573';
-import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=889f2cc97573';
-import { createByteLru } from './vn-byte-lru.mjs?v=889f2cc97573';
+import { integratedLoudness, normalizationGain, peakOf, speechBounds } from './vn-loudness.mjs?v=ef485ae04925';
+import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=ef485ae04925';
+import { createByteLru } from './vn-byte-lru.mjs?v=ef485ae04925';
 
 export const VOICE_TARGET_LUFS = -16;
 // Room by environment bed (vn-audio ambienceFor) and mood.

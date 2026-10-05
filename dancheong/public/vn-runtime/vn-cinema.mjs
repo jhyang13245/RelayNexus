@@ -1,5 +1,5 @@
-import { alphaBounds, faceLandmarks } from './vn-sprite.mjs?v=889f2cc97573';
-import { rasterTask } from './vn-raster.mjs?v=889f2cc97573';
+import { alphaBounds, faceLandmarks } from './vn-sprite.mjs?v=ef485ae04925';
+import { rasterTask } from './vn-raster.mjs?v=ef485ae04925';
 
 export const ruleTransitions = ['diagonal', 'circle', 'blinds', 'ink'];
 export function validatedEmphasis(value, text) {

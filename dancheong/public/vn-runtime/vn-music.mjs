@@ -5,7 +5,7 @@
  * All patterns are original and generated deterministically per mood.
  */
 
-import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=889f2cc97573';
+import { createPlaybackContext, useMediaPlayback, resumePlayback } from './vn-media-session.mjs?v=ef485ae04925';
 const MOODS = ["normal", "warm", "sad", "tense", "battle", "eerie", "memory"];
 
 // Per-mood generative config: tempo, centre pitch, scale, and 8-bar root progression.
