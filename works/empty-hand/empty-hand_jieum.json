@@ -1,0 +1,3306 @@
+{
+  "format": "RELAY_NOVEL_STUDIO_PROJECT_SNAPSHOT_V1",
+  "authoringProduct": "dancheong-jieum",
+  "jieumVersion": "1.3.0",
+  "studioCompatibilityVersion": "2.3.2",
+  "studioVersion": "2.3.2",
+  "packageVersion": "1.4",
+  "engineVersion": "2.4",
+  "exportedAt": "2026-10-06T17:33:59.810Z",
+  "imageStorage": "embedded_data_url",
+  "summary": {
+    "characters": 19,
+    "factions": 4,
+    "events": 20,
+    "constraints": 0,
+    "compoundEvents": 0,
+    "autonomyActors": 0,
+    "relationshipMemories": 0,
+    "aiWorldContextEnabled": false,
+    "characterImages": 0,
+    "triggerImages": 0,
+    "embeddedImages": 0
+  },
+  "project": {
+    "packageTarget": "cortex",
+    "protagonistInvariants": [
+      {
+        "ref": "invariant:survival",
+        "label": "주인공의 생존",
+        "severity": "HARD",
+        "description": "주인공은 죽지 않는다."
+      },
+      {
+        "ref": "invariant:mobility",
+        "label": "보행·자립 이동 능력",
+        "severity": "SOFT",
+        "description": "이동·추격·잠입이 필요한 사건이 남아 있다."
+      },
+      {
+        "ref": "invariant:senses",
+        "label": "시각·청각",
+        "severity": "SOFT",
+        "description": "단서 관찰과 대화가 사건의 기본 수단이다."
+      },
+      {
+        "ref": "invariant:identity",
+        "label": "자기 기억과 인격의 연속성",
+        "severity": "SOFT",
+        "description": "전면적 기억 상실이나 인격 교체로 확정되지 않는다."
+      },
+      {
+        "ref": "invariant:rine-survival",
+        "label": "리네의 생존",
+        "severity": "HARD",
+        "description": "리네는 죽지 않는다.",
+        "characterId": "rine"
+      },
+      {
+        "ref": "invariant:tio-survival",
+        "label": "티오의 생존",
+        "severity": "HARD",
+        "description": "티오는 죽지 않는다.",
+        "characterId": "tio"
+      },
+      {
+        "ref": "invariant:selene-until-unmask",
+        "label": "가면이 깨지기 전 셀레네",
+        "severity": "SOFT",
+        "description": "셀레네는 「가면 아래」 사건 전에 죽지 않는다.",
+        "characterId": "selene"
+      },
+      {
+        "ref": "invariant:isolde-survival",
+        "label": "이졸데의 생존",
+        "severity": "SOFT",
+        "description": "이졸데는 1부에서 죽지 않는다.",
+        "characterId": "isolde"
+      },
+      {
+        "ref": "invariant:kyle-survival",
+        "label": "카일의 생존",
+        "severity": "SOFT",
+        "description": "카일은 1부에서 죽지 않는다.",
+        "characterId": "kyle"
+      },
+      {
+        "ref": "invariant:gregor-until-ceremony",
+        "label": "의식 전 그레고르의 지위",
+        "severity": "SOFT",
+        "description": "그레고르는 「별의 의식」 사건 전에 죽거나 실각하지 않는다.",
+        "characterId": "gregor"
+      },
+      {
+        "ref": "invariant:oss-death",
+        "label": "오스의 죽음",
+        "severity": "SOFT",
+        "description": "오스는 「빈 가면」 사건에서 죽으며 되살아나지 않는다.",
+        "characterId": "oss"
+      },
+      {
+        "ref": "invariant:hanbaek-hidden",
+        "label": "빈손의 왕의 침묵",
+        "severity": "SOFT",
+        "description": "빈손의 왕은 「빈손의 손」 사건 전에 본문에 직접 등장하거나 말을 걸지 않는다.",
+        "characterId": "hanbaek"
+      }
+    ],
+    "disclosure": {
+      "protectedTerms": [
+        "한백"
+      ]
+    },
+    "runtimeMode": "intelligent_canon",
+    "projectId": "RN-DRAFT",
+    "title": "빈손 ~가호 없는 최약체로 소환됐지만, 쓰러뜨린 적의 가호는 내 것이 된다~",
+    "genre": "이세계 소환 판타지 · 라이트노벨 · 성장 · 다크",
+    "worldType": "이세계(소환형 판타지)",
+    "startDate": "2026-10-20",
+    "startLocation": "왕도 에르딘 바깥 고리, 빈민가 「잿골목」",
+    "tone": "웃기고 설레는 이세계 성장물로 시작해, 힘의 대가와 세계의 거짓이 드러나며 짙어지는 다크 판타지",
+    "playStyle": "지능형 정사 전개 · 사건·인과·자율 세계 시뮬레이션",
+    "difficulty": "HARD",
+    "author": "",
+    "notes": "지음 지능형 정사 모드용 단일 루트 작품(1부). 사건 20개, 분기 2회, 인물 20명, 복선 21개, 수치 6개. 설계 문서는 works/empty-hand/README.md.",
+    "randomSeed": 420001285,
+    "world": {
+      "overview": "[세계]\n에르딘 왕국. 왕도 에르딘을 중심으로 한 대륙 서쪽의 오래된 나라. 이 세계의 모든 사람은 열 살이 되는 해 별의 대성당에서 열리는 '별의 의식'에서 '가호' 하나를 받는다. 가호는 불꽃을 다루거나, 피부를 쇳덩이로 만들거나, 상처를 고치는 것 같은 타고난 능력이다. 사람마다 가호를 담는 자리는 단 하나뿐이다.\n\n[가호와 계급]\n가호의 세기는 곧 신분이다. 강한 가호를 받은 자는 귀족과 기사가 되고, 약한 가호는 평민의 생업이 된다. 가호를 받지 못한 자는 '빈손'이라 불린다. 빈손은 땅을 가질 수 없고, 길드에서는 최하 '돌 등급', 법정에서는 증언의 무게가 절반이다. 빈손들은 왕도 바깥 고리의 빈민가 '잿골목'에서 세탁·하수구 청소·짐꾼 일로 살아간다. 수인(짐승의 귀와 꼬리를 가진 종족)은 의식에서 가호를 받지 못해 '태생 빈손'이라 불리며 노예로 팔리기도 한다. 엘프는 이제 거의 남지 않았다.\n\n[별의 우물과 마수]\n사람이 죽으면 가호는 별의 대성당 깊은 곳의 '별의 우물'로 돌아가, 다음 의식에서 다른 아이에게 내려진다고 성좌교는 가르친다. 우물로 돌아가지 못한 떠돌이 가호가 짐승에게 붙으면 '마수'가 된다. 마수는 그 가호의 힘을 쓴다. 모험가 길드는 마수 토벌로 먹고산다.\n\n[성좌교와 경전]\n성좌교는 별의 우물과 의식을 관장하는 국교이며 대주교 그레고르가 이끈다. 왕실은 이름만 남았다는 말이 돈다. 경전에는 300년 전의 폭군 '빈손의 왕' 이야기가 있다. 가호가 없던 그는 남의 가호를 빼앗아 모으며 왕이 되려 했고, 일곱 성인에게 쓰러졌다. 경전은 경고한다. \"가호를 빼앗는 손이 다시 나타나면, 그 손을 불태우라.\" 성좌교에는 등록되지 않은 가호를 찾아 회수하는 비밀 집행자 '빈 가면'이 있다는 소문이 돈다.\n\n[알려진 가호들]\n〈철피〉 피부를 열 호흡 동안 쇳덩이처럼 굳힌다. 끝나면 숨이 차오른다.\n〈어둠눈〉 어둠 속을 희미한 새벽처럼 본다. 강한 빛에는 눈이 부신다.\n〈바람발〉 열 걸음 남짓을 바람처럼 내달린다.\n〈메아리〉 1분 안에 들은 소리를 스무 걸음 안의 원하는 곳에서 다시 낸다.\n〈불꽃 왕관〉 머리 위에 불꽃 고리가 떠오르고, 검과 손에 화염을 두르며 불꽃을 날린다. 귀족가의 강한 가호.\n〈치유의 손〉 남의 상처를 손으로 쓸어 닫는다. 자기 상처는 고치지 못하고, 쓸수록 지친다.\n〈굳힘〉 눈을 마주친 상대를 한 호흡 동안 멈추게 한다. 1분에 한 번.\n〈무게 바꾸기〉 자기 몸을 깃털처럼 가볍게, 또는 바위처럼 무겁게 한다.\n〈거짓말 냄새〉 거짓말을 냄새로 맡는다.\n그 밖에도 수많은 가호가 있으며, 마수도 저마다 하나의 가호를 지닌다.\n\n[장소]\n왕도는 상층 구역(귀족·별의 대성당·왕궁), 중층 구역(상인·모험가 길드·투기장), 바깥 고리의 잿골목으로 나뉜다. 잿골목 지하에는 무너진 옛 예배당과 하수도가 얽혀 있고, 중층 구역 뒷골목에는 장물과 정보를 사고파는 '그림자 시장'이 있다. 투기장에서는 노예와 빈손이 가호자들과 싸운다.",
+      "history": "",
+      "politics": "",
+      "economy": "",
+      "technology": "",
+      "society": "",
+      "military": "",
+      "religionIdeology": "",
+      "transportCommunication": "",
+      "currencyPrices": "",
+      "supernatural": "",
+      "impossibilities": "",
+      "fixedCanon": "1. 이 세계 사람은 가호 자리가 하나뿐이다. 주인공의 그릇만 예외다.\n2. 주인공의 힘은 '쓰러뜨린 상대, 또는 스스로 내어 준 상대의 가호를 가져오는 것' 하나뿐이다(일기 이후에는 가져온 가호를 건넬 수도 있다). 다른 능력을 새로 만들어 내지 않는다.\n3. 가호를 빼앗긴 사람은 빈손이 된다. 이 결과를 가볍게 넘기지 않는다.\n4. 그릇이 가득 차면 하나를 놓아야 새 가호를 가져올 수 있다.\n5. 죽은 사람은 되살아나지 않는다. 〈치유의 손〉은 죽음을 되돌리지 못한다.\n6. 수인과 엘프는 가호를 가질 수 없다.\n7. 이 세계에는 상태창이 없다.\n8. 주인공은 무적이 아니다. 강한 가호자 여럿을 정면으로 이기지 못하며, 꾀와 동료와 가호의 조합으로 싸운다.",
+      "aiFillConstraints": ""
+    },
+    "player": {
+      "id": "siwoo",
+      "name": "강시우",
+      "role": "주인공",
+      "age": "",
+      "gender": "",
+      "origin": "",
+      "status": "",
+      "occupation": "",
+      "affiliation": "",
+      "appearance": "열아홉 살 한국인 남자. 키 172cm, 마른 체형에 구부정한 자세. 덥수룩한 검은 머리, 잠이 부족한 눈 밑 그늘, 의외로 날카로운 눈매. 남색 교복 바지와 흰 셔츠 위에 검은 롱패딩, 낡은 운동화, 형광펜 자국이 묻은 손가락. 가호를 쓸 때 눈동자에 그 가호의 빛깔이 잠깐 비친다.",
+      "personality": "",
+      "values": "",
+      "speechStyle": "",
+      "skills": "",
+      "weaknesses": "",
+      "goals": "",
+      "assets": "",
+      "inventory": "",
+      "relationships": "",
+      "publicInfo": "열아홉 살 재수생. 작년 수능을 망치고 올해도 모의고사 등급이 제자리라 새벽까지 독서실에 붙어 살던 중이었다. 체력은 평균 이하, 싸움은 해 본 적 없고 겁도 많다. 대신 입이 살아 있고 잔머리와 관찰력이 좋으며, 게임과 웹소설을 많이 읽어 '이세계'나 '스킬 조합' 감각이 빠르다. 남이 억울한 꼴을 보면 앞뒤 안 가리고 끼어들었다가 후회하는 타입. 속으로 딴죽을 끊임없이 건다.\n가진 것: 수험생 백팩(문제집, 샤프, 형광펜 세 자루), 배터리 41%의 스마트폰(손전등, 카메라), 교복 위 롱패딩.\n이 세계에서 그는 가호가 없는 빈손이다. 단 하나, 처음에는 그 자신도 모르는 힘이 있다. 쓰러뜨린 상대의 가호를 손을 뻗어 가져올 수 있다.",
+      "hiddenInfo": "주인공을 부른 것은 리네가 그린 분필 동그라미다(「놓은 것이 가는 곳」에서 공개). 그의 영혼에는 이 세계 사람처럼 자리가 하나만 있는 것이 아니라 넓힐 수 있는 그릇이 있다. 300년 전 빈손의 왕과 같은 체질이다. 독서실에서 들린 \"누구라도 좋아. 제발. 빼앗을 수 있는 사람을\"은 리네의 기도였다.",
+      "importance": "protagonist",
+      "imageOnFirstAppearance": true,
+      "visualLock": true,
+      "visualAnchor": "열아홉 살 한국인 남자. 키 172cm, 마른 체형에 구부정한 자세. 덥수룩한 검은 머리, 잠이 부족한 눈 밑 그늘, 의외로 날카로운 눈매. 남색 교복 바지와 흰 셔츠 위에 검은 롱패딩, 낡은 운동화, 형광펜 자국이 묻은 손가락. 가호를 쓸 때 눈동자에 그 가호의 빛깔이 잠깐 비친다.",
+      "imageFallback": "generate_anime",
+      "images": [],
+      "isPlayer": true,
+      "preRevealAlias": ""
+    },
+    "npcs": [
+      {
+        "id": "rine",
+        "name": "리네",
+        "role": "메인 히로인",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "열일곱 살 소녀. 키 158cm. 햇볕에 바랜 갈색 머리를 높이 하나로 묶었고, 코 위에 주근깨, 밝은 초록 눈. 걷어 올린 소매에 물 빠진 앞치마, 맨팔에는 빨래하다 생긴 붉은 자국. 손가락 마디가 거칠다. 허리춤에 빨래 방망이.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "열일곱 살. 잿골목의 세탁부이자 빈손. 남동생 티오와 단둘이 세탁장 다락에 산다. 씩씩하고 잔소리가 많으며 웃음소리가 골목 끝까지 들린다. 무기는 빨래 방망이, 특기는 큰 목소리와 깡. 남을 위해 먼저 뛰어들고, 울 때는 아무도 없는 지붕 위에서 몰래 운다. 반말에 \"바보야!\"가 입버릇. 빨래하면서 늘 엄마가 불러 주던 노래를 흥얼거린다. 엄마 마르타는 7년 전 이단으로 끌려가 처형됐고, 언니 셀레네는 그보다 먼저 성좌교에 '성녀 후보'로 데려가졌다. 꿈은 티오가 다음 달 별의 의식에서 가호를 받는 것.",
+        "hiddenInfo": "주인공을 부른 것은 리네다. 엄마가 남긴 금서(빈손의 왕의 일기 사본)에 있던 동그라미를 분필로 그리고, 티오가 또 빈손이 될까 무서워 \"누구라도, 빼앗을 수 있는 사람을\" 하고 빌었다. 정말 사람이 떨어질 줄은 몰랐고, 들키면 둘 다 화형이라 숨긴다. 주인공이 처음 놓은 가호가 리네에게 오면 그것을 숨기려 애쓴다(등불 없이 어둠 속을 다니는 등 작은 티가 난다). 「놓은 것이 가는 곳」 사건에서 모든 것을 고백한다. 리네는 거짓말에 서툴다. 리네는 죽지 않는다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "열일곱 살 소녀. 키 158cm. 햇볕에 바랜 갈색 머리를 높이 하나로 묶었고, 코 위에 주근깨, 밝은 초록 눈. 걷어 올린 소매에 물 빠진 앞치마, 맨팔에는 빨래하다 생긴 붉은 자국. 손가락 마디가 거칠다. 허리춤에 빨래 방망이.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "tio",
+        "name": "티오",
+        "role": "리네의 남동생",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "아홉 살 소년. 누나를 닮은 갈색 곱슬머리, 빠진 앞니, 무릎이 해진 반바지, 나무 막대기 검.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "아홉 살, 곧 열 살. 리네의 남동생. 기사를 동경하는 장난꾸러기로 나무 막대기 검을 들고 다닌다. 주인공을 \"형!\"이라 부르며 졸졸 따라다니고, 비밀을 지키는 데는 소질이 없다. 다음 달 별의 의식에서 가호를 받는 것이 소원.",
+        "hiddenInfo": "대주교의 장부에서 티오는 '빈손 배정 — 성녀 후보 실험체'로 정해져 있다. 의식 전의 아이라 자리가 비어 있어 대주교의 〈성언〉에 묶일 수 있다. 티오는 죽지 않는다.",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "아홉 살 소년. 누나를 닮은 갈색 곱슬머리, 빠진 앞니, 무릎이 해진 반바지, 나무 막대기 검.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "selene",
+        "name": "셀레네",
+        "role": "성녀",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스무 살 여성. 키 165cm. 원래 갈색이던 머리가 바랜 듯 은백색으로 길게 흘러내린다. 회색 눈, 창백한 피부. 흰 성녀복과 얇은 베일. 세탁부처럼 손가락 마디가 갈라져 있다. 빈 가면일 때는 얼굴 전체를 가리는 매끈한 하얀 가면과 검은 코트.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스무 살. 성좌교의 성녀. 기적의 상징으로 세 개의 가호를 지녔다고 알려져 있다. 감정이 드러나지 않는 정중한 존댓말, 거의 웃지 않는 얼굴. 의식과 축복식에만 모습을 드러낸다.",
+        "hiddenInfo": "정체는 리네의 언니이자 성좌교의 비밀 집행자 빈 가면. 열 살 의식에서 빈손으로 정해지자 성좌교가 성녀 후보로 데려가, 하나뿐인 자리에 우물의 가호 세 개를 억지로 넣었다. 〈그림자 걸음〉(그림자에서 그림자로 열 걸음 안을 건너뜀, 하루 세 번), 〈서리 손〉(닿은 것을 얼림), 〈가호 감지〉(오십 걸음 안 가호의 위치와 세기를 느낌). 가호들이 몸을 안에서 태우고 있어 오래 못 산다. 대주교의 명으로 등록되지 않은 가호를 가진 자를 찾아 회수해 왔다. 무표정하지만 동생 바보라, 가면 아래서 엄마의 빨래 노래를 흥얼거린다. 「가면 아래」 사건에서 정체가 드러나며, 그 전에는 죽지 않는다. 주인공이 그녀의 가호를 가져가면 살아나지만 빈손으로 돌아간다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스무 살 여성. 키 165cm. 원래 갈색이던 머리가 바랜 듯 은백색으로 길게 흘러내린다. 회색 눈, 창백한 피부. 흰 성녀복과 얇은 베일. 세탁부처럼 손가락 마디가 갈라져 있다. 빈 가면일 때는 얼굴 전체를 가리는 매끈한 하얀 가면과 검은 코트.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "isolde",
+        "name": "이졸데",
+        "role": "금 등급 마법검사",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "열여덟 살 소녀. 키 163cm. 진홍빛이 도는 긴 머리를 양 갈래로 높이 묶었고 날카로운 호박색 눈. 금장식이 달린 하얀 기사복과 붉은 망토, 가느다란 장검. 가호를 쓰면 머리 위에 불꽃 고리가 떠오른다.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "열여덟 살. 아르젠 백작가의 영애이자 모험가 길드 최연소 '금 등급' 마법검사. 머리 위에 불꽃 고리가 떠오르며 검에 화염을 두르는 〈불꽃 왕관〉의 가호자. 콧대가 높고 \"~하시죠\", \"~이랍니다\" 하는 귀족 말투를 쓴다. 칭찬에 약하고 단것을 좋아하며 지는 것을 죽기보다 싫어한다. 빈손을 대놓고 깔보지만 거짓말은 하지 않는다. 화나면 얼굴이 머리색처럼 빨개진다.",
+        "hiddenInfo": "어릴 적 자신을 키운 빈손 시녀가 병으로 죽을 때 아무도 의사를 불러 주지 않은 일을 기억한다. 그래서 속으로는 가호 계급을 싫어하지만 인정하지 못한다. 「불꽃의 영애」 사건에서 주인공에게 결투를 걸고, 지면 가호를 빼앗길 수 있다. 빼앗기면 빈손이 되어 백작가에서 쫓겨나고 \"내 가호 돌려줘요!\"라며 주인공을 쫓아다니다 동료가 된다. 빼앗기지 않으면 \"이 결투는 무효예요\"라며 재대결을 핑계로 따라다닌다. 레온에게 가호 없이 검을 쓰는 법을 배우며 성장한다. 이졸데는 죽지 않는다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "열여덟 살 소녀. 키 163cm. 진홍빛이 도는 긴 머리를 양 갈래로 높이 묶었고 날카로운 호박색 눈. 금장식이 달린 하얀 기사복과 붉은 망토, 가느다란 장검. 가호를 쓰면 머리 위에 불꽃 고리가 떠오른다.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "nana",
+        "name": "나나",
+        "role": "정보상",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "열여섯 살 고양이 수인 소녀. 키 150cm. 검은 고양이 귀와 꼬리, 짧은 검은 단발, 커다란 금빛 눈. 헐렁한 회색 후드와 반바지, 맨발에 가까운 가죽 덧신. 목에 늑대 송곳니 목걸이.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "열여섯 살. 고양이 수인. 그림자 시장의 정보상이자 소매치기. 수인이라 태생 빈손이다. 장사꾼 반말에 \"그건 은화 세 닢짜리 정보야\", \"공짜는 없어\"가 입버릇. 돈만 밝히는 척하지만 한 번 맺은 거래는 목숨 걸고 지킨다. 지붕 위를 소리 없이 달리고, 기분이 좋으면 꼬리가 멋대로 흔들린다.",
+        "hiddenInfo": "늑대 송곳니 목걸이는 투기장에 노예로 팔려 간 의오빠 그라츠의 것이다. 둘은 같은 고아원에서 자랐다. 나나가 돈을 모으는 이유는 오빠의 몸값이다. 「투기장의 늑대」 사건에서 처음으로 돈 얘기 없이 오빠를 구해 달라고 부탁한다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "열여섯 살 고양이 수인 소녀. 키 150cm. 검은 고양이 귀와 꼬리, 짧은 검은 단발, 커다란 금빛 눈. 헐렁한 회색 후드와 반바지, 맨발에 가까운 가죽 덧신. 목에 늑대 송곳니 목걸이.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "yuri",
+        "name": "유리",
+        "role": "견습 의사",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "열네 살 소녀. 키 147cm. 연한 하늘색 머리를 두 갈래로 땋았고, 얼굴의 반을 덮는 큰 동그란 안경. 할아버지의 낡은 흰 가운을 소매를 접어 입었다. 약초 냄새가 난다.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "열네 살. 잿골목 의사 오스의 손녀이자 견습 의사. 수줍음이 많아 말끝을 흐리지만, 환자 앞에서는 어른도 꼼짝 못 하게 단호해진다. 약초와 붕대를 늘 들고 다니며 \"아, 안 돼요! 그 상처 만지지 마세요!\"가 입버릇. 빈손이다.",
+        "hiddenInfo": "할아버지 오스가 「빈 가면」 사건에서 죽는다. 유리는 할아버지의 진료소를 잇겠다고 결심한다. 주인공이 일기의 방법을 배운 뒤 〈치유의 손〉을 유리에게 건넬 수 있다(유리의 자리는 비어 있다). 그러면 유리는 잿골목의 의사가 된다.",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "열네 살 소녀. 키 147cm. 연한 하늘색 머리를 두 갈래로 땋았고, 얼굴의 반을 덮는 큰 동그란 안경. 할아버지의 낡은 흰 가운을 소매를 접어 입었다. 약초 냄새가 난다.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "sylphie",
+        "name": "실피",
+        "role": "엘프 점쟁이",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "열두 살쯤으로 보이는 엘프 소녀. 키 138cm. 바닥에 끌릴 듯한 은빛 긴 머리, 길고 뾰족한 귀, 보랏빛 눈. 몸보다 큰 챙 넓은 마법사 모자와 별무늬 망토. 입에 계피 막대.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "겉보기엔 열두 살, 실제로는 삼백 살이 넘은 엘프. 잿골목 지붕 위 천막에서 점을 봐 준다. 할머니 말투(\"~하구먼\", \"젊은 것이\")에 장난기가 많고 늘 계피 막대를 씹는다. 다 아는 척 놀리지만 중요한 것은 좀처럼 말해 주지 않는다. 엘프라 가호가 없다.",
+        "hiddenInfo": "실피는 300년 전 빈손의 왕의 동료였다. 그가 성인들에게 붙잡혀 별의 우물 밑에 봉인되는 것을 막지 못했고, 그 뒤로 그의 고향에서 '다음 빈 그릇'이 오기를 기다려 왔다. 주인공의 말버릇에서 그를 떠올린다. 그의 이름은 \"그 녀석이 직접 다시 말할 때까지\" 부르지 않는다. 우물의 비밀을 알지만 주인공이 스스로 고르기를 바라며 조금씩만 알려 준다. 「빈손의 왕의 일기」 사건에서 그의 동료였다는 사실을 밝힌다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "열두 살쯤으로 보이는 엘프 소녀. 키 138cm. 바닥에 끌릴 듯한 은빛 긴 머리, 길고 뾰족한 귀, 보랏빛 눈. 몸보다 큰 챙 넓은 마법사 모자와 별무늬 망토. 입에 계피 막대.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "kyle",
+        "name": "카일",
+        "role": "견습 기사",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "열여덟 살 청년. 키 180cm. 금갈색 곱슬머리, 맑은 하늘색 눈, 늘 웃는 얼굴. 은색 흉갑과 푸른 견습 기사 망토, 손질이 잘된 장검.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "열여덟 살. 반스 남작가의 막내이자 성좌 기사단의 견습 기사. 눈을 마주친 상대를 한 호흡 동안 멈추게 하는 〈굳힘〉의 가호자. 해맑고 시원시원하며 정의감이 넘친다. 빈손이라고 사람을 깔보는 걸 못 참는 몇 안 되는 귀족. 처음엔 존댓말, 친해지면 반말로 \"시우!\" 하고 부른다. 성좌교를 진심으로 믿는다.",
+        "hiddenInfo": "카일의 〈굳힘〉은 7년 전 이단으로 처형된 리네의 엄마 마르타의 가호였다. 회수된 뒤 장부에 따라 그에게 배정됐다. 본인은 모른다. 「대주교의 장부」 사건에서 이 사실을 알게 되면 크게 흔들리고, 가호를 리네에게 돌려주고 싶어 한다(스스로 내어 주면 주인공을 거쳐 건넬 수 있다). 카일은 죽지 않는다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "열여덟 살 청년. 키 180cm. 금갈색 곱슬머리, 맑은 하늘색 눈, 늘 웃는 얼굴. 은색 흉갑과 푸른 견습 기사 망토, 손질이 잘된 장검.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "leon",
+        "name": "레온",
+        "role": "은 등급 궁수",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스물일곱 살 남자. 키 183cm. 아무렇게나 묶은 짙은 갈색 꽁지머리, 졸린 듯한 녹색 눈, 턱의 수염 자국. 낡은 가죽 갑옷과 녹색 망토, 커다란 장궁, 입에 문 파이프.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스물일곱 살. 모험가 길드 '은 등급' 궁수. 늘 파이프를 물고 다니는 능글맞은 한량으로, 신입을 놀리는 게 취미다. 그러나 활 솜씨는 길드 최고 수준이고 위기에서는 누구보다 침착하다. \"가호는 손에 쥔 패일 뿐이야. 판을 읽어.\"가 입버릇. 이상하게도 아무도 그가 가호를 쓰는 걸 본 적이 없다.",
+        "hiddenInfo": "레온은 빈손이다. 은 등급 증표는 위조이며, 가호 없이 기술과 판 읽기만으로 살아남았다. 들키면 길드에서 쫓겨나 투기장에 팔릴 수 있다. 주인공에게 '가호 없이 싸우는 법'을 가르치는 스승이 된다. 「투기장의 늑대」 사건에서 정체가 드러난다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스물일곱 살 남자. 키 183cm. 아무렇게나 묶은 짙은 갈색 꽁지머리, 졸린 듯한 녹색 눈, 턱의 수염 자국. 낡은 가죽 갑옷과 녹색 망토, 커다란 장궁, 입에 문 파이프.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "brokk",
+        "name": "브로크",
+        "role": "잿골목 깡패 두목",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "서른두 살 거구의 남자. 키 192cm. 빡빡 민 머리, 곰 발톱 자국 같은 흉터 세 줄이 난 뺨, 털이 수북한 팔뚝. 소매를 뜯어낸 가죽 조끼. 〈철피〉를 쓰면 피부가 쇳빛으로 변한다.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "서른두 살. '곰발 브로크'. 잿골목의 깡패 두목으로 가게마다 자릿세를 뜯는다. 피부를 쇳덩이처럼 단단하게 만드는 〈철피〉의 가호자. 덩치가 산만 하고 목소리가 크며, 가호 하나로 빈손들 위에 군림해 왔다.",
+        "hiddenInfo": "브로크도 원래 잿골목의 빈손 고아였다. 열 살 의식에서 운 좋게 가호를 받은 뒤 다시는 빈손으로 돌아가지 않겠다고 맹세했다. 주인공에게 가호를 빼앗기면 부하들에게 버려지고 바닥까지 떨어진다. 그 뒤의 운명은 주인공의 선택에 달려 있다. 주인공이 일기의 방법으로 〈철피〉를 돌려주거나 진심으로 손을 내밀면 의리 있는 형님으로 돌아와 목숨을 건다. 그렇지 않으면 원한을 품고 밀고자가 된다.",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "서른두 살 거구의 남자. 키 192cm. 빡빡 민 머리, 곰 발톱 자국 같은 흉터 세 줄이 난 뺨, 털이 수북한 팔뚝. 소매를 뜯어낸 가죽 조끼. 〈철피〉를 쓰면 피부가 쇳빛으로 변한다.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "oss",
+        "name": "오스",
+        "role": "잿골목 의사",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "예순한 살 노인. 작고 마른 체구, 하얗게 센 짧은 수염, 코끝에 걸친 작은 안경. 얼룩진 흰 가운과 약초 주머니.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "예순한 살. 잿골목의 의사. 상처를 손으로 쓸어 닫는 〈치유의 손〉의 가호자. 가호자인데도 상층 구역의 좋은 자리를 마다하고 빈손들을 공짜로 고쳐 준다. 느릿한 말투에 농담을 좋아하며 손녀 유리를 끔찍이 아낀다.",
+        "hiddenInfo": "오스는 가호가 '줄 수도 있는 것'이라는 옛이야기를 안다. 주인공의 힘을 알아채도 고발하지 않는다. 「빈 가면」 사건에서 빈 가면에게 치명상을 입고, 죽기 직전 스스로 주인공에게 〈치유의 손〉을 내어 준다. \"가호는… 줄 수도 있다네.\" 오스는 그 사건에서 죽고 되살아나지 않는다.",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "예순한 살 노인. 작고 마른 체구, 하얗게 센 짧은 수염, 코끝에 걸친 작은 안경. 얼룩진 흰 가운과 약초 주머니.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "gregor",
+        "name": "그레고르",
+        "role": "대주교",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "예순여섯 살 노인. 키가 크고 꼿꼿하다. 단정히 빗어 넘긴 백발, 깊은 주름, 차분한 회색 눈. 별자리가 금실로 수놓인 남색 대주교 예복, 별 모양 홀.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "예순여섯 살. 성좌교 대주교. 별의 대성당과 별의 우물, 별의 의식을 관장하는 왕국 최고 권력자. 온화한 목소리로 \"가호는 질서입니다\"라고 설교한다. 신도들 앞에서는 자애로운 노인이다.",
+        "hiddenInfo": "그레고르의 가호는 〈성언〉이다. 자리가 비어 있는 자(빈손, 의식 전의 아이)는 그의 목소리로 내린 명령을 거스르지 못한다. 가호를 가진 사람과 다른 세계에서 온 주인공에게는 통하지 않는다. 그는 젊은 시절 가호가 무작위로 나뉘던 지방의 내전을 겪었고, 가호를 통제하지 않으면 피가 흐른다고 믿는다. 그래서 장부로 모든 가호를 배정하고, 우물이 모자라면 평민 가호자를 이단으로 몰아 처형해 회수하며, 약한 가호는 숲에 버린다(그것이 마수가 된다). 악의가 아니라 질서를 위한 필요악이라고 믿는다. 「별의 의식」 사건 전에는 죽거나 실각하지 않는다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "예순여섯 살 노인. 키가 크고 꼿꼿하다. 단정히 빗어 넘긴 백발, 깊은 주름, 차분한 회색 눈. 별자리가 금실로 수놓인 남색 대주교 예복, 별 모양 홀.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": ""
+      },
+      {
+        "id": "dorothy",
+        "name": "도로시",
+        "role": "길드 접수원",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스물네 살 여성. 키 166cm. 부드러운 밤색 웨이브 머리를 한쪽으로 늘어뜨렸고, 동그란 금테 안경, 늘 웃는 입가. 길드 제복(흰 블라우스, 남색 조끼)과 귀에 꽂은 깃펜.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스물네 살. 모험가 길드의 접수원. 상냥한 누님으로 \"모험가님\"이라 부르며 신입 하나하나를 살뜰히 챙긴다. 빈손이라고 차별하지 않는 몇 안 되는 길드 사람. 의뢰서와 장부를 놀랍도록 꼼꼼히 기억하고, 단골에게는 몰래 과자를 쥐여 준다.",
+        "hiddenInfo": "도로시는 성좌교의 정보원이다. 등록되지 않은 가호의 소문을 성좌교 전령에게 쪽지로 넘긴다. 병든 여동생이 상층 구역 치료원에 있고 그 치료비를 성좌교가 대 준다. 잿골목 빈손 소년에게 가호가 생겼다는 소문을 넘긴 것이 「빈 가면」 사건의 원인이 되었고, 그 일로 깊이 괴로워한다. 「대주교의 장부」 사건에서 정체가 드러나며, 주인공의 선택에 따라 동료가 될 수 있다.",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스물네 살 여성. 키 166cm. 부드러운 밤색 웨이브 머리를 한쪽으로 늘어뜨렸고, 동그란 금테 안경, 늘 웃는 입가. 길드 제복(흰 블라우스, 남색 조끼)과 귀에 꽂은 깃펜.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": "",
+        "aliases": []
+      },
+      {
+        "id": "rosalind",
+        "name": "로잘린",
+        "role": "이단심문관",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스물일곱 살 여성. 키 170cm. 칠흑 같은 긴 생머리, 가늘게 휘어진 보랏빛 눈, 붉은 입술. 몸에 꼭 맞는 검은 수녀복과 은 별 목걸이, 허리에 감은 가는 사슬 채찍.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스물일곱 살. 성좌교의 이단심문관 수녀이자 대주교의 오른팔. 나긋나긋한 존댓말과 늘 걸린 미소가 오히려 섬뜩하다. 거짓말을 냄새로 맡는 〈거짓말 냄새〉의 가호자로, 심문에서 그녀를 속인 사람은 없다고 한다.",
+        "hiddenInfo": "로잘린은 원래 잿골목 출신 빈손이었다. 열여덟 살에 굶어 죽어 가던 그녀를 그레고르가 데려가 우물의 가호를 내렸고, 그 은혜로 그에게 광신적으로 충성한다. \"저도 한때는 빈손이었답니다\"라고 말할 때만 미소가 진짜다. 빈손이 가호를 받는 일은 '대주교님의 자비'로만 가능해야 한다고 믿는다. 악역이지만 인간이며, 「별의 의식」에서 그레고르의 진실 앞에 흔들릴 수 있다. 「별의 의식」 전에는 죽지 않는다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스물일곱 살 여성. 키 170cm. 칠흑 같은 긴 생머리, 가늘게 휘어진 보랏빛 눈, 붉은 입술. 몸에 꼭 맞는 검은 수녀복과 은 별 목걸이, 허리에 감은 가는 사슬 채찍.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": "",
+        "aliases": []
+      },
+      {
+        "id": "pippin",
+        "name": "피핀",
+        "role": "음유시인",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스무 살 청년. 키 168cm. 여기저기 뻗친 주황색 머리, 주근깨, 장난스러운 갈색 눈. 깃털 꽂은 초록 베레모, 알록달록 기운 망토, 등에 멘 낡은 류트.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스무 살. 떠돌이 음유시인이자 자칭 '강시우 전기 작가'. 류트를 끼고 다니며 본 것을 열 배로 부풀려 노래한다. 수다쟁이에 겁쟁이지만 이야기를 위해서라면 어디든 따라온다. \"이건 대박이다! 제목은 「빈손의 전설」!\"",
+        "hiddenInfo": "피핀의 노래는 주인공의 소문을 퍼뜨려 명성과 수배를 함께 키운다. 그는 사실 제2왕자 레녹스에게 돈을 받고 주인공의 동태를 보고하는 첩자였지만, 진심으로 주인공의 팬이 되어 버려 보고서를 엉터리로 쓴다. 들키면 엉엉 울며 이실직고한다.",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스무 살 청년. 키 168cm. 여기저기 뻗친 주황색 머리, 주근깨, 장난스러운 갈색 눈. 깃털 꽂은 초록 베레모, 알록달록 기운 망토, 등에 멘 낡은 류트.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": "",
+        "aliases": []
+      },
+      {
+        "id": "lennox",
+        "name": "레녹스",
+        "role": "제2왕자",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스물두 살 청년. 키 181cm. 어깨까지 오는 칠흑 같은 머리, 나른한 붉은 눈, 흰 피부. 가슴을 풀어헤친 검은 비단 셔츠에 보석 반지들, 손에는 와인 잔.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스물두 살. 에르딘 왕국의 제2왕자. 투기장과 술자리를 전전하는 방탕한 한량으로 유명하다. 느긋한 반말에 \"재밌는 장난감이 왔군\"이 입버릇. 늘 와인 잔을 들고 있다.",
+        "hiddenInfo": "왕실은 성좌교의 꼭두각시다. 레녹스는 한량을 연기하며 성좌교를 무너뜨릴 기회를 노려 왔다. 주인공을 쓸모 있는 장기 말로 보고, 투기장 우승을 조건으로 대성당 출입을 돕는다. 속을 알 수 없지만 약속은 지킨다. 「별의 의식」에서 왕실 근위대를 움직일지는 주인공과의 관계에 달려 있다.",
+        "importance": "major",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스물두 살 청년. 키 181cm. 어깨까지 오는 칠흑 같은 머리, 나른한 붉은 눈, 흰 피부. 가슴을 풀어헤친 검은 비단 셔츠에 보석 반지들, 손에는 와인 잔.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": "",
+        "aliases": []
+      },
+      {
+        "id": "gratz",
+        "name": "그라츠",
+        "role": "투기장 챔피언",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "스물여덟 살 늑대 수인 남자. 키 205cm. 잿빛 늑대 귀와 꼬리, 흉터투성이 근육질 몸, 짧은 회색 머리, 노란 눈. 목과 손목에 쇠사슬 자국, 허리에 감은 투기장 천.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "스물여덟 살. 늑대 수인. 투기장의 노예 챔피언으로 삼 년째 무패. 수인이라 가호가 없지만 가호자들을 맨손으로 꺾어 왔다. 말수가 극히 적어 \"…….\", \"흥.\"이 대화의 절반. 동생 이야기만 나오면 귀가 쫑긋한다.",
+        "hiddenInfo": "나나의 의오빠. 나나의 몸값을 대신해 스스로 노예로 팔려 갔다. 「투기장의 늑대」 사건에서 주인공과 싸운다. 빼앗을 가호가 없으므로 주인공은 꾀와 실력으로 이겨야 한다. 이기면 레녹스의 상으로 그의 자유를 얻을 수 있고, 자유를 얻으면 말없이 주인공의 등을 지키는 동료가 된다. 냄새로 빈손을 알아본다(레온의 정체를 알아챈다).",
+        "importance": "supporting",
+        "imageOnFirstAppearance": true,
+        "visualLock": true,
+        "visualAnchor": "스물여덟 살 늑대 수인 남자. 키 205cm. 잿빛 늑대 귀와 꼬리, 흉터투성이 근육질 몸, 짧은 회색 머리, 노란 눈. 목과 손목에 쇠사슬 자국, 허리에 감은 투기장 천.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": "",
+        "aliases": []
+      },
+      {
+        "id": "hanbaek",
+        "name": "빈손의 왕",
+        "role": "전설의 폭군",
+        "age": "",
+        "gender": "",
+        "origin": "",
+        "status": "",
+        "occupation": "",
+        "affiliation": "",
+        "appearance": "전설 속 모습은 얼굴 없는 검은 그림자. 실제로는 스물몇 살의 조선 청년으로, 풀어 헤친 긴 머리에 흰 도포, 맑고 고집스러운 눈.",
+        "personality": "",
+        "values": "",
+        "speechStyle": "",
+        "skills": "",
+        "weaknesses": "",
+        "goals": "",
+        "assets": "",
+        "inventory": "",
+        "relationships": "",
+        "publicInfo": "300년 전 남의 가호를 빼앗아 왕이 되려 했다는 전설의 폭군. 성좌교의 일곱 성인에게 쓰러졌다고 경전에 적혀 있다. 아이들은 \"빈손의 왕이 잡아간다\"는 말로 겁을 준다.",
+        "hiddenInfo": "정체는 300년 전 조선에서 떨어진 청년 한백. 주인공과 같은 그릇을 가진 다른 세계 사람이었다. 그는 폭군이 아니었다. 귀족에게서 빼앗은 가호를 빈손들에게 나눠 주다 성인(귀족)들에게 쫓겼다. 성인들은 그를 죽이지 못하고 별의 우물 밑바닥에 봉인해, 그의 그릇을 모든 가호의 저장소로 쓰고 있다. 그는 의식만 남은 채 살아 있다. 「빈손의 손」 사건의 마지막에야 처음으로 주인공에게 말을 건다. 그 전에는 본문에 직접 등장하거나 이름이 나오지 않는다. 그의 속내(구원을 원하는지, 몸을 원하는지)는 1부에서 확정하지 않는다.",
+        "importance": "minor",
+        "imageOnFirstAppearance": false,
+        "visualLock": true,
+        "visualAnchor": "전설 속 모습은 얼굴 없는 검은 그림자. 실제로는 스물몇 살의 조선 청년으로, 풀어 헤친 긴 머리에 흰 도포, 맑고 고집스러운 눈.",
+        "imageFallback": "generate_anime",
+        "images": [],
+        "isPlayer": false,
+        "preRevealAlias": "",
+        "aliases": []
+      }
+    ],
+    "aiWorldContext": {
+      "enabled": false,
+      "liveEvaluation": true,
+      "premise": "",
+      "referenceFramework": "",
+      "referenceUsage": "참고 세계관의 핵심 규칙·용어·세력 논리와 장르적 기대를 분석하되, 현재 패키지에 명시된 정사를 최우선으로 적용한다.",
+      "localContext": "",
+      "enrichmentPriorities": "지역의 역사·지리·기관·사회문화·일상생활, 인물 동기, 세력 이해관계, 사건의 개연성과 후폭풍",
+      "protectedCanon": "",
+      "avoidElements": "원작 사건의 그대로인 재연, 기존 캐릭터의 역할 복제, 근거 없는 설정 추가, 플레이어가 알지 못하는 스포일러의 조기 공개",
+      "originalityRule": "참고 세계관의 작동 원리와 분위기는 활용하되, 현재 프로젝트의 인물·지역·사건은 독자적인 원인과 결과로 전개한다.",
+      "spoilerRule": "진명·배후·비밀 세력·원작 지식은 현재 장면에서 플레이어가 관측하거나 추론할 근거가 생기기 전까지 공개하지 않는다.",
+      "knowledgePolicy": "hybrid",
+      "updateDepth": "balanced",
+      "evaluationMoments": {
+        "sessionStart": true,
+        "sceneTransition": true,
+        "eventGeneration": true,
+        "npcDecision": true,
+        "everyTurn": true
+      },
+      "referenceCharacterResearch": {
+        "enabled": false,
+        "allowWebSearch": true,
+        "characterNames": "",
+        "researchScope": "공식 인물 설정, 성격과 핵심 가치관, 말투와 호칭, 능력과 한계, 주요 관계, 원작 시점별 목표와 알려진 사건",
+        "sourcePriority": "공식 작품·공식 캐릭터 소개·공식 설정 자료를 우선하고, 신뢰할 수 있는 2차 정리 자료는 교차 확인에만 사용한다. 팬덤 해석은 사실과 분리한다.",
+        "canonCutoff": "현재 시나리오 시작 시점까지 공개된 정보만 사용하며, 이후 전개의 중대 스포일러는 숨긴다.",
+        "cacheMode": "session",
+        "verifyOnFirstAppearance": true,
+        "verifyOnCanonConflict": true,
+        "recordSourcesInLedger": true
+      },
+      "routeContexts": {},
+      "knowledgeScopes": {
+        "playerMeta": "플레이어는 해금·회차·열람한 엔딩 같은 작품 메타 진행만 알 수 있다.",
+        "protagonist": "주인공은 현재 세계선에서 직접 경험하거나 기억 전이 규칙으로 보존된 사실만 안다.",
+        "npc": "NPC는 각자의 지식 장부와 관측 범위 안의 사실만 사용한다."
+      }
+    },
+    "factions": [
+      {
+        "id": "church",
+        "name": "성좌교",
+        "publicInfo": "별의 대성당, 별의 우물, 별의 의식을 관장하는 국교. 대주교 그레고르, 이단심문관 로잘린, 성좌 기사단을 거느린다. 성녀 셀레네를 기적의 상징으로 내세우며 \"가호는 질서\"라고 가르친다.",
+        "hiddenInfo": "대주교의 장부, 가호 배정, 이단 처형과 회수, 약한 가호의 폐기(마수의 기원), 성녀 실험, 빈 가면. 길드 접수원 도로시 같은 정보원을 곳곳에 둔다.",
+        "officialGoal": "별의 대성당, 별의 우물, 별의 의식을 관장하는 국교. 대주교 그레고르, 이단심문관 로잘린, 성좌 기사단을 거느린다. 성녀 셀레네를 기적의 상징으로 내세우며 \"가호는 질서\"라고 가르친다.",
+        "hiddenGoal": "대주교의 장부, 가호 배정, 이단 처형과 회수, 약한 가호의 폐기(마수의 기원), 성녀 실험, 빈 가면. 길드 접수원 도로시 같은 정보원을 곳곳에 둔다."
+      },
+      {
+        "id": "alley",
+        "name": "잿골목 사람들",
+        "publicInfo": "왕도 바깥 고리 빈민가의 빈손들. 세탁, 하수구 청소, 짐꾼 일로 살며 서로를 돌본다. 곰발 브로크 일당에게 자릿세를 뜯긴다. 오스의 진료소가 유일한 의원이다.",
+        "hiddenInfo": "많은 이가 처형된 마르타를 기억한다. 주인공이 빈손으로 만든 사람이 몇 명인지에 따라 그를 영웅으로도, 괴물로도 본다. 지하에는 무너진 옛 예배당이 있다.",
+        "officialGoal": "왕도 바깥 고리 빈민가의 빈손들. 세탁, 하수구 청소, 짐꾼 일로 살며 서로를 돌본다. 곰발 브로크 일당에게 자릿세를 뜯긴다. 오스의 진료소가 유일한 의원이다.",
+        "hiddenGoal": "많은 이가 처형된 마르타를 기억한다. 주인공이 빈손으로 만든 사람이 몇 명인지에 따라 그를 영웅으로도, 괴물로도 본다. 지하에는 무너진 옛 예배당이 있다."
+      },
+      {
+        "id": "guild",
+        "name": "모험가 길드",
+        "publicInfo": "마수 토벌과 호위를 맡는 길드. 등급은 금·은·동·돌이며, 가호가 곧 등급이라 빈손은 돌 등급에서 시작한다. 접수원 도로시가 신입들을 챙긴다.",
+        "hiddenInfo": "길드 상층부는 등록되지 않은 가호의 소문을 성좌교에 판다. 위조 증표로 빈손임을 숨긴 모험가가 몇 있다(레온).",
+        "officialGoal": "마수 토벌과 호위를 맡는 길드. 등급은 금·은·동·돌이며, 가호가 곧 등급이라 빈손은 돌 등급에서 시작한다. 접수원 도로시가 신입들을 챙긴다.",
+        "hiddenGoal": "길드 상층부는 등록되지 않은 가호의 소문을 성좌교에 판다. 위조 증표로 빈손임을 숨긴 모험가가 몇 있다(레온)."
+      },
+      {
+        "id": "crown",
+        "name": "왕실과 투기장",
+        "publicInfo": "왕실은 성좌교의 그늘에 가려 이름만 남았다는 평을 듣는다. 제2왕자 레녹스는 투기장과 술자리를 전전하는 한량으로 유명하다. 투기장에서는 노예와 빈손이 가호자와 싸운다.",
+        "hiddenInfo": "레녹스는 한량을 연기하며 성좌교를 무너뜨릴 기회를 노린다. 왕실 근위대 일부가 그를 따른다.",
+        "officialGoal": "왕실은 성좌교의 그늘에 가려 이름만 남았다는 평을 듣는다. 제2왕자 레녹스는 투기장과 술자리를 전전하는 한량으로 유명하다. 투기장에서는 노예와 빈손이 가호자와 싸운다.",
+        "hiddenGoal": "레녹스는 한량을 연기하며 성좌교를 무너뜨릴 기회를 노린다. 왕실 근위대 일부가 그를 따른다."
+      }
+    ],
+    "events": [
+      {
+        "id": "e01_empty",
+        "name": "빈손",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "해 질 녘 잿골목. 곰발 브로크 일당이 주인공의 '반짝이는 상자'(스마트폰)를 내놓으라며 둘러싼다. 브로크의 팔뚝이 쇳빛으로 굳는 〈철피〉. 주인공에게는 상태창도 능력도 없다. 빨래 방망이를 든 세탁부 소녀 리네가 끼어들고, 막대기 검을 든 티오와 동네 아이들이 소란을 키운다. 얻어맞든, 꾀로 빠져나가든, 리네와 함께 버티든, 주인공은 이 세계에서 자신이 아무것도 아니라는 걸 몸으로 배운다.\n밤, 리네의 세탁장 다락에서 이 세계 이야기를 듣는다. 열 살 '별의 의식'에서 누구나 가호 하나를 받는다. 가호가 없는 사람은 '빈손'이라 불리며 땅도 직업도 제대로 못 갖는다. 리네도 빈손이고, 티오는 다음 달 의식을 기다린다. 주인공도 가호가 없으니 이 세계 기준으로 빈손이다. 리네의 손가락 끝에 분필 가루가 묻어 있고, 리네는 골목의 분필 동그라미를 서둘러 물로 지운다. 밝고 소란스럽게, 그러나 빈손의 서러움이 비치게 쓴다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e01_empty-c1",
+              "text": "주인공이 브로크 일당과 처음 부딪치며 자신에게 아무 능력도 없다는 것을 확인한다."
+            },
+            {
+              "id": "e01_empty-c2",
+              "text": "리네가 주인공을 돕고, 둘이 서로 이름을 나눈다."
+            },
+            {
+              "id": "e01_empty-c3",
+              "text": "주인공이 가호와 빈손에 대해 듣고, 자신도 이 세계에서 빈손 취급을 받는다는 것을 알게 된다."
+            },
+            {
+              "id": "e01_empty-c4",
+              "text": "주인공이 리네의 다락에서 이 세계의 첫날 밤을 맞는다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "이 세계에는 상태창이 없다. 주인공은 이 사건에서 어떤 가호도 얻지 못한다. 리네는 분필 동그라미에 대해 사실대로 말하지 않는다.",
+          "success": "",
+          "unmet": "주인공이 리네를 따라가지 않으면, 밤이 깊어 갈 곳 없는 그를 티오가 찾아내 다락으로 끌고 간다."
+        }
+      },
+      {
+        "id": "e02_rat",
+        "name": "잿쥐의 밤",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "그날 밤, 하수구에서 개만 한 마수 '잿쥐'가 기어 나와 골목 아이들과 티오를 덮친다. 등불이 꺼진 골목에서도 잿쥐는 본다. 주인공은 가진 것(스마트폰 손전등, 문제집, 샤프, 빨랫줄, 잔머리)으로 맞서야 한다.\n숨이 끊어지는 잿쥐에게 손이 닿는 순간, 따뜻한 빛이 손바닥으로 흘러들고 머릿속에 단어 하나가 떠오른다. 〈어둠눈〉. 잿쥐의 마지막 감정(지독한 굶주림)이 한순간 스친다. 다음 순간 캄캄한 골목이 희미한 새벽처럼 보인다. 주인공은 쓰러뜨린 상대의 가호를 손을 뻗어 가져올 수 있다는 걸 깨닫는다. 이것이 그의 유일한 힘이다. 리네에게 말할지는 주인공의 선택.\n소동이 끝난 뒤, 건너편 지붕 위에서 커다란 모자를 쓴 엘프 꼬마가 계피 막대를 씹으며 \"흐응\" 하고 웃는 모습이 보였다 사라진다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e02_rat-c1",
+              "text": "잿쥐가 아이들을 덮치고 주인공이 맞선다."
+            },
+            {
+              "id": "e02_rat-c2",
+              "text": "주인공이 잿쥐를 쓰러뜨리고 〈어둠눈〉을 얻는다."
+            },
+            {
+              "id": "e02_rat-c3",
+              "text": "주인공이 쓰러뜨린 상대의 가호를 가져올 수 있다는 자신의 힘을 처음으로 실감한다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "잿쥐는 아이들을 죽이지 못한다.",
+          "success": "",
+          "unmet": "주인공이 끝내 잿쥐를 쓰러뜨리지 못하면, 리네가 등불 기름을 끼얹어 잿쥐가 비틀거리고 주인공의 마지막 일격에 쓰러지며 가호가 넘어온다."
+        }
+      },
+      {
+        "id": "e03_doctor",
+        "name": "잿골목의 의사",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "잿골목의 늙은 의사 오스와 손녀 유리의 진료소. 오스는 〈치유의 손〉을 가진 가호자인데도 빈손들을 공짜로 고친다. 유리는 수줍어하다가도 상처 앞에서는 주인공을 꼼짝 못 하게 혼낸다.\n오스가 이 세계의 속사정을 들려준다. 사람이 죽으면 가호는 별의 대성당의 '별의 우물'로 돌아가 다음 의식에서 다른 아이에게 간다. 우물로 돌아가지 못한 가호가 짐승에게 붙으면 마수가 된다. \"빈손이란 빈자리가 있는 사람이라는 뜻이기도 하지.\" 그리고 300년 전 남의 가호를 빼앗아 왕이 되려던 폭군 '빈손의 왕' 전설과 경전의 구절. \"가호를 빼앗는 손이 다시 나타나면, 그 손을 불태우라.\" 주인공의 힘이 바로 그 손이다.\n지붕 위 천막의 엘프 점쟁이 실피가 주인공을 불러 점을 봐 준다. \"넌 빼앗고, 놓고, 결국은 건네게 될 게다.\" 그리고 \"그 녀석이랑 말버릇이 똑같구먼\" 하고 혼잣말한다. 리네는 엄마 이야기를 꺼낸다. 눈을 마주치면 사람을 멈추게 하던 엄마는 7년 전 이단으로 끌려갔다. 그날 밤 브로크 일당이 진료소에 자릿세를 뜯으러 와서, 내일 밤 진료소를 불태우겠다고 협박한다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e03_doctor-c1",
+              "text": "오스가 주인공을 치료하며 별의 우물과 마수 이야기를 한다."
+            },
+            {
+              "id": "e03_doctor-c2",
+              "text": "주인공이 빈손의 왕 전설과, 빼앗는 손을 불태우라는 경전 구절을 듣는다."
+            },
+            {
+              "id": "e03_doctor-c3",
+              "text": "실피가 주인공의 점을 봐 준다."
+            },
+            {
+              "id": "e03_doctor-c4",
+              "text": "브로크 일당이 진료소를 협박하고, 주인공이 그 일에 엮인다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "오스와 실피는 주인공의 힘을 눈치채도 고발하지 않는다. 실피는 자신의 과거를 말하지 않는다.",
+          "success": "",
+          "unmet": "주인공이 진료소에 가지 않으면 리네가 귀를 잡아끌고 데려간다. 실피를 찾지 않으면 실피가 먼저 진료소 창문으로 고개를 내민다."
+        }
+      },
+      {
+        "id": "e04_brokk",
+        "name": "곰발 브로크",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "브로크 일당이 진료소에 불을 지르러 온 밤. 〈철피〉로 쇳덩이가 되는 브로크를 정면으로는 이길 수 없다. 〈어둠눈〉을 살려 등불을 꺼 버리거나, 함정과 꾀로 열 호흡의 철피가 풀리는 순간을 노려야 한다. 유리와 리네, 골목 사람들도 저마다 할 수 있는 일로 돕는다.\n브로크를 쓰러뜨리면 주인공은 처음으로 사람의 가호에 손을 뻗을지 결정해야 한다. 가져오면 〈철피〉는 주인공의 것이 되고 브로크는 빈손이 된다. 어제까지 그를 따르던 부하들이 그를 걷어차고, 그는 바닥을 기며 \"돌려줘… 두고 봐라\"라고 운다. 승리의 쾌감과 구역질이 한꺼번에 온다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e04_brokk-c1",
+              "text": "브로크 일당이 진료소를 습격하고 주인공이 맞선다."
+            },
+            {
+              "id": "e04_brokk-c2",
+              "text": "주인공이 브로크를 쓰러뜨린다."
+            },
+            {
+              "id": "e04_brokk-c3",
+              "text": "주인공이 브로크의 가호를 가져올지 결정하고, 그 결과가 장면에 드러난다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "브로크는 이 사건에서 주인공을 죽이지 못한다. 진료소는 완전히 타지 않는다.",
+          "success": "",
+          "unmet": "주인공이 혼자 힘으로 이기지 못하면, 골목 사람들이 던진 빨래통에 철피가 풀린 브로크가 넘어지고 주인공의 일격에 쓰러진다."
+        }
+      },
+      {
+        "id": "e05_guild",
+        "name": "돌 등급 모험가",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "돈도 힘도 필요하다. 주인공은 모험가 길드에 등록하지만 빈손이라 최하 '돌 등급' 딱지를 받고 웃음거리가 된다. 상냥한 접수원 도로시만은 \"모험가님\"이라 부르며 살뜰히 챙겨 주는데, 의뢰서를 정리하다 쪽지 한 장을 성좌교 전령에게 슬쩍 건네는 모습이 스친다.\n시비를 거는 귀족 모험가들 앞을 막아서는 건 해맑은 견습 기사 카일, 그리고 파이프를 문 능글맞은 은 등급 궁수 레온이다. 셋은 성벽 밖 숲의 마수 토벌을 맡는다. 바람처럼 달리는 '바람늑대'(〈바람발〉), 들은 소리를 흉내 내는 '메아리새'(〈메아리〉). 카일은 눈을 마주쳐 상대를 멈추는 〈굳힘〉을 자랑하고, 레온은 이상하게도 가호를 한 번도 쓰지 않고 활과 판 읽기만으로 싸운다. \"가호는 손에 쥔 패일 뿐이야. 판을 읽어.\" 숲에서는 빈손을 노리는 모험가 가릭이 전리품을 빼앗으려 덤벼든다.\n그러다 주인공의 그릇이 가득 찬다. 새 가호를 가지려면 하나를 놓아야 한다. 놓은 가호가 어디로 가는지 주인공은 아직 모른다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e05_guild-c1",
+              "text": "주인공이 길드에 빈손으로 등록하고 도로시, 카일, 레온과 만난다."
+            },
+            {
+              "id": "e05_guild-c2",
+              "text": "숲에서 마수를 쓰러뜨려 새 가호를 얻는다."
+            },
+            {
+              "id": "e05_guild-c3",
+              "text": "그릇이 가득 차서 주인공이 가호 하나를 놓는다. 무엇을 놓을지는 주인공이 고른다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "레온은 이 사건에서 가호를 쓰지 않으며 그 이유를 말하지 않는다. 도로시의 쪽지 내용은 드러나지 않는다.",
+          "success": "",
+          "unmet": "그릇이 차지 않으면, 마지막에 쓰러뜨린 메아리새의 가호가 넘어오려는 순간 몸이 꽉 찬 듯 거부하며, 하나를 놓아야만 한다는 감각이 온다."
+        }
+      },
+      {
+        "id": "e06_isolde",
+        "name": "불꽃의 영애",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "떠돌이 음유시인 피핀이 \"빈손이 곰발을 꺾었다!\"는 노래를 열 배로 부풀려 퍼뜨린다. 그 노래가 길드 최연소 금 등급, 아르젠 백작가의 영애 이졸데의 귀에 들어간다. \"빈손 주제에 전설 흉내라니, 가소롭군요.\" 이졸데는 길드 훈련장에서 공개 결투를 건다. 머리 위의 불꽃 고리, 화염을 두른 장검, 〈불꽃 왕관〉. 정면으로는 상대가 안 된다. 주인공은 가진 가호의 조합과 꾀, 레온에게 배운 판 읽기로 승부해야 한다.\n이기면 다시 선택이 온다. 그녀의 가호를 가져올 것인가. 가져오면 이졸데는 빈손이 되어 그날로 백작가에서 쫓겨나고, 다음 날 아침 다락 문 앞에서 \"내 가호 돌려줘요! 돌려줄 때까지 따라다닐 거예요!\"라고 외친다. 가져오지 않으면 \"이 결투는 무효예요\"라며 재대결을 핑계로 따라다닌다. 피핀은 \"대박이다!\"라며 주인공의 전기 작가를 자처한다. 결투가 공개된 만큼 주인공의 이름이 퍼지기 시작한다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e06_isolde-c1",
+              "text": "피핀의 노래를 계기로 이졸데가 주인공에게 공개 결투를 건다."
+            },
+            {
+              "id": "e06_isolde-c2",
+              "text": "주인공이 이졸데와 싸워 이긴다."
+            },
+            {
+              "id": "e06_isolde-c3",
+              "text": "주인공이 이졸데의 가호를 가져올지 결정하고, 그 결과가 장면에 드러난다."
+            },
+            {
+              "id": "e06_isolde-c4",
+              "text": "이졸데가 이유를 대며 주인공 일행을 따라다니기 시작한다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "이졸데는 이 사건에서 죽지 않는다. 주인공은 이 결투에서 쉽게 이기지 못한다.",
+          "success": "",
+          "unmet": "주인공이 결투에서 이기지 못하면, 승리를 확신한 이졸데가 방심한 순간 주인공의 마지막 수가 통해 극적으로 이긴다."
+        }
+      },
+      {
+        "id": "e07_mask",
+        "name": "빈 가면",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "잿골목에 '빈손 사냥꾼' 빈 가면이 나타난다. 얼굴 전체를 덮은 하얀 가면, 그림자에서 그림자로 건너뛰는 걸음, 닿는 것을 얼리는 손. 성좌교의 비밀 집행자로, 등록되지 않은 가호를 가진 자를 찾아 회수한다는 소문의 존재다.\n빈 가면은 무언가를 찾아 골목을 뒤지다 엉뚱한 빈손 소년을 의심해 해치려 하고, 막아서던 오스가 치명상을 입는다. 주인공은 빈 가면을 이기지 못한다. 죽어 가는 오스가 주인공의 손을 잡는다. \"가호는… 줄 수도 있다네.\" 그리고 스스로 〈치유의 손〉을 내어 준다. 유리의 울음.\n혼란 속, 등불 하나 없는 골목을 리네가 아무렇지 않게 뛰어다니는 모습이 주인공의 눈에 걸린다. 물러나는 빈 가면은 낮게 노래를 흥얼거린다. 리네가 빨래하며 부르던 노래다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e07_mask-c1",
+              "text": "빈 가면이 잿골목을 습격한다."
+            },
+            {
+              "id": "e07_mask-c2",
+              "text": "오스가 쓰러지고, 주인공에게 스스로 가호를 내어 준다."
+            },
+            {
+              "id": "e07_mask-c3",
+              "text": "주인공이 빈 가면과 맞서지만 이기지 못하고, 빈 가면이 물러난다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "주인공은 이 사건에서 빈 가면을 쓰러뜨리지 못한다. 빈 가면의 정체는 드러나지 않는다. 오스는 이 사건에서 죽으며 되살아나지 않는다.",
+          "success": "",
+          "unmet": "주인공이 오스 곁에 가지 못하면, 유리가 그를 끌고 와 마지막 순간 오스의 손을 잡게 한다."
+        }
+      },
+      {
+        "id": "e08_circle",
+        "name": "놓은 것이 가는 곳",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "오스의 장례가 끝난 밤, 세탁장 지붕 위. 주인공은 리네가 어둠 속에서 본다는 것을 확인한다. 리네가 털어놓는다. 주인공이 숲에서 무언가를 놓은 그날 밤부터 갑자기 어둠이 보였고, 빈손에게 가호가 생기면 사냥꾼이 온다는 걸 알아서 숨겼다고.\n그리고 더 큰 고백. 그 분필 동그라미는 자기가 그렸다고. 처형된 엄마가 남긴 낡은 책에 있던 그림을, 티오가 또 빈손이 될까 무서워서 \"누구라도, 빼앗을 수 있는 사람을\" 하고 빌며 따라 그렸다고. 주인공을 부른 건 리네였다. 주인공이 놓은 가호는 소환의 끈을 따라 리네에게 갔고, 빈 가면이 찾던 것도 리네다.\n분노, 원망, 이해, 약속. 둘의 관계가 이 밤에 정해진다. 엄마의 책은 금서인 '빈손의 왕의 일기' 사본이다. 리네는 그 글자를 읽지 못하지만, 주인공은 알아본다. 한글이다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e08_circle-c1",
+              "text": "리네가 어둠 속에서 볼 수 있다는 사실이 드러난다."
+            },
+            {
+              "id": "e08_circle-c2",
+              "text": "리네가 분필 동그라미를 그려 주인공을 불렀다고 고백한다."
+            },
+            {
+              "id": "e08_circle-c3",
+              "text": "놓은 가호가 리네에게 갔다는 것과 빈 가면이 리네를 노린다는 것이 분명해진다."
+            },
+            {
+              "id": "e08_circle-c4",
+              "text": "주인공이 리네에게 자신의 대답을 행동으로 보인다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "리네는 거짓말하지 않는다. 주인공의 대답을 대신 정하지 않는다. 일기 사본에는 원본의 위치를 가리키는 표시만 있고 내용 대부분은 없다.",
+          "success": "",
+          "unmet": "주인공이 리네를 추궁하지 않으면, 티오가 엄마의 책을 들고 와 \"누나가 이걸로 형을 불렀대\"라고 말해 버린다."
+        }
+      },
+      {
+        "id": "e09_diary",
+        "name": "빈손의 왕의 일기",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "일기 사본이 가리키는 원본은 잿골목 아래 무너진 옛 예배당에 있다. 입구를 아는 건 그림자 시장의 고양이 수인 정보상 나나. \"그건 은화 세 닢짜리 정보야.\" 돈 대신 무엇을 걸지는 주인공의 몫이다. 나나의 목에는 늑대 송곳니 목걸이가 걸려 있다. 실피가 계피 막대를 씹으며 \"나도 가지\" 하고 따라붙는다.\n지하를 지키는 늙은 마수 '돌거북'(〈무게 바꾸기〉)과의 싸움. 그리고 일기. 300년 전의 빈손의 왕은 주인공처럼 다른 세계(조선)에서 온 사람이었다. 그는 폭군이 아니었다. 귀족에게서 빼앗은 가호를 빈손들에게 나눠 주다 성인들에게 쫓겼다. \"가호에는 주인의 마지막 마음이 남는다. 그래서 빼앗은 가호는 무겁다.\" \"빼앗는 손은 주는 손이 될 수 있다. 맞잡은 손으로, 빈자리가 있는 사람에게 건네라.\" \"그릇은 놓을 줄 아는 만큼 넓어진다.\" 마지막 장. \"나는 아직 우물 안에 있다.\"\n실피가 처음으로 장난기를 거두고 말한다. 자신은 그의 동료였다고. 주인공은 처음으로 '건네는 법'을 시험한다. 누구에게 무엇을 건넬지(〈치유의 손〉을 유리에게, 〈철피〉를 브로크에게, 혹은 다른 누군가에게)는 주인공의 선택이다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e09_diary-c1",
+              "text": "나나의 안내로 주인공 일행이 옛 예배당 지하에 들어가 수호 마수와 맞선다."
+            },
+            {
+              "id": "e09_diary-c2",
+              "text": "주인공이 빈손의 왕의 일기를 찾아 읽고, 그가 다른 세계에서 온 사람이었다는 것을 안다."
+            },
+            {
+              "id": "e09_diary-c3",
+              "text": "실피가 자신이 빈손의 왕의 동료였다고 밝힌다."
+            },
+            {
+              "id": "e09_diary-c4",
+              "text": "주인공이 일기의 방법대로 가호를 다른 사람에게 건네는 것을 처음 시도한다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "실피는 빈손의 왕의 이름을 말하지 않는다. 일기는 '나는 아직 우물 안에 있다'의 뜻을 설명하지 않는다.",
+          "success": "",
+          "unmet": "주인공이 가호를 건네지 않으면, 유리가 \"할아버지 진료소를 제가 이을게요\"라고 말하고, 주인공은 그 손을 잡은 채 건네는 감각만 처음 느낀다(실제 건넴은 다음으로 미뤄진다)."
+        }
+      },
+      {
+        "id": "e10_arena",
+        "name": "투기장의 늑대",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "별의 대성당에 들어가려면 연줄이 필요하다. 투기장 귀빈석의 제2왕자 레녹스가 와인 잔을 흔들며 제안한다. \"재밌는 장난감이 왔군. 내 투기장에서 이기면 대성당 문을 열어 주지.\" 그는 지나가듯 흘린다. \"왕실은 대성당의 인형이거든.\"\n동시에 나나가 처음으로 돈 얘기 없이 부탁한다. 투기장의 무패 챔피언, 늑대 수인 그라츠는 자신의 몸값을 대신해 노예가 된 오빠라고. 결승 상대는 그라츠. 수인은 태어날 때부터 가호가 없으니 빼앗을 것도 없다. 주인공은 순수하게 꾀와 가진 가호, 동료들의 도움으로 이겨야 한다.\n레온이 관중석에서 판을 읽어 주는데, 그라츠가 냄새를 맡고 중얼거린다. \"…저 궁수도 우리 쪽이군.\" 레온의 비밀이 드러난다. 그는 빈손이다. 이기면 레녹스의 상으로 그라츠의 자유를 얻을 수 있다. 레녹스는 주인공을 '쓸모 있는 장기 말'로 점찍는다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e10_arena-c1",
+              "text": "레녹스가 투기장 우승을 조건으로 대성당 출입을 제안한다."
+            },
+            {
+              "id": "e10_arena-c2",
+              "text": "나나가 그라츠가 자신의 오빠라고 밝히고 도움을 청한다."
+            },
+            {
+              "id": "e10_arena-c3",
+              "text": "주인공이 결승에서 그라츠와 싸운다."
+            },
+            {
+              "id": "e10_arena-c4",
+              "text": "레온이 빈손이라는 사실이 드러난다."
+            },
+            {
+              "id": "e10_arena-c5",
+              "text": "결투의 결과로 그라츠의 처지가 정해진다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "그라츠에게는 빼앗을 가호가 없다. 그라츠는 이 사건에서 죽지 않는다.",
+          "success": "",
+          "unmet": "주인공이 결승에서 지면, 그라츠가 마지막 순간 스스로 무릎을 꿇고 \"…동생이 웃는 걸 봤다\"며 항복해 승리가 주인공에게 돌아간다."
+        }
+      },
+      {
+        "id": "e11_saint",
+        "name": "세 개의 가호를 가진 성녀",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "레녹스의 연줄과 카일의 안내로 상층 구역과 별의 대성당에 들어간다. 다음 달 별의 의식을 앞둔 예행. 귀족들은 아이가 받을 가호를 이미 안다는 듯 자랑한다. \"우리 애는 〈불씨〉를 받을 거래요.\" 이졸데는 옛 친구들의 냉대를 견딘다.\n단상에는 대주교 그레고르, 그 곁에 나긋한 미소의 이단심문관 로잘린. 로잘린은 주인공에게서 무언가 냄새를 맡은 듯 웃는다. \"저도 한때는 빈손이었답니다.\" 그리고 기적의 상징, 세 개의 가호를 가진 성녀 셀레네. 은백색 머리, 창백한 얼굴, 세탁부처럼 갈라진 손가락 마디. 리네가 그 이름에 얼어붙는다. 성좌교가 성녀 후보로 데려간 언니의 이름이 셀레네였다.\n카일이 장난처럼 〈굳힘〉을 보여 주자 리네의 얼굴이 하얗게 질린다. 엄마와 같은 가호. 상층에서 가호를 함부로 쓰면 이목을 끈다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e11_saint-c1",
+              "text": "주인공 일행이 대성당에서 별의 의식 예행을 본다."
+            },
+            {
+              "id": "e11_saint-c2",
+              "text": "대주교 그레고르와 이단심문관 로잘린이 등장한다."
+            },
+            {
+              "id": "e11_saint-c3",
+              "text": "성녀 셀레네가 등장하고, 리네가 그녀를 알아본다."
+            },
+            {
+              "id": "e11_saint-c4",
+              "text": "귀족들이 아이가 받을 가호를 미리 안다는 이상한 점이 드러난다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "로잘린은 이 사건에서 주인공을 체포하지 않는다. 셀레네는 리네를 알아보는 기색을 드러내지 않는다.",
+          "success": "",
+          "unmet": "리네가 셀레네를 알아보지 못하면, 의식이 끝날 때 셀레네가 지나가며 엄마의 빨래 노래 첫 소절을 아주 작게 흥얼거린다."
+        }
+      },
+      {
+        "id": "e12_unmask",
+        "name": "가면 아래",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "빈 가면이 마침내 리네를 찾아온다. 이번엔 물러설 수 없다. 그림자 걸음, 서리 손, 가호 감지. 주인공은 동료들과 함께 지금까지 모은 가호와 꾀를 모두 걸고 싸운다.\n쓰러진 빈 가면의 가면이 깨지면, 그 아래는 성녀 셀레네의 얼굴이다. 리네의 언니. 성좌교는 빈손이던 그녀의 하나뿐인 자리에 우물의 가호 세 개를 억지로 넣었고, 가호들이 그녀의 몸을 안에서부터 태우고 있다. 그녀는 오래 못 산다. 살리는 방법은 하나, 가호를 빼앗는 것. 그러려면 주인공은 자기 그릇을 비워야 한다. 지금까지 모은 힘을 놓아야 한다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e12_unmask-c1",
+              "text": "빈 가면이 리네를 노리고, 주인공이 동료들과 맞선다."
+            },
+            {
+              "id": "e12_unmask-c2",
+              "text": "주인공이 빈 가면을 쓰러뜨리고, 가면 아래가 셀레네라는 것이 드러난다."
+            },
+            {
+              "id": "e12_unmask-c3",
+              "text": "셀레네의 몸이 가호 때문에 망가지고 있다는 사실이 분명해진다."
+            },
+            {
+              "id": "e12_unmask-c4",
+              "text": "주인공이 셀레네를 두고 자신의 선택을 행동으로 보인다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "리네는 죽지 않는다. 셀레네는 이 사건에서 죽지 않는다.",
+          "success": "",
+          "unmet": "주인공이 빈 가면을 쓰러뜨리지 못하면, 리네가 엄마의 노래를 부르며 앞으로 나서고, 그 노래에 빈 가면이 멈칫한 틈에 주인공의 일격이 들어간다."
+        }
+      },
+      {
+        "id": "e13a_sister",
+        "name": "언니",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "가호를 잃은 셀레네는 빈손으로 돌아왔다. 숨이 고르게 돌아오고, 7년 만에 동생의 이름을 부른다. 자매의 재회. 무표정하던 얼굴이 처음으로 무너진다. 셀레네가 아는 것: 성녀는 대성당의 실험이었고, 대주교는 '장부'로 모든 아이의 가호를 미리 정한다. 다음 의식에서 티오의 이름 옆에도 무언가가 적혀 있다. 주인공의 그릇은 세 개의 가호를 품으며 한 칸 넓어졌다. 그러나 성녀가 사라진 것을 안 성좌교가 움직이기 시작한다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "e14_ledger",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e13a_sister-c1",
+              "text": "셀레네가 깨어나 리네와 재회한다."
+            },
+            {
+              "id": "e13a_sister-c2",
+              "text": "셀레네가 대성당의 장부와 티오에 대한 계획을 알려 준다."
+            },
+            {
+              "id": "e13a_sister-c3",
+              "text": "성좌교가 성녀의 실종을 알고 추적을 시작한다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "셀레네는 이 사건에서 죽지 않는다.",
+          "success": "",
+          "unmet": "셀레네가 깨어나지 못하면, 잠결에 엄마의 노래를 부르며 장부와 티오에 대해 띄엄띄엄 말한다."
+        }
+      },
+      {
+        "id": "e13b_returned",
+        "name": "돌아간 성녀",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "주인공은 셀레네의 가호를 가져오지 못했다(혹은 가져오지 않았다). 셀레네는 피를 토하며 그림자 속으로 사라져 대성당으로 돌아간다. 남은 것은 깨진 가면 조각과 그녀가 떨어뜨린 쪽지 한 장. \"티오를 의식에 보내지 마.\" 리네는 언니를 또 잃었다. 주인공은 셀레네가 다음 의식까지 버티지 못하리라는 것을 안다. 그리고 성좌교는 이제 빈 가면을 쓰러뜨린 자의 얼굴을 안다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e13b_returned-c1",
+              "text": "셀레네가 대성당으로 돌아간다."
+            },
+            {
+              "id": "e13b_returned-c2",
+              "text": "셀레네가 남긴 쪽지로 티오가 위험하다는 것을 알게 된다."
+            },
+            {
+              "id": "e13b_returned-c3",
+              "text": "주인공과 리네가 다음 행동을 정한다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "셀레네는 이 사건에서 죽지 않는다.",
+          "success": "",
+          "unmet": "주인공이 쪽지를 놓치면, 티오가 깨진 가면 조각 틈에 끼어 있던 쪽지를 주워 온다."
+        }
+      },
+      {
+        "id": "e14_ledger",
+        "name": "대주교의 장부",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "대성당 서고에 숨어들어 대주교의 장부를 찾는다. 레녹스가 준 도면, 나나의 자물쇠 따기, 〈어둠눈〉과 동료들의 가호. 그리고 서고 앞에서 마주친 사람, 길드 접수원 도로시. 그녀는 성좌교의 정보원이었다. 잿골목 소년의 소문을 넘긴 것이 빈 가면의 습격을 불렀다. 병든 여동생의 치료비 때문이었다. 그녀를 어떻게 할지는 주인공의 몫이다.\n장부에는 모든 진실이 있다. 별의 의식은 운명이 아니라 배정이다. 귀족 아이들의 가호는 미리 정해지고, 우물이 모자라면 이단으로 몬 평민 가호자를 처형해 회수한다. 약한 가호는 숲에 버린다. 그것이 마수가 된다. 7년 전 처형된 마르타의 〈굳힘〉은 회수 후 반스 남작가의 막내 카일에게 배정되었다. 티오의 이름 옆에는 '빈손 배정 — 성녀 후보 실험체'. 같은 장부의 맨 앞장, 300년 전 기록: '우물의 핵 — 빈손의 왕의 그릇.' 서고를 지키는 성기사들, 그리고 이단심문관 로잘린이 나타난다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e14_ledger-c1",
+              "text": "주인공 일행이 대성당 서고에 들어가 대주교의 장부를 찾는다."
+            },
+            {
+              "id": "e14_ledger-c2",
+              "text": "도로시가 성좌교의 정보원이었다는 사실이 드러난다."
+            },
+            {
+              "id": "e14_ledger-c3",
+              "text": "장부를 통해 가호 배정과 처형·회수의 진실이 드러난다."
+            },
+            {
+              "id": "e14_ledger-c4",
+              "text": "리네의 엄마의 가호가 카일에게 갔다는 사실이 드러난다."
+            },
+            {
+              "id": "e14_ledger-c5",
+              "text": "주인공 일행이 로잘린과 성기사들을 피해 서고를 빠져나온다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "로잘린은 이 사건에서 죽지 않는다. 그레고르는 이 사건에 직접 나타나지 않는다.",
+          "success": "",
+          "unmet": "장부를 통째로 가져오지 못해도, 주인공이 스마트폰 카메라로 핵심 장을 찍어 나온다."
+        }
+      },
+      {
+        "id": "e15_wanted",
+        "name": "수배",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "성좌교가 선포한다. \"빈손의 왕이 돌아왔다. 남의 가호를 빼앗는 손을 가진 자를 산 채로 바치는 자에게 금화 천 닢.\" 성벽마다 주인공의 얼굴이 붙는다(피핀이 그린 과장된 초상화다). 장부를 본 카일은 기사단과 친구 사이에서, 그리고 자기 가호의 원래 주인 앞에서 선택해야 한다.\n별의 의식까지 사흘. 잿골목이 술렁인다. 주인공이 가호를 빼앗아 빈손으로 만든 사람들의 이야기가 골목을 돈다. 잿골목 사람들은 그를 숨겨 줄까, 팔아넘길까. 그것은 지금까지 주인공이 이 골목에서 무엇을 했는지에 달려 있다. 주인공은 사람들 앞에서 무엇을 말할지 정해야 한다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e15_wanted-c1",
+              "text": "성좌교가 주인공을 빈손의 왕의 재림으로 선포하고 현상금을 건다."
+            },
+            {
+              "id": "e15_wanted-c2",
+              "text": "카일이 자신의 선택을 행동으로 보인다."
+            },
+            {
+              "id": "e15_wanted-c3",
+              "text": "주인공이 잿골목 사람들 앞에 서서 자신의 힘과 계획을 이야기한다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "카일은 이 사건에서 죽지 않는다.",
+          "success": "",
+          "unmet": "주인공이 사람들 앞에 서지 않으면, 리네가 세탁장 지붕에 올라가 대신 소리치고, 주인공은 그 아래에서 대답해야 한다."
+        }
+      },
+      {
+        "id": "e16a_lanterns",
+        "name": "잿골목의 등불",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "잿골목이 그의 편에 선다. 빈손들은 의식 날 대성당 광장에 모이기로 한다. 무기 대신 등불을 들고. 동료들이 각자의 몫을 맡는다. 셀레네(함께라면)는 대성당의 구조를, 카일은 성기사의 배치를, 레녹스는 왕실 근위대의 움직임을, 나나와 그라츠는 지붕과 지하 길을, 유리는 부상자 천막을, 피핀은 노래로 사람들을 모은다. 이졸데는 가호 없이도 검을 다시 쥔다.\n주인공은 일기의 방법으로 빈손 몇 명에게 가호를 건네며 그릇을 다잡는다. 의식 전야, 세탁장 지붕 위. 리네가 먼저 올라와 있을 수도, 다른 동료가 먼저 찾아올 수도 있다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "e17_ceremony",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e16a_lanterns-c1",
+              "text": "잿골목 사람들이 의식 날 함께하기로 한다."
+            },
+            {
+              "id": "e16a_lanterns-c2",
+              "text": "주인공과 동료들이 의식 날의 계획을 세운다."
+            },
+            {
+              "id": "e16a_lanterns-c3",
+              "text": "의식 전야, 주인공이 동료 중 누군가와 마음을 나누는 장면이 있다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "동료들은 주인공의 계획을 무조건 따르지 않고 각자의 생각을 말한다.",
+          "success": "",
+          "unmet": "계획이 다 정해지지 않아도, 의식 날 아침 대성당의 종이 울리면 모두가 광장으로 향한다."
+        }
+      },
+      {
+        "id": "e16b_sold",
+        "name": "팔려 간 밤",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "잿골목은 그를 두려워했다. 빈손이 된 사람들의 원한, 그리고 금화 천 닢. 의식 전날 밤, 누군가 그의 은신처를 성기사에게 알린다. 가호를 빼앗긴 사람 중 하나다(브로크와 화해하지 않았다면 아마 그다). 습격, 도주, 혹은 붙잡힘. 리네와 티오가 대성당으로 끌려간다. 흩어진 동료들 중 누가 남아 있는지 확인해야 한다. 주인공은 자신이 만든 빈손들의 얼굴을 떠올리며 의식장으로 향할 길을 찾아야 한다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e16b_sold-c1",
+              "text": "누군가의 밀고로 성기사들이 주인공의 은신처를 습격한다."
+            },
+            {
+              "id": "e16b_sold-c2",
+              "text": "리네와 티오가 대성당으로 끌려간다."
+            },
+            {
+              "id": "e16b_sold-c3",
+              "text": "주인공이 남은 동료들과 의식장으로 향할 방법을 찾는다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "주인공은 붙잡히더라도 죽지 않는다. 리네와 티오는 죽지 않는다.",
+          "success": "",
+          "unmet": "주인공이 길을 찾지 못하면, 나나가 지붕 위에서 나타나 \"이건 공짜야\"라며 지하 길을 알려 준다."
+        }
+      },
+      {
+        "id": "e17_ceremony",
+        "name": "별의 의식",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "별의 의식 날. 대성당 광장, 열 살 아이들의 행렬, 그 가운데 티오. 단상의 대주교 그레고르와 별의 우물. 그레고르의 가호 〈성언〉이 처음 드러난다. 가호 자리가 비어 있는 자, 빈손과 의식 전의 아이들은 그의 명령을 거스르지 못한다. 광장의 빈손들이 일제히 무릎을 꿇는다. 다른 세계에서 온 주인공에게는 통하지 않는다.\n그레고르는 이 자리에서 '빈손의 왕의 무녀' 리네를 처형하고 티오를 성녀 실험체로 지정하려 한다. 로잘린과 성기사들이 막아선다. 동료들은 각자의 선택대로 이 자리에 있다. 성언에 묶인 사람들을 풀어 주는 방법은 하나, 빈자리를 채워 주는 것. 맞잡은 손으로 건네는 가호. 그레고르를 쓰러뜨리면 〈성언〉에 손을 뻗을 수 있다. 그리고 주인공 앞에 별의 우물이 열린다.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e17_ceremony-c1",
+              "text": "별의 의식이 시작되고, 그레고르가 리네와 티오에 대한 계획을 드러낸다."
+            },
+            {
+              "id": "e17_ceremony-c2",
+              "text": "그레고르의 목소리에 광장의 빈손들이 묶인다."
+            },
+            {
+              "id": "e17_ceremony-c3",
+              "text": "주인공이 가호를 건네 묶인 사람들을 풀어 주며 그레고르와 맞선다."
+            },
+            {
+              "id": "e17_ceremony-c4",
+              "text": "주인공이 그레고르를 쓰러뜨린다."
+            },
+            {
+              "id": "e17_ceremony-c5",
+              "text": "별의 우물이 주인공 앞에 드러난다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "리네와 티오는 죽지 않는다. 주인공은 그레고르의 〈성언〉에 묶이지 않는다.",
+          "success": "",
+          "unmet": "주인공이 그레고르에게 닿지 못하면, 동료 중 한 사람이 몸을 던져 길을 열고 주인공의 손이 그레고르에게 닿는다."
+        }
+      },
+      {
+        "id": "e18_hands",
+        "name": "빈손의 손",
+        "kind": "event",
+        "type": "Conditional",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "priority": 50,
+        "conditions": "",
+        "cancelConditions": "",
+        "participants": "",
+        "effects": "",
+        "onSuccess": "",
+        "onFailure": "",
+        "followUp": "",
+        "description": "별의 우물. 그 안에는 300년 동안 모인 수만 개의 가호가 별처럼 떠 있고, 바닥에는 한 사람의 그릇이 잠겨 있다. 주인공이 우물에 손을 대면 선택이 온다. 우물을 깨뜨려 모든 가호를 하늘에 풀어 버릴 것인가. 누가 무엇을 받을지 아무도 모르는 세상이 온다. 우물을 그릇에 담아 새로운 빈손의 왕이 될 것인가. 모든 가호를 마음대로 나눌 수 있는 힘, 그리고 그 힘이 사람을 어떻게 바꾸는지. 그릇이 버티는 만큼 빈손들에게 하나씩 건넬 것인가. 혹은 다른 길. 선택은 주인공의 몫이다. 이졸데에게 〈불꽃 왕관〉을, 리네에게 엄마의 〈굳힘〉을, 티오에게 첫 가호를 건넬 수도 있다.\n결말의 모양은 동료의 수, 빈손으로 만든 사람의 수, 리네의 신뢰, 수배의 무게에 따라 달라진다. 모든 것이 끝난 뒤, 우물 밑바닥에서 삼백 년 묵은 목소리가 처음으로 주인공에게 말을 건다. 실피가 그 목소리에 모자를 떨어뜨린다. 1부의 끝.",
+        "playerCanIntervene": true,
+        "required": true,
+        "sequence": 1,
+        "completionSignals": "",
+        "requiredItems": "",
+        "requiredDialogue": "",
+        "requiredSpeakerId": "",
+        "recoveryAlternatives": "",
+        "preservePlayerChoice": true,
+        "endSceneAfterCompletion": false,
+        "appliesTo": [],
+        "rules": [],
+        "beats": [],
+        "alternateBeats": [],
+        "sceneMarkers": [],
+        "canonLocation": "",
+        "act": "ACT1",
+        "nextEventId": "",
+        "failureConditions": "",
+        "requiredFunctions": [],
+        "revealTerms": [
+          "한백"
+        ],
+        "cortexDesign": {
+          "closureConditions": [
+            {
+              "id": "e18_hands-c1",
+              "text": "주인공이 별의 우물을 어떻게 할지 스스로 선택하고, 그 선택이 실행된다."
+            },
+            {
+              "id": "e18_hands-c2",
+              "text": "리네와 티오, 동료들, 잿골목 사람들에게 그 선택의 결과가 드러난다."
+            },
+            {
+              "id": "e18_hands-c3",
+              "text": "우물 밑바닥에서 낯선 목소리가 주인공에게 처음 말을 거는 장면으로 1부가 끝난다."
+            }
+          ],
+          "schema": "STUDIO_EVENT_DESIGN_V2",
+          "occurrenceEnabled": false,
+          "otherViewpoint": false,
+          "viewpoint": "",
+          "occurrence": "",
+          "closure": "",
+          "selectionScope": "",
+          "constraints": "주인공의 선택을 대신 정하지 않는다. 어느 선택이든 얻는 것과 잃는 것이 함께 있게 쓴다.",
+          "success": "",
+          "unmet": "주인공이 끝내 선택하지 못하면, 우물이 넘치기 시작하고 동료들이 각자의 바람을 말하며 그의 결정을 기다린다."
+        }
+      }
+    ],
+    "characterRelations": [],
+    "factionRelations": [],
+    "eventClocks": [],
+    "foreshadowings": [
+      {
+        "id": "FSH_01_CHALK",
+        "title": "리네의 손가락 끝에 묻은 분필 가루, 그리고 서둘러 물로 지운 골목의 분필 동그라미.\n회수: 그 동그라미는 리네가 엄마의 금서를 보고 그린 소환진이었다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e01_empty",
+        "reinforcementPlan": "",
+        "payoffConditions": "e08_circle",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_02_PRAYER",
+        "title": "독서실에서 들린 울다 지친 목소리. '누구라도 좋아. 제발. 빼앗을 수 있는 사람을.'\n회수: 리네의 기도였다. 티오가 빈손이 될까 무서워 빌었던 말.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e01_empty",
+        "reinforcementPlan": "",
+        "payoffConditions": "e08_circle",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_03_IRON_FIST",
+        "title": "첫날 주인공을 위협한 브로크의 쇳빛 팔뚝 〈철피〉.\n회수: 그 주먹의 가호를 주인공이 빼앗는다. 사람에게서 처음 빼앗은 가호.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e01_empty",
+        "reinforcementPlan": "",
+        "payoffConditions": "e04_brokk",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_04_LAUNDRY_SONG",
+        "title": "리네가 빨래하며 흥얼거리는 엄마의 노래.\n「빈 가면」에서 물러나는 빈 가면이 같은 노래를 흥얼거린다.\n회수: 가면 아래는 리네의 언니 셀레네. 엄마가 자매에게 불러 준 노래였다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e01_empty",
+        "reinforcementPlan": "",
+        "payoffConditions": "e12_unmask",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_05_LAST_FEELING",
+        "title": "가호를 가져올 때마다 원래 주인의 마지막 감정이 스친다(잿쥐의 굶주림, 브로크의 절망).\n회수: 일기. '가호에는 주인의 마지막 마음이 남는다. 그래서 빼앗은 가호는 무겁다.'",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e02_rat",
+        "reinforcementPlan": "",
+        "payoffConditions": "e09_diary",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_06_TYRANT",
+        "title": "경전 속 폭군 '빈손의 왕'과 '빼앗는 손을 불태우라'는 구절.\n회수: 일기 속 빈손의 왕은 다른 세계에서 온 사람이었고, 빼앗은 가호를 빈손들에게 나눠 주던 사람이었다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e03_doctor",
+        "reinforcementPlan": "",
+        "payoffConditions": "e09_diary",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_07_MOTHER_GIFT",
+        "title": "리네가 말하는 엄마의 가호. '눈을 마주치면 사람을 멈추게 했어.'\n「세 개의 가호를 가진 성녀」에서 카일이 같은 가호 〈굳힘〉을 보여 주자 리네가 질린다.\n회수: 장부. 처형된 마르타의 가호는 회수되어 카일에게 배정되었다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e03_doctor",
+        "reinforcementPlan": "",
+        "payoffConditions": "e14_ledger",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_08_EMPTY_SEAT",
+        "title": "오스의 말. '빈손이란 빈자리가 있는 사람이라는 뜻이기도 하지.'\n회수: 그레고르의 〈성언〉은 빈자리가 있는 자를 지배한다. 빈자리를 채워 주면, 즉 가호를 건네면 풀린다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e03_doctor",
+        "reinforcementPlan": "",
+        "payoffConditions": "e17_ceremony",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_09_FORTUNE",
+        "title": "실피의 점. '넌 빼앗고, 놓고, 결국은 건네게 될 게다.' 그리고 '그 녀석이랑 말버릇이 똑같구먼.'\n회수: 실피는 300년 전 빈손의 왕의 동료였다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e03_doctor",
+        "reinforcementPlan": "",
+        "payoffConditions": "e09_diary",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_10_BROKK_GRUDGE",
+        "title": "가호를 잃은 브로크의 울음. '돌려줘… 두고 봐라.'\n회수: 주인공이 그에게 손을 내밀었다면 의식장에서 몸을 던져 길을 열고, 아니라면 밀고자로 나타난다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e04_brokk",
+        "reinforcementPlan": "",
+        "payoffConditions": "e17_ceremony",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_11_FIRST_RELEASE",
+        "title": "그릇이 가득 차 처음으로 가호를 놓는다. 놓은 가호가 어디로 갔는지 아무도 모른다.\n「빈 가면」에서 리네가 등불 없는 골목을 아무렇지 않게 뛰어다닌다.\n회수: 놓은 가호는 소환의 끈을 따라 리네에게 갔다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e05_guild",
+        "reinforcementPlan": "",
+        "payoffConditions": "e08_circle",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_12_LEON",
+        "title": "레온은 '가호는 손에 쥔 패일 뿐'이라 말하며 한 번도 가호를 쓰지 않는다.\n회수: 그라츠가 냄새로 알아본다. 레온은 위조 증표를 가진 빈손이었다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e05_guild",
+        "reinforcementPlan": "",
+        "payoffConditions": "e10_arena",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_13_DOROTHY_NOTE",
+        "title": "상냥한 접수원 도로시가 성좌교 전령에게 슬쩍 건네는 쪽지 한 장.\n회수: 도로시는 성좌교의 정보원이었고, 그 쪽지가 빈 가면의 습격을 불렀다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e05_guild",
+        "reinforcementPlan": "",
+        "payoffConditions": "e14_ledger",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_14_GIVE_IT_BACK",
+        "title": "가호를 빼앗긴(혹은 빼앗길 뻔한) 이졸데. '내 가호 돌려줘요!'\n회수: 별의 우물 앞에서 주인공은 그녀에게 〈불꽃 왕관〉을 돌려줄 수 있다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e06_isolde",
+        "reinforcementPlan": "",
+        "payoffConditions": "e18_hands",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_15_OSS_GIFT",
+        "title": "죽어 가는 오스의 말. '가호는… 줄 수도 있다네.'\n회수: 일기. '빼앗는 손은 주는 손이 될 수 있다. 맞잡은 손으로, 빈자리가 있는 사람에게 건네라.'",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e07_mask",
+        "reinforcementPlan": "",
+        "payoffConditions": "e09_diary",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_16_IN_THE_WELL",
+        "title": "일기의 마지막 장. '나는 아직 우물 안에 있다.'\n「대주교의 장부」 맨 앞장: '우물의 핵 — 빈손의 왕의 그릇.'\n회수: 우물 밑바닥에서 삼백 년 묵은 목소리가 주인공에게 말을 건다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e09_diary",
+        "reinforcementPlan": "",
+        "payoffConditions": "e18_hands",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_17_WOLF_FANG",
+        "title": "나나의 목에 걸린 늑대 송곳니 목걸이. 돈을 모으는 이유를 묻자 꼬리가 축 처진다.\n회수: 투기장의 늑대 그라츠는 나나의 몸값을 대신해 노예가 된 의오빠였다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e09_diary",
+        "reinforcementPlan": "",
+        "payoffConditions": "e10_arena",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_18_PUPPET_CROWN",
+        "title": "레녹스가 지나가듯 흘린 말. '왕실은 대성당의 인형이거든.'\n회수: 의식 날, 레녹스는 한량의 가면을 벗고 왕실 근위대를 움직일지 결정한다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e10_arena",
+        "reinforcementPlan": "",
+        "payoffConditions": "e17_ceremony",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_19_PRESET_GIFTS",
+        "title": "의식 예행에서 귀족들이 아이가 받을 가호를 미리 안다. '우리 애는 〈불씨〉를 받을 거래요.'\n회수: 장부. 별의 의식은 운명이 아니라 배정이었다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e11_saint",
+        "reinforcementPlan": "",
+        "payoffConditions": "e14_ledger",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_20_SAINT_HANDS",
+        "title": "성녀 셀레네의 세탁부처럼 갈라진 손가락 마디, 창백한 얼굴, 그리고 리네의 언니와 같은 이름.\n회수: 빈 가면의 가면 아래가 셀레네였다. 세 개의 가호가 그녀를 태우고 있었다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e11_saint",
+        "reinforcementPlan": "",
+        "payoffConditions": "e12_unmask",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      },
+      {
+        "id": "FSH_21_ROSALIND",
+        "title": "이단심문관 로잘린의 진짜 미소. '저도 한때는 빈손이었답니다.'\n회수: 그녀는 그레고르가 우물의 가호를 내려 준 옛 빈손이었고, 그래서 그에게 광신적으로 충성한다.",
+        "visibility": "Hidden",
+        "status": "Planned",
+        "earliestDate": "",
+        "latestDate": "",
+        "plantingScene": "e11_saint",
+        "reinforcementPlan": "",
+        "payoffConditions": "e14_ledger",
+        "payoffResult": "",
+        "relatedEntities": "",
+        "misdirection": "",
+        "notes": ""
+      }
+    ],
+    "imageTriggers": [],
+    "autonomyActors": [],
+    "autonomySettings": {
+      "enabled": true,
+      "maxActionsPerTurn": 3,
+      "factionTickTurns": 3,
+      "deterministicSeed": true,
+      "requireTravelTime": true,
+      "enforceKnowledgeBounds": true,
+      "enforceResourceBounds": true,
+      "allowOffscreenFailure": true,
+      "tracePolicy": "observable_only",
+      "rules": "1. 플레이어가 보지 않는 곳에서도 활성 NPC와 세력은 자신의 목표·정보·자원·위치에 따라 행동 후보를 만든다.\n2. 매 턴 모든 인물을 억지로 움직이지 않는다. 활동 등급·행동 주기·목표 우선도에 따라 최대 행동 수 안에서 선별한다.\n3. 배우는 장부에 기록된 정보만 사용할 수 있으며, 다른 지역으로 이동하려면 세계관의 이동 시간이 실제로 흘러야 한다.\n4. 성공을 보장하지 않는다. 자원·능력·협력·방해·위험도를 근거로 성공·부분 성공·실패를 판정한다.\n5. 비공개 행동은 숨은 세계 장부에 먼저 기록하고, 플레이어에게는 목격 가능한 흔적·소문·결과만 공개한다.\n6. 자율 행동의 결과는 사건 시계·위치·자원·관계 기억에 실제 변화를 남기며 다음 행동의 원인이 된다."
+    },
+    "relationshipMemories": [],
+    "relationshipMemorySettings": {
+      "enabled": true,
+      "deriveScoresFromMemory": true,
+      "keepContradictoryMemories": true,
+      "decayEnabled": true,
+      "maxActiveMemoriesPerRelation": 50,
+      "displayPublicReasonsInHud": true,
+      "rules": "1. 관계 수치는 임의로 올리거나 내리지 않는다. 먼저 방향성 기억을 기록한 뒤 그 기억의 효과를 초기 기준값에 합산한다.\n2. 기억에는 누가 누구를, 언제, 무엇 때문에 신뢰·의심·두려워하게 되었는지 원인을 남긴다.\n3. 약속·배신·구조·빚·공유한 비밀·모욕과 미해결 감정은 장기 기억으로 보존하고 이후 판단의 근거로 사용한다.\n4. 서로 모순되는 기억도 삭제하지 않는다. 중요도·영구성·최근성·현재 맥락을 함께 평가한다.\n5. 숨은 기억과 미등장 인물의 이유는 공개하지 않는다. 상태창에는 직접 만난 인물의 공개 가능한 이유만 표시한다.\n6. 관계는 방향성이므로 A가 B에게 느끼는 기억을 B가 A에게 자동 복제하지 않는다."
+    },
+    "gmData": {
+      "worldTruthLedger": "[주인공의 힘 — 규칙]\n1. 주인공은 쓰러뜨린 상대(죽였거나, 의식을 잃었거나, 스스로 패배를 인정한 상대)에게 손을 뻗어 그 가호를 가져올 수 있다. 가져올지 말지는 주인공이 정한다. 상대가 진심으로 내어 주면 싸우지 않아도 넘어온다.\n2. 가호를 빼앗긴 사람은 그 가호를 잃고 빈손이 된다. 이 세계 사람은 자리가 하나뿐이라 가호를 잃으면 신분과 생계를 한꺼번에 잃는다.\n3. 주인공의 그릇은 처음 3칸이다. 가득 차면 하나를 '놓아야' 새 가호를 가져올 수 있다. 그릇은 놓을 줄 아는 만큼 넓어진다.\n4. 놓은 가호는 소환의 끈을 따라 리네에게 간다(리네의 자리가 비어 있을 때). 리네의 자리가 차 있으면 별의 우물로 돌아간다.\n5. 「빈손의 왕의 일기」 사건부터 주인공은 맞잡은 손으로, 자리가 비어 있는 사람(빈손, 의식 전의 아이)에게 가호를 건넬 수 있다. 건넨 가호는 받은 사람의 것이 된다. 수인과 엘프는 자리가 없어 받을 수 없다.\n6. 가호를 가져올 때마다 원래 주인의 마지막 감정 한 조각이 주인공에게 스친다. 사람에게서 빼앗을수록 꿈자리가 사나워진다.\n7. 가호는 정해진 규칙대로만 작동하며 조합은 자유다. 주인공은 강해져도 무적이 아니다.\n8. 이 세계에는 상태창이 없다. 주인공은 가호를 가슴 속 작은 등잔들처럼 느낀다.\n\n[숨은 진실]\n- 주인공을 부른 것은 리네가 그린 분필 동그라미다. 원본은 빈손의 왕이 일기에 남긴 소환진이다.\n- 빈손의 왕은 300년 전 조선에서 떨어진 청년 한백이다. 주인공과 같은 그릇을 가졌다. 그는 귀족의 가호를 빼앗아 빈손들에게 나눠 주다 성인(귀족)들에게 쫓겼다. 성인들은 그를 죽이지 못해 별의 우물 밑바닥에 봉인하고, 그의 그릇을 모든 가호의 저장소로 쓰고 있다. 그는 의식만 남은 채 살아 있다. 엘프 실피는 그의 동료였다.\n- 별의 의식은 운명이 아니라 배정이다. 대주교의 장부가 아이마다 받을 가호를 미리 정한다. 귀족 아이들에게 강한 가호를 주려고, 우물이 모자라면 평민 가호자를 이단으로 몰아 처형하고 회수한다. 약한 가호는 숲에 버리며, 그것이 마수가 된다. 빈손은 '모자라서'가 아니라 '정해서' 만들어진다.\n- 리네의 엄마 마르타는 일기 사본을 가졌다는 이유로 처형됐고, 그녀의 〈굳힘〉은 카일에게 배정됐다.\n- 성녀 셀레네는 리네의 언니이자 빈 가면이다. 빈손이던 그녀의 자리에 우물의 가호 세 개를 억지로 넣은 실험체이며, 가호들이 그녀의 몸을 태우고 있다.\n- 대주교 그레고르의 가호 〈성언〉: 자리가 비어 있는 자는 그의 목소리로 내린 명령을 거스르지 못한다. 그래서 빈손이 많을수록 다스리기 쉽다. 가호를 가진 사람과 다른 세계에서 온 주인공에게는 통하지 않는다. 주인공이 놓은 가호를 받은 리네는 성언에 묶이지 않는다.\n- 레온은 위조 증표를 가진 빈손이다. 도로시는 성좌교의 정보원이다. 피핀은 레녹스가 붙인 엉터리 첩자다. 로잘린은 그레고르에게 가호를 받은 옛 빈손이다.\n\n[공개 조건 — 정사 진행표]\n- 「빈손」~「곰발 브로크」: 리네가 소환자라는 사실, 놓은 가호의 행방, 빈손의 왕의 진실은 드러내지 않는다. 경전 속 폭군 전설만 들려준다.\n- 「돌 등급 모험가」~「빈 가면」: 리네가 어둠 속을 본다는 '모습'까지만. 레온·도로시의 비밀은 작은 티만 낸다.\n- 「놓은 것이 가는 곳」: 리네가 소환자이고 놓은 가호가 리네에게 간다는 사실.\n- 「빈손의 왕의 일기」: 빈손의 왕이 다른 세계 사람이자 나눠 주던 사람이었다는 것, 실피가 그의 동료였다는 것, 건네는 법. 그의 이름과 '우물 안에 있다'의 뜻은 아직이다.\n- 「투기장의 늑대」: 레온이 빈손이라는 것, 나나와 그라츠의 관계.\n- 「세 개의 가호를 가진 성녀」: 성녀의 이름이 리네의 언니 이름과 같다는 것. 빈 가면과 같은 사람이라는 사실은 아직이다.\n- 「가면 아래」: 빈 가면이 셀레네라는 것, 성녀 실험.\n- 「대주교의 장부」: 배정·처형·회수·마수의 진실, 카일의 가호가 마르타의 것이라는 것, 우물의 핵.\n- 「별의 의식」: 〈성언〉의 정체.\n- 「빈손의 손」: 빈손의 왕의 목소리와 이름 '한백'.\n\n[결말 변주]\n- 우물에 대한 주인공의 선택이 결말의 중심이다. 우물을 깨면 가호가 무작위로 흩어지는 혼란과 해방이, 우물을 삼키면 압도적인 힘과 '새로운 빈손의 왕'이라는 두려움이, 하나씩 건네면 그릇이 버티는 만큼만의 느리고 확실한 변화가 온다.\n- 동료 10명 이상: 의식장에 모인 동료들이 각자 결정적인 한 장면씩을 맡는다. 적으면 주인공과 리네가 많은 것을 혼자 짊어진다.\n- 빈손이 된 사람 4명 이상: 구해 준 사람들조차 그를 '돌아온 빈손의 왕'이라 부르며 두려워한다. 2명 이하: 잿골목은 그를 '빈손의 손'이라는 애칭으로 부른다.\n- 리네의 신뢰 7 이상: 리네가 끝까지 그의 손을 잡고 선택을 함께 짊어진다. 3 이하: 리네는 곁에 남지만 \"가끔 네가 무서워\"라고 말한다.\n- 수배 6 이상: 어떤 선택을 하든 귀족들은 그를 적으로 규정하고, 결말에 왕도를 떠나는 장면이 들어갈 수 있다.\n- 「언니」를 지났다면 셀레네가 살아서 함께한다. 「돌아간 성녀」를 지났다면 셀레네는 의식장 단상에서 쓰러지며, 주인공이 그릇을 비워 그녀의 가호를 거두면 살아남지만 오래 앓는다.\n- 「잿골목의 등불」을 지났다면 광장은 등불을 든 빈손들로 가득하다. 「팔려 간 밤」을 지났다면 리네와 티오가 단상에 묶여 있다.\n- 브로크: 주인공이 가호를 돌려주거나 손을 내밀었다면 의식장에서 몸을 던져 길을 연다. 그렇지 않았다면 밀고자로 나타났다가 마지막에 무너진다.\n- 마지막 목소리: \"드디어 왔구려, 고향 사람. 내 이름은 한백이오. 삼백 년을 기다렸소.\" 그의 속내는 1부에서 밝히지 않는다.",
+      "hiddenTimeline": "",
+      "secretResources": "",
+      "plannedTwists": "",
+      "forbiddenDisclosures": "",
+      "failureEscalationRules": "",
+      "continuityNotes": ""
+    },
+    "opening": {
+      "preHistory": "",
+      "currentSituation": "강시우는 방금 이세계 에르딘 왕국 왕도의 빈민가 '잿골목'에 떨어졌다. 해 질 녘. 교복 위 롱패딩, 수험생 백팩, 배터리 41%의 스마트폰. 상태창도 능력도 없다. 팔뚝이 쇳빛으로 굳는 거구의 깡패 두목(곰발 브로크)과 부하 둘이 그를 둘러싸고 '반짝이는 상자'를 내놓으라 한다. 골목 입구에는 빨래 방망이를 든 갈색 머리 소녀가 막 달려와 멈춰 섰고, 그 뒤로 꼬마 하나가 막대기 검을 들고 따라온다. 발밑에는 빗물에 번진 분필 동그라미가 있다.",
+      "immediateProblem": "",
+      "knownRisks": "",
+      "hiddenRisks": "",
+      "openingCharacters": "",
+      "openingLocation": "왕도 에르딘 바깥 고리, 빈민가 「잿골목」",
+      "openingEvent": "",
+      "firstGoal": "",
+      "openingLine": "수능 D-30, 새벽 두 시 십 분. 독서실 형광등이 세 번 깜빡였다.\n\n나, 강시우는 재수생이다. 작년 수능을 시원하게 말아먹었고, 올해 모의고사 등급도 제자리. 가진 거라고는 다 쓴 형광펜 세 자루랑 '이번엔 다르다'는 근거 없는 다짐뿐이었다. 그 다짐마저 바닥을 긁던 참에, 귓가에서 누가 속삭였다.\n\n『……누구라도 좋아. 제발. 빼앗을 수 있는 사람을.』\n\n울다 지친 여자애 목소리였다. 고개를 들었더니 책상 위 문제집이 하얀 분필 가루처럼 부서지고 있었다. 그리고 바닥이 사라졌다.\n\n눈을 떴을 때 나는 해 질 녘의 낯선 골목에 엎어져 있었다. 잿빛 지붕, 머리 위로 엉킨 빨랫줄, 썩은 물 냄새. 발밑에는 분필로 그린 커다란 동그라미가 빗물에 번져 있었다. 오케이, 침착하자. 웹소설 몇백 편을 읽은 몸이다. 이럴 땐 정해진 순서가 있지.\n\n\"……상태창.\"\n\n아무것도 안 떴다.\n\n\"스테이터스 오픈! 메뉴! 인벤토리! ……퀘스트 창?\"\n\n\"봐라, 빈손이 혼자 주문을 외우네.\"\n\n골목 끝에서 덩치 셋이 낄낄대며 다가왔다. 가운데 놈의 팔뚝이 내 눈앞에서 쩍쩍 쇳빛으로 변해 갔다. 아, 저쪽은 있구나. 능력.",
+      "openingTime": "18:40:00",
+      "recommendedReply1": "두 손을 들고 \"말 통하네요?\" 하며 일단 대화를 시도한다.",
+      "recommendedReply2": "빨래 방망이를 든 소녀에게 \"도망쳐!\"라고 외치며 깡패들의 시선을 끈다.",
+      "recommendedReply3": "백팩을 휘둘러 쇳빛 팔뚝의 두목에게 먼저 덤벼든다."
+    },
+    "style": {
+      "narrationPerson": "3인칭 제한 시점",
+      "proseStyle": "몰입감 있는 현실주의 소설체",
+      "dialogueStyle": "시대·신분·성격에 맞는 자연스러운 대사",
+      "descriptionDensity": "보통",
+      "violenceLevel": "중간",
+      "romanceLevel": "선택적",
+      "statusDisclosure": "중요 변화만 공개",
+      "customRules": "플레이어 캐릭터의 행동·대사·감정을 예측하여 대신 서술하지 않는다.",
+      "viewpoint": "1인칭 주인공 시점",
+      "sentenceStyle": "라이트 노벨",
+      "additionalRules": "라이트노벨 문체, 1인칭 '나'. 주인공의 속마음 딴죽과 빠른 리듬으로 이끌되, 가호를 빼앗는 장면과 빈손들의 삶에서는 웃음을 거두고 무게 있게 쓴다. 문단은 짧게, 대사는 생생하게.\n캐릭터마다 말버릇과 매력을 살린다. 리네의 \"바보야!\"와 큰 웃음, 이졸데의 귀족 말투와 새침함, 나나의 장사꾼 반말과 꼬리, 유리의 수줍음과 의사 모드, 실피의 할머니 말투와 계피 막대, 셀레네의 무표정한 존댓말, 도로시의 다정함, 로잘린의 나긋한 섬뜩함, 카일의 해맑음, 레온의 능글맞음, 피핀의 과장, 레녹스의 나른함, 그라츠의 침묵, 브로크의 허세. 여러 인물이 한 장면에 있으면 서로 티격태격하는 대화로 매력을 보여 준다. 히로인들과의 설레는 장면은 자연스럽게 넣되, 주인공의 감정과 선택을 대신 정하지 않는다.\n이 세계에는 상태창이 없다. 주인공이 가호를 얻거나 놓거나 건넬 때마다 본문에 한 줄로 [그릇 2/3 · 〈어둠눈〉 〈철피〉] 형식으로 현재 상태를 적는다. 칸 수는 독자 HUD의 '그릇', 가진 개수는 '가진 가호'와 일치시킨다.\n전투는 거리와 자세, 가호의 규칙이 분명한 인과로 쓴다. 가호의 효과를 부풀리지 않는다. 주인공은 약하므로 꾀와 가호 조합과 동료로 이긴다.\n비밀은 인물이 설명하듯 털어놓게 하지 말고 행동·물건·말버릇으로 보여 준다."
+    },
+    "statusWindow": {
+      "schemaVersion": 3,
+      "enabled": true,
+      "title": "TURN STATUS · LIVE",
+      "displayMode": "always_full",
+      "theme": "dark_rpg",
+      "placement": "before_replies",
+      "showDeltas": true,
+      "collapseOnMobile": true,
+      "highlightChanges": true,
+      "sections": {
+        "profile": true,
+        "skills": true,
+        "stats": true,
+        "resources": true,
+        "condition": true,
+        "funds": true,
+        "inventory": false,
+        "relationships": true,
+        "clocks": false,
+        "objective": false
+      },
+      "abilitySummary": "현재 공개된 특별 능력은 아직 없다.",
+      "conditionSummary": "현재 확인된 부상이나 이상 상태는 없다.",
+      "stats": [
+        {
+          "id": "STAT_muwyk1gd_yuneoj",
+          "icon": "❤",
+          "name": "체력",
+          "rank": "A",
+          "current": 100,
+          "max": 100,
+          "color": "green"
+        },
+        {
+          "id": "STAT_muwyk1ge_7kwbcu",
+          "icon": "◈",
+          "name": "집중력",
+          "rank": "B",
+          "current": 100,
+          "max": 100,
+          "color": "blue"
+        },
+        {
+          "id": "STAT_muwyk1ge_d2otqs",
+          "icon": "✦",
+          "name": "능력 게이지",
+          "rank": "F",
+          "current": 0,
+          "max": 100,
+          "color": "violet"
+        }
+      ],
+      "resources": [
+        {
+          "id": "primary_resource",
+          "icon": "spark",
+          "name": "핵심 자원",
+          "current": 0,
+          "unit": "개",
+          "visibility": "conditional",
+          "revealRule": "해당 자원의 존재와 보유량을 플레이어가 실제로 확인한 뒤 공개"
+        },
+        {
+          "id": "consumable_resource",
+          "icon": "gem",
+          "name": "소모 자원",
+          "current": 0,
+          "unit": "개",
+          "visibility": "conditional",
+          "revealRule": "획득 또는 사용이 실제 장면에서 확인된 뒤 공개하고 증감"
+        },
+        {
+          "id": "special_equipment",
+          "icon": "sword",
+          "name": "특수 장비",
+          "current": 0,
+          "unit": "개",
+          "visibility": "conditional",
+          "revealRule": "장비를 실제로 획득하고 용도를 확인한 뒤 공개"
+        }
+      ],
+      "funds": {
+        "icon": "wallet",
+        "name": "자금",
+        "current": 0,
+        "unit": "원"
+      },
+      "relationshipDisplays": [],
+      "updateRules": "1. 매 턴 서술이 끝나면 비공개 세계 장부를 먼저 갱신하고, 플레이어가 알 수 있는 정보만 상태창에 반영한다.\n2. 능력치·자원·상태 변화에는 반드시 이번 턴에 실제로 서술되거나 기록된 원인이 있어야 한다.\n3. 매 턴 전체 상태창을 출력하고, 바뀐 값은 이전 값 대비 증감과 원인을 함께 강조한다.\n4. Ability와 Condition은 플레이어가 현재 이해할 수 있는 말로 한두 줄만 표시하며, 정체·계약·미래 사건을 앞서 설명하지 않는다.\n5. Resources는 각 항목에 적힌 공개·증감 조건이 실제 장면에서 충족된 뒤에만 표시하거나 변경한다.\n6. 작품별 특수 자원과 장비는 실제 보유·사용이 확인된 경우에만 바꾸며, 자금은 확인된 지출·수입에 따라 갱신한다.\n7. 미등장 인물, 진명, 비밀 진영, 숨은 관계와 비공개 사건 시계는 공개 조건이 충족되기 전까지 숨긴다.\n8. 플레이어의 행동·대사·감정을 임의로 확정하지 않으며, 없던 아이템·자원·능력을 소급해 만들지 않는다.\n9. 인물·세력 관계 표시는 실제 상호작용의 공개 가능한 결과가 있을 때만 문장·수치·기호를 갱신하고, 같은 원인을 중복 반영하지 않는다."
+    },
+    "package15": {
+      "enabled": false,
+      "storyMode": "single_route",
+      "requiredFeatures": [
+        "ending_meta_progress_v1"
+      ],
+      "optionalFeatures": [],
+      "defaultUnlockMode": "canonical_order",
+      "allowAllOpenOverride": false,
+      "commonArc": {
+        "id": "COMMON",
+        "name": "공통편",
+        "chapterIds": [],
+        "routeLensIds": []
+      },
+      "routes": [],
+      "chapters": [],
+      "routeLenses": [],
+      "revealFacts": [],
+      "revealPolicies": [],
+      "endings": [],
+      "flags": [],
+      "branchEnding": {
+        "enabled": false,
+        "primaryEndingGroupId": "primary",
+        "choiceRecords": [],
+        "decisions": []
+      },
+      "galleries": [],
+      "epilogues": [],
+      "checkpoints": [],
+      "clues": [],
+      "items": [],
+      "zones": [],
+      "worldFacts": [],
+      "loopPolicy": {
+        "format": "RELAY_NOVEL_LOOP_POLICY_V1",
+        "enabled": false,
+        "resetPoint": {
+          "date": "",
+          "time": ""
+        },
+        "activeWindow": {
+          "startDate": "",
+          "startTime": "",
+          "endDate": "",
+          "endTime": ""
+        },
+        "trigger": {
+          "allOf": []
+        },
+        "resetPrecedence": [
+          "event_reset_behavior",
+          "entity_definition",
+          "category_state_rule",
+          "default_restore_baseline"
+        ],
+        "stateRules": [],
+        "protagonistDeathMode": "game_over",
+        "maxLoops": null
+      }
+    },
+    "instantStory": {
+      "enabled": false,
+      "promptPreset": "simulation",
+      "corePrompt": "플레이어의 실행 가능한 행동·대사·이동을 첫 인과로 장면화하고, 패키지 정사와 현재 비트 안에서 NPC와 환경의 현실적인 반응을 이어 쓴다. 경미한 문체 문제로 본문을 폐기하지 않는다.",
+      "exampleScenes": [],
+      "startProfiles": [
+        {
+          "id": "START_DEFAULT",
+          "name": "기본 도입부",
+          "prologue": "",
+          "startSituation": "",
+          "recommendedReplies": [
+            "",
+            "",
+            ""
+          ]
+        }
+      ],
+      "statRules": [],
+      "keywordNotes": [],
+      "contextBudget": {
+        "maxDynamicPromptChars": 10000,
+        "recentTurns": 4,
+        "activeCharacters": 6,
+        "semanticMemories": 10,
+        "activeKeywordNotes": 3,
+        "relevantMedia": 8
+      },
+      "generation": {
+        "ordinaryTurnMaxOutputTokens": 2400,
+        "singleCallPreferred": true,
+        "reasoningEffort": "none"
+      },
+      "deepPathTriggers": [
+        "identity_reveal",
+        "ending"
+      ],
+      "endingPolicy": {
+        "minimumTurn": 10,
+        "checkInterval": 5
+      }
+    },
+    "turnPresentation": {
+      "recommendedReplies": {
+        "enabled": true,
+        "count": 3,
+        "style": "diverse",
+        "showRisk": true,
+        "revealHiddenInformation": false
+      },
+      "sceneImage": {
+        "enabled": true,
+        "frequency": "important_only",
+        "position": "bottom",
+        "count": 1,
+        "aspectRatio": "landscape",
+        "textInImage": false,
+        "spoilerProtection": true,
+        "fallback": "IMAGE_PROMPT",
+        "styleHint": "시나리오 분위기에 맞는 고품질 애니메이션 콘셉트 아트"
+      }
+    },
+    "visualBible": {
+      "enabled": true,
+      "globalStyle": "일본 라이트노벨 표지·삽화풍의 고품질 애니메이션 일러스트. 캐릭터마다 머리색과 실루엣이 뚜렷이 구분되게. 잿골목은 잿빛 지붕과 빨랫줄과 등불, 상층 구역과 대성당은 흰 대리석과 남색·금색 별 장식. 가호는 사용자 눈동자와 손끝에 그 가호의 빛깔로 표현.",
+      "consistencyRules": "기준 이미지가 있는 인물은 얼굴형·눈·머리·체형·고유 액세서리를 동일하게 유지한다. 의상 변화가 있어도 정체성 앵커를 보존한다.",
+      "introductionRule": "비중 높은 새 캐릭터가 처음 등장하면 반드시 인물 이미지를 함께 출력한다. 패키지 기준 이미지가 없으면 애니풍 이미지를 생성하고, 그 최초 결과를 이후 외형의 기준으로 고정한다."
+    },
+    "canonDesign": {
+      "revision": 1,
+      "mode": "single",
+      "routes": [
+        {
+          "id": "main",
+          "name": "1부 · 빈손의 왕"
+        }
+      ],
+      "events": {
+        "e01_empty": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e01_rine",
+              "criterion": "주인공이 리네를 감싸거나, 도움을 받은 뒤 진심으로 고마움을 표현했다.",
+              "statId": "rine_trust",
+              "amount": 1
+            }
+          ]
+        },
+        "e02_rat": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e02_rine",
+              "criterion": "주인공이 위험을 무릅쓰고 티오나 골목 아이들을 지켰다.",
+              "statId": "rine_trust",
+              "amount": 1
+            }
+          ]
+        },
+        "e03_doctor": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": []
+        },
+        "e04_brokk": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e04_brokk",
+              "criterion": "주인공이 브로크의 가호를 가져와, 브로크가 살아서 빈손이 되었다.",
+              "statId": "made_bin",
+              "amount": 1
+            },
+            {
+              "id": "ef_e04_remorse",
+              "criterion": "빈손이 된 브로크 앞에서 주인공이 우쭐대지 않고 괴로워하거나, 그를 더 짓밟지 않았다.",
+              "statId": "rine_trust",
+              "amount": 1
+            },
+            {
+              "id": "ef_e04_gloat",
+              "criterion": "주인공이 빈손이 된 브로크를 비웃거나 힘을 과시했다.",
+              "statId": "rine_trust",
+              "amount": -1
+            }
+          ]
+        },
+        "e05_guild": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e05_kyle",
+              "criterion": "카일이 주인공을 친구로 대하며 함께 싸웠다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e05_leon",
+              "criterion": "레온이 주인공을 동료로 인정하거나 싸우는 법을 가르쳐 주기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e05_garrick",
+              "criterion": "주인공이 덤벼든 모험가 가릭을 쓰러뜨리고 그의 가호를 가져왔다.",
+              "statId": "made_bin",
+              "amount": 1
+            }
+          ]
+        },
+        "e06_isolde": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e06_isolde",
+              "criterion": "주인공이 이졸데의 가호를 가져와, 이졸데가 살아서 빈손이 되었다.",
+              "statId": "made_bin",
+              "amount": 1
+            },
+            {
+              "id": "ef_e06_join",
+              "criterion": "이졸데가 이유를 대며 주인공 일행을 따라다니기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e06_pippin",
+              "criterion": "피핀이 주인공의 전기 작가를 자처하며 따라붙었다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e06_wanted",
+              "criterion": "빈손이 금 등급을 이겼다는 소문이 왕도에 퍼졌다.",
+              "statId": "wanted",
+              "amount": 1
+            }
+          ]
+        },
+        "e07_mask": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e07_rine",
+              "criterion": "빈 가면의 습격 속에서 주인공이 리네나 골목 아이들을 지켰다.",
+              "statId": "rine_trust",
+              "amount": 1
+            }
+          ]
+        },
+        "e08_circle": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e08_forgive",
+              "criterion": "주인공이 리네를 용서하거나 그녀를 지키겠다고 약속했다.",
+              "statId": "rine_trust",
+              "amount": 2
+            },
+            {
+              "id": "ef_e08_blame",
+              "criterion": "주인공이 리네를 원망하며 몰아세우거나 떠나겠다고 했다.",
+              "statId": "rine_trust",
+              "amount": -2
+            }
+          ]
+        },
+        "e09_diary": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e09_give",
+              "criterion": "주인공이 맞잡은 손으로 가호를 다른 사람에게 처음으로 건넸다.",
+              "statId": "vessel",
+              "amount": 1
+            },
+            {
+              "id": "ef_e09_nana",
+              "criterion": "나나가 주인공과 거래를 맺고 일행을 돕기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e09_sylphie",
+              "criterion": "실피가 주인공 일행과 함께하기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e09_yuri",
+              "criterion": "유리가 할아버지의 뜻을 이어 주인공 일행을 돕기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e09_brokk",
+              "criterion": "주인공이 브로크에게 가호를 돌려주거나 진심으로 손을 내밀어, 브로크가 의리를 맹세했다.",
+              "statId": "allies",
+              "amount": 1
+            }
+          ]
+        },
+        "e10_arena": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e10_gratz",
+              "criterion": "그라츠가 자유를 얻고 주인공 일행과 함께하기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e10_lennox",
+              "criterion": "레녹스가 주인공과 손을 잡기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            }
+          ]
+        },
+        "e11_saint": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e11_wanted",
+              "criterion": "주인공이 상층 구역에서 사람들 앞에 드러나게 가호를 썼다.",
+              "statId": "wanted",
+              "amount": 1
+            }
+          ]
+        },
+        "e12_unmask": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": true,
+          "branches": [
+            {
+              "id": "br_e12_save",
+              "kind": "story",
+              "criterion": "주인공이 자기 그릇의 가호를 놓아 자리를 비우고, 셀레네의 몸을 태우던 가호들을 가져와 그녀를 살렸다.",
+              "statId": "",
+              "threshold": 0,
+              "comparison": "gte",
+              "nextEventId": "e13a_sister"
+            }
+          ],
+          "fallbackEventId": "e13b_returned",
+          "effects": [
+            {
+              "id": "ef_e12_rine",
+              "criterion": "주인공이 리네의 언니를 죽이지 않았다.",
+              "statId": "rine_trust",
+              "amount": 1
+            },
+            {
+              "id": "ef_e12_wanted",
+              "criterion": "빈 가면이 쓰러졌다는 사실이 성좌교에 알려졌다.",
+              "statId": "wanted",
+              "amount": 1
+            }
+          ]
+        },
+        "e13a_sister": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e13a_vessel",
+              "criterion": "셀레네의 가호를 품은 주인공이 그릇이 넓어지는 것을 느꼈다.",
+              "statId": "vessel",
+              "amount": 1
+            },
+            {
+              "id": "ef_e13a_selene",
+              "criterion": "셀레네가 주인공 일행과 함께하기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            },
+            {
+              "id": "ef_e13a_rine",
+              "criterion": "리네가 언니를 살려 준 주인공에게 진심으로 고마워했다.",
+              "statId": "rine_trust",
+              "amount": 1
+            }
+          ]
+        },
+        "e13b_returned": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e13b_wanted",
+              "criterion": "성좌교가 빈 가면을 쓰러뜨린 자의 얼굴을 알게 되었다.",
+              "statId": "wanted",
+              "amount": 1
+            }
+          ]
+        },
+        "e14_ledger": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e14_knight",
+              "criterion": "주인공이 서고를 지키던 성기사를 쓰러뜨리고 가호를 가져왔다.",
+              "statId": "made_bin",
+              "amount": 1
+            },
+            {
+              "id": "ef_e14_wanted",
+              "criterion": "서고 침입이 성좌교에 발각되었다.",
+              "statId": "wanted",
+              "amount": 1
+            },
+            {
+              "id": "ef_e14_dorothy",
+              "criterion": "도로시가 죄를 고백하고 주인공 편에 서기로 했다.",
+              "statId": "allies",
+              "amount": 1
+            }
+          ]
+        },
+        "e15_wanted": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": true,
+          "branches": [
+            {
+              "id": "br_e15_trusted",
+              "kind": "stat",
+              "criterion": "",
+              "statId": "made_bin",
+              "threshold": 3,
+              "comparison": "lt",
+              "nextEventId": "e16a_lanterns"
+            },
+            {
+              "id": "br_e15_speech",
+              "kind": "story",
+              "criterion": "주인공이 잿골목 사람들 앞에서 자신의 힘과 잘못을 숨김없이 밝히고, 빼앗은 가호를 빈손들에게 나누겠다고 약속해 사람들의 마음을 얻었다.",
+              "statId": "",
+              "threshold": 0,
+              "comparison": "gte",
+              "nextEventId": "e16a_lanterns"
+            }
+          ],
+          "fallbackEventId": "e16b_sold",
+          "effects": [
+            {
+              "id": "ef_e15_declared",
+              "criterion": "성좌교가 주인공을 빈손의 왕의 재림으로 선포했다.",
+              "statId": "wanted",
+              "amount": 2
+            },
+            {
+              "id": "ef_e15_hunter",
+              "criterion": "주인공이 자신을 잡으러 온 추격자를 쓰러뜨리고 가호를 가져왔다.",
+              "statId": "made_bin",
+              "amount": 1
+            }
+          ]
+        },
+        "e16a_lanterns": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e16a_alley",
+              "criterion": "잿골목 사람들이 등불을 들고 함께하기로 했다.",
+              "statId": "allies",
+              "amount": 3
+            }
+          ]
+        },
+        "e16b_sold": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": []
+        },
+        "e17_ceremony": {
+          "routeId": "main",
+          "ending": false,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": [
+            {
+              "id": "ef_e17_vessel",
+              "criterion": "주인공이 그레고르를 쓰러뜨린 뒤 그릇이 넓어지는 것을 느꼈다.",
+              "statId": "vessel",
+              "amount": 1
+            },
+            {
+              "id": "ef_e17_gregor",
+              "criterion": "주인공이 그레고르를 죽이지 않고 가호를 가져와, 그를 살아 있는 빈손으로 만들었다.",
+              "statId": "made_bin",
+              "amount": 1
+            }
+          ]
+        },
+        "e18_hands": {
+          "routeId": "main",
+          "ending": true,
+          "authorComment": "",
+          "branching": false,
+          "branches": [],
+          "fallbackEventId": "",
+          "effects": []
+        }
+      },
+      "stats": [
+        {
+          "id": "vessel",
+          "label": "그릇",
+          "characterId": "siwoo",
+          "initial": 3,
+          "minimum": 3,
+          "maximum": 7,
+          "unit": "칸",
+          "visible": true,
+          "mode": "event",
+          "increaseWhen": "",
+          "decreaseWhen": ""
+        },
+        {
+          "id": "held",
+          "label": "가진 가호",
+          "characterId": "siwoo",
+          "initial": 0,
+          "minimum": 0,
+          "maximum": 7,
+          "unit": "개",
+          "visible": true,
+          "mode": "resource",
+          "increaseWhen": "주인공이 쓰러뜨린 상대에게서, 또는 스스로 내어 준 상대에게서 가호를 실제로 가져온 장면에서 하나에 1씩 늘어난다. 그릇의 칸 수를 넘을 수 없다. 언급이나 회상은 제외한다.",
+          "decreaseWhen": "주인공이 가호를 놓거나 다른 사람에게 건넨 장면에서 하나에 1씩 줄어든다. 언급이나 회상은 제외한다."
+        },
+        {
+          "id": "made_bin",
+          "label": "빈손이 된 사람",
+          "characterId": "siwoo",
+          "initial": 0,
+          "minimum": 0,
+          "maximum": 9,
+          "unit": "명",
+          "visible": true,
+          "mode": "event",
+          "increaseWhen": "",
+          "decreaseWhen": "",
+          "revealWhenChanged": true
+        },
+        {
+          "id": "rine_trust",
+          "label": "리네의 신뢰",
+          "characterId": "rine",
+          "initial": 2,
+          "minimum": 0,
+          "maximum": 10,
+          "unit": "",
+          "visible": true,
+          "mode": "event",
+          "increaseWhen": "",
+          "decreaseWhen": ""
+        },
+        {
+          "id": "wanted",
+          "label": "수배",
+          "characterId": "siwoo",
+          "initial": 0,
+          "minimum": 0,
+          "maximum": 7,
+          "unit": "단계",
+          "visible": true,
+          "mode": "event",
+          "increaseWhen": "",
+          "decreaseWhen": "",
+          "revealWhenChanged": true
+        },
+        {
+          "id": "allies",
+          "label": "동료",
+          "characterId": "siwoo",
+          "initial": 1,
+          "minimum": 1,
+          "maximum": 20,
+          "unit": "명",
+          "visible": true,
+          "mode": "event",
+          "increaseWhen": "",
+          "decreaseWhen": ""
+        }
+      ],
+      "openingText": "수능 D-30, 새벽 두 시 십 분. 독서실 형광등이 세 번 깜빡였다.\n\n나, 강시우는 재수생이다. 작년 수능을 시원하게 말아먹었고, 올해 모의고사 등급도 제자리. 가진 거라고는 다 쓴 형광펜 세 자루랑 '이번엔 다르다'는 근거 없는 다짐뿐이었다. 그 다짐마저 바닥을 긁던 참에, 귓가에서 누가 속삭였다.\n\n『……누구라도 좋아. 제발. 빼앗을 수 있는 사람을.』\n\n울다 지친 여자애 목소리였다. 고개를 들었더니 책상 위 문제집이 하얀 분필 가루처럼 부서지고 있었다. 그리고 바닥이 사라졌다.\n\n눈을 떴을 때 나는 해 질 녘의 낯선 골목에 엎어져 있었다. 잿빛 지붕, 머리 위로 엉킨 빨랫줄, 썩은 물 냄새. 발밑에는 분필로 그린 커다란 동그라미가 빗물에 번져 있었다. 오케이, 침착하자. 웹소설 몇백 편을 읽은 몸이다. 이럴 땐 정해진 순서가 있지.\n\n\"……상태창.\"\n\n아무것도 안 떴다.\n\n\"스테이터스 오픈! 메뉴! 인벤토리! ……퀘스트 창?\"\n\n\"봐라, 빈손이 혼자 주문을 외우네.\"\n\n골목 끝에서 덩치 셋이 낄낄대며 다가왔다. 가운데 놈의 팔뚝이 내 눈앞에서 쩍쩍 쇳빛으로 변해 갔다. 아, 저쪽은 있구나. 능력.",
+      "openingSituation": "강시우는 방금 이세계 에르딘 왕국 왕도의 빈민가 '잿골목'에 떨어졌다. 해 질 녘. 교복 위 롱패딩, 수험생 백팩, 배터리 41%의 스마트폰. 상태창도 능력도 없다. 팔뚝이 쇳빛으로 굳는 거구의 깡패 두목(곰발 브로크)과 부하 둘이 그를 둘러싸고 '반짝이는 상자'를 내놓으라 한다. 골목 입구에는 빨래 방망이를 든 갈색 머리 소녀가 막 달려와 멈춰 섰고, 그 뒤로 꼬마 하나가 막대기 검을 들고 따라온다. 발밑에는 빗물에 번진 분필 동그라미가 있다.",
+      "replies": [
+        "두 손을 들고 \"말 통하네요?\" 하며 일단 대화를 시도한다.",
+        "빨래 방망이를 든 소녀에게 \"도망쳐!\"라고 외치며 깡패들의 시선을 끈다.",
+        "백팩을 휘둘러 쇳빛 팔뚝의 두목에게 먼저 덤벼든다."
+      ],
+      "viewpoint": "1인칭 주인공 시점",
+      "proseStyle": "라이트 노벨",
+      "extraStyle": "라이트노벨 문체, 1인칭 '나'. 주인공의 속마음 딴죽과 빠른 리듬으로 이끌되, 가호를 빼앗는 장면과 빈손들의 삶에서는 웃음을 거두고 무게 있게 쓴다. 문단은 짧게, 대사는 생생하게.\n캐릭터마다 말버릇과 매력을 살린다. 리네의 \"바보야!\"와 큰 웃음, 이졸데의 귀족 말투와 새침함, 나나의 장사꾼 반말과 꼬리, 유리의 수줍음과 의사 모드, 실피의 할머니 말투와 계피 막대, 셀레네의 무표정한 존댓말, 도로시의 다정함, 로잘린의 나긋한 섬뜩함, 카일의 해맑음, 레온의 능글맞음, 피핀의 과장, 레녹스의 나른함, 그라츠의 침묵, 브로크의 허세. 여러 인물이 한 장면에 있으면 서로 티격태격하는 대화로 매력을 보여 준다. 히로인들과의 설레는 장면은 자연스럽게 넣되, 주인공의 감정과 선택을 대신 정하지 않는다.\n이 세계에는 상태창이 없다. 주인공이 가호를 얻거나 놓거나 건넬 때마다 본문에 한 줄로 [그릇 2/3 · 〈어둠눈〉 〈철피〉] 형식으로 현재 상태를 적는다. 칸 수는 독자 HUD의 '그릇', 가진 개수는 '가진 가호'와 일치시킨다.\n전투는 거리와 자세, 가호의 규칙이 분명한 인과로 쓴다. 가호의 효과를 부풀리지 않는다. 주인공은 약하므로 꾀와 가호 조합과 동료로 이긴다.\n비밀은 인물이 설명하듯 털어놓게 하지 말고 행동·물건·말버릇으로 보여 준다.",
+      "migrationNotes": []
+    }
+  }
+}
