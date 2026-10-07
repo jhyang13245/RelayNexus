@@ -6,16 +6,17 @@
 //     --alias:@jieum=<단청 소스>/features/jieum --alias:@harness=<단청 소스>/tests/cortex/harness.mjs \
 //     --external:jsdom --external:fake-indexeddb --outfile=verify.mjs
 //   node assemble-cortex.mjs <단청 소스>/vendor/cortex cortex-test.html --test-timeout
-//   node --max-old-space-size=8192 verify.mjs <작업 JSON> cortex-test.html
+//   node --max-old-space-size=6144 verify.mjs <작업 JSON> cortex-test.html [A|B|C|D ...]
+// 경로마다 70개 사건을 한 창에서 진행한다. 경로를 지정하지 않으면 네 경로를 차례로 돈다.
 import fs from "node:fs";
 import vm from "node:vm";
 import JSZip from "jszip";
 import { normalizeProject } from "@jieum/studio-model";
 import { exportScenarioPack } from "@jieum/studio-export";
 import { HeadlessCortex, makeModel } from "@harness";
-import { draft } from "./draft.mjs";
+import { events } from "./story.mjs";
 
-const [jsonPath, cortexHtml] = process.argv.slice(2);
+const [jsonPath, cortexHtml, ...only] = process.argv.slice(2);
 const project = normalizeProject(JSON.parse(fs.readFileSync(jsonPath, "utf8")).project);
 const output = await exportScenarioPack(project, false);
 const zip = await JSZip.loadAsync(await output.blob.arrayBuffer());
@@ -31,7 +32,8 @@ const scenario = ctx.CortexNexusBridge.toCortexScenario(ctx.CortexNexusBridge.ad
 ctx.CortexJieum.initialize(scenario);
 
 // 이야기 분기 조건 문장. 판정 요청에는 사건 점수 조건과 분기 조건이 같은 형식(key·criterion)으로 들어온다.
-const storyBranches = new Set(draft.routes.flatMap((r: any) => r.events.flatMap((e: any) => e.branches.filter((b: any) => b.kind === "story").map((b: any) => b.criterion))));
+const storyBranches = new Set((events as any[]).flatMap((e) => (e.branches ?? []).filter((b: any) => b.kind === "story").map((b: any) => b.criterion)));
+const ending = (events as any[]).at(-1).id;
 
 async function play(label: string, satisfied: (criterion: string) => boolean) {
   const model = makeModel({
@@ -46,37 +48,45 @@ async function play(label: string, satisfied: (criterion: string) => boolean) {
   const app = await new HeadlessCortex({ initialScenario: scenario, standalonePath: cortexHtml, model }).open();
   const visited: string[] = [];
   const note = () => { const id = app.scenario.event?.id; if (id && visited.at(-1) !== id) visited.push(id); };
+  const started = Date.now();
   try {
     app.api._setSettings({ apiKey: "fixture-only", typingSpeed: "instant" });
     note();
     // 저장·판정 보완은 비동기로 끝난다. 턴이 늘지 않으면 잠시 기다렸다가 다시 보낸다.
-    for (let i = 0, idle = 0; i < 200 && idle < 40 && !app.scenario.runtime.branchEndingState?.ending; i++) {
+    for (let i = 0, idle = 0; i < 1200 && idle < 40 && !app.scenario.runtime.branchEndingState?.ending; i++) {
       const before = app.turns.length, status = app.turns.at(-1)?.status;
       await app.turn("주변을 살피고 할 일을 한다.");
+      model.calls.length = 0; // 하네스 모의 모델은 요청 본문(프롬프트 전체)을 모두 쌓아 두므로 턴마다 비운다.
+      // fake-indexeddb 6.x는 끝난 트랜잭션을 지우지 않아, 저장할 때마다 이전 상태 사본이 롤백 기록에 남는다. 끝난 것만 걷어 낸다.
+      for (const db of (app.indexedDB as any)._databases.values()) db.transactions = db.transactions.filter((t: any) => t._state !== "finished");
       note();
       if (app.turns.length === before && app.turns.at(-1)?.status === status) { idle++; await app.settle(250); } else idle = 0;
     }
-    const ending = app.scenario.runtime.branchEndingState?.ending?.terminalEventId;
-    if (!ending) console.log(`[${label}] 멈춘 사건 ${app.scenario.event?.id} · 마지막 턴 ${app.turns.at(-1)?.status}`);
-    console.log(`[${label}] 엔딩 ${ending} · 턴 ${app.turns.length} · 수치 ${JSON.stringify(ctx.CortexJieum.values(app.scenario))}`);
+    const reached = app.scenario.runtime.branchEndingState?.ending?.terminalEventId;
+    if (!reached) console.log(`[${label}] 멈춘 사건 ${app.scenario.event?.id} · 마지막 턴 ${app.turns.at(-1)?.status}`);
+    console.log(`[${label}] 엔딩 ${reached} · 사건 ${visited.length}개 · 턴 ${app.turns.length} · ${Math.round((Date.now() - started) / 1000)}초 · 수치 ${JSON.stringify(ctx.CortexJieum.values(app.scenario))}`);
     console.log(`[${label}] 거친 사건: ${visited.join(" → ")}`);
-    return { ending, visited };
+    return { reached, visited };
   } finally {
     app.close();
   }
 }
 
+const branchEvents = ["e35a_brokk_return", "e35b_brokk_grudge", "e49a_sister", "e49b_returned", "e59a_lanterns", "e59b_sold", "e62a_eve_rine", "e62b_eve_isolde", "e62c_eve_selene"];
 const runs = [
-  { label: "모든 조건 충족", satisfied: () => true, expect: ["e13a_sister", "e16a_lanterns"], skip: ["e13b_returned", "e16b_sold"] },
-  { label: "점수만 충족·분기 조건 미충족", satisfied: (c: string) => !storyBranches.has(c), expect: ["e13b_returned", "e16b_sold"], skip: ["e13a_sister", "e16a_lanterns"] },
-  { label: "아무 조건도 미충족", satisfied: () => false, expect: ["e13b_returned", "e16a_lanterns"], skip: ["e13a_sister", "e16b_sold"] },
-];
+  { key: "A", label: "모든 조건 충족", satisfied: () => true, expect: ["e35a_brokk_return", "e49a_sister", "e59a_lanterns", "e62b_eve_isolde"] },
+  { key: "B", label: "점수만 충족·분기 조건 미충족", satisfied: (c: string) => !storyBranches.has(c), expect: ["e35b_brokk_grudge", "e49b_returned", "e59b_sold", "e62a_eve_rine"] },
+  { key: "C", label: "아무 조건도 미충족", satisfied: () => false, expect: ["e35b_brokk_grudge", "e49b_returned", "e59a_lanterns", "e62a_eve_rine"] },
+  { key: "D", label: "셀레네 전야만 충족", satisfied: (c: string) => c.includes("셀레네를 찾아가"), expect: ["e35b_brokk_grudge", "e49b_returned", "e59a_lanterns", "e62c_eve_selene"] },
+].filter((r) => !only.length || only.includes(r.key));
+
 let ok = true;
 for (const run of runs) {
   const r = await play(run.label, run.satisfied);
-  const pass = r.ending === "e18_hands" && run.expect.every((id) => r.visited.includes(id)) && run.skip.every((id) => !r.visited.includes(id));
+  const skip = branchEvents.filter((id) => !run.expect.includes(id));
+  const pass = r.reached === ending && run.expect.every((id) => r.visited.includes(id)) && skip.every((id) => !r.visited.includes(id));
   console.log(`[${run.label}] ${pass ? "통과" : "실패"}\n`);
   ok &&= pass;
 }
-console.log(ok ? "검증 통과: 엔딩 도달, 「가면 아래」와 「수배」 분기의 모든 경로(이야기 조건·수치 조건·기본 경로)" : "검증 실패");
+console.log(ok ? `검증 통과: ${runs.map((r) => r.key).join("·")} 경로 모두 엔딩 ${ending} 도달, 분기 4곳의 갈래가 기대대로 갈림` : "검증 실패");
 process.exit(ok ? 0 : 1);
