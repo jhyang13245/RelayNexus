@@ -7,7 +7,7 @@
 //     --external:jsdom --external:fake-indexeddb --outfile=verify.mjs
 //   node assemble-cortex.mjs <단청 소스>/vendor/cortex cortex-test.html --test-timeout
 //   node --max-old-space-size=6144 verify.mjs <작업 JSON> cortex-test.html [A|B|C|D|E ...]
-// 경로마다 70개 사건을 한 창에서 진행한다. 경로를 지정하지 않으면 다섯 경로를 차례로 돈다.
+// 경로마다 69개 사건을 한 창에서 진행한다. 경로를 지정하지 않으면 다섯 경로를 차례로 돈다.
 import fs from "node:fs";
 import vm from "node:vm";
 import JSZip from "jszip";
