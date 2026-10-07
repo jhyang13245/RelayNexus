@@ -6,8 +6,8 @@
 //     --alias:@jieum=<단청 소스>/features/jieum --alias:@harness=<단청 소스>/tests/cortex/harness.mjs \
 //     --external:jsdom --external:fake-indexeddb --outfile=verify.mjs
 //   node assemble-cortex.mjs <단청 소스>/vendor/cortex cortex-test.html --test-timeout
-//   node --max-old-space-size=6144 verify.mjs <작업 JSON> cortex-test.html [A|B|C|D ...]
-// 경로마다 70개 사건을 한 창에서 진행한다. 경로를 지정하지 않으면 네 경로를 차례로 돈다.
+//   node --max-old-space-size=6144 verify.mjs <작업 JSON> cortex-test.html [A|B|C|D|E ...]
+// 경로마다 70개 사건을 한 창에서 진행한다. 경로를 지정하지 않으면 다섯 경로를 차례로 돈다.
 import fs from "node:fs";
 import vm from "node:vm";
 import JSZip from "jszip";
@@ -72,12 +72,13 @@ async function play(label: string, satisfied: (criterion: string) => boolean) {
   }
 }
 
-const branchEvents = ["e35a_brokk_return", "e35b_brokk_grudge", "e49a_sister", "e49b_returned", "e59a_lanterns", "e59b_sold", "e62a_eve_rine", "e62b_eve_isolde", "e62c_eve_selene"];
+const branchEvents = ["e35a_brokk_return", "e35b_brokk_grudge", "e49a_sister", "e49b_returned", "e59a_lanterns", "e59b_sold", "e62a_eve_rine", "e62b_eve_isolde", "e62c_eve_selene", "e62d_eve_estelle"];
 const runs = [
-  { key: "A", label: "모든 조건 충족", satisfied: () => true, expect: ["e35a_brokk_return", "e49a_sister", "e59a_lanterns", "e62b_eve_isolde"] },
+  { key: "A", label: "모든 조건 충족", satisfied: () => true, expect: ["e35a_brokk_return", "e49a_sister", "e59a_lanterns", "e62d_eve_estelle"] },
   { key: "B", label: "점수만 충족·분기 조건 미충족", satisfied: (c: string) => !storyBranches.has(c), expect: ["e35b_brokk_grudge", "e49b_returned", "e59b_sold", "e62a_eve_rine"] },
   { key: "C", label: "아무 조건도 미충족", satisfied: () => false, expect: ["e35b_brokk_grudge", "e49b_returned", "e59a_lanterns", "e62a_eve_rine"] },
   { key: "D", label: "셀레네 전야만 충족", satisfied: (c: string) => c.includes("셀레네를 찾아가"), expect: ["e35b_brokk_grudge", "e49b_returned", "e59a_lanterns", "e62c_eve_selene"] },
+  { key: "E", label: "이졸데 전야만 충족", satisfied: (c: string) => c.includes("이졸데를 찾아가"), expect: ["e35b_brokk_grudge", "e49b_returned", "e59a_lanterns", "e62b_eve_isolde"] },
 ].filter((r) => !only.length || only.includes(r.key));
 
 let ok = true;
