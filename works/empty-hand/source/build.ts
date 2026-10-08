@@ -60,7 +60,7 @@ let project: Project = normalizeProject({
     ...p.opening, openingLine: S.opening.prologue, currentSituation: S.opening.situation, openingLocation: S.meta.startLocation,
     openingTime: S.opening.time, recommendedReply1: S.opening.replies[0], recommendedReply2: S.opening.replies[1], recommendedReply3: S.opening.replies[2],
   },
-  style: { ...p.style, viewpoint: S.style.viewpoint, sentenceStyle: S.style.proseStyle, additionalRules: S.style.extraStyle },
+  style: { ...p.style, narrationPerson: S.style.viewpoint, viewpoint: S.style.viewpoint, sentenceStyle: S.style.proseStyle, additionalRules: S.style.extraStyle },
 });
 
 // 사건: 작성 순서가 곧 진행 순서다(정해진 정사 사건이므로 유형은 Fixed). 분기 사건의 다음 사건은 기본 경로, 갈래 사건은 next로 합류 지점을 지정한다.
