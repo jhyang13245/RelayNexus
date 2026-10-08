@@ -65,9 +65,10 @@ let project: Project = normalizeProject({
 
 // 사건: 작성 순서가 곧 진행 순서다(정해진 정사 사건이므로 유형은 Fixed). 분기 사건의 다음 사건은 기본 경로, 갈래 사건은 next로 합류 지점을 지정한다.
 const list = S.events as any[];
-// 사건 설명 = 본문 + [핵심 공개](그 사건에서 독자가 새로 알게 되는 1~2개) + 사용자 연출 메모.
+// 사건 설명 = 본문 + [핵심 공개](그 사건에서 독자가 새로 알게 되는 1~2개) + 작가 메모([시간]·[시우의 마음]·[관계의 흔적]·[일상]·[끝 장면]) + 사용자 연출 메모.
 const revealOf = (e: any) => e.reveal ?? (S.reveals as Record<string, string>)[e.id];
-const withNote = (e: any) => [e.description, revealOf(e) ? `[핵심 공개] ${revealOf(e)}` : "", (S.notes as Record<string, string>)[e.id]].filter(Boolean).join("\n\n");
+const memosOf = (e: any) => (S.memos as Record<string, string[]>)[e.id] ?? [];
+const withNote = (e: any) => [e.description, revealOf(e) ? `[핵심 공개] ${revealOf(e)}` : "", ...memosOf(e), (S.notes as Record<string, string>)[e.id]].filter(Boolean).join("\n\n");
 project.events = list.map((e, i) => {
   const b = blankStoryEvent(i + 1);
   const next = e.fallback || e.next || list[i + 1]?.id || "";
