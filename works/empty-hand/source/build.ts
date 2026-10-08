@@ -65,7 +65,9 @@ let project: Project = normalizeProject({
 
 // 사건: 작성 순서가 곧 진행 순서다(정해진 정사 사건이므로 유형은 Fixed). 분기 사건의 다음 사건은 기본 경로, 갈래 사건은 next로 합류 지점을 지정한다.
 const list = S.events as any[];
-const withNote = (e: any) => [e.description, (S.notes as Record<string, string>)[e.id]].filter(Boolean).join("\n\n");
+// 사건 설명 = 본문 + [핵심 공개](그 사건에서 독자가 새로 알게 되는 1~2개) + 사용자 연출 메모.
+const revealOf = (e: any) => e.reveal ?? (S.reveals as Record<string, string>)[e.id];
+const withNote = (e: any) => [e.description, revealOf(e) ? `[핵심 공개] ${revealOf(e)}` : "", (S.notes as Record<string, string>)[e.id]].filter(Boolean).join("\n\n");
 project.events = list.map((e, i) => {
   const b = blankStoryEvent(i + 1);
   const next = e.fallback || e.next || list[i + 1]?.id || "";
@@ -104,7 +106,8 @@ project.foreshadowings = S.foreshadowings.map((f: any, i: number) => ({
   id: `FS_${String(i + 1).padStart(2, "0")}`, title: f.title, visibility: "Hidden", status: "Planned",
   earliestDate: "", latestDate: "", plantingScene: f.plant, reinforcementPlan: f.plantHow,
   payoffConditions: f.payoff, payoffResult: f.payoffResult, relatedEntities: "",
-  misdirection: "심는 장면에서는 이 단서의 뜻을 인물이 설명하거나 서술이 풀어 주지 않는다.", notes: "",
+  misdirection: "심는 장면에서는 이 단서의 뜻을 인물이 설명하거나 서술이 풀어 주지 않는다.",
+  notes: f.light ? "가벼운 복선이다. 장면의 중심이 아니므로 심을 때도 회수할 때도 한두 문장으로 스치듯 다룬다." : "",
 }));
 project.disclosure = { protectedTerms: S.protectedTerms };
 project.protagonistInvariants = [...project.protagonistInvariants, ...S.invariants];
