@@ -1,5 +1,5 @@
 // 모의 플레이 검증: 작업 JSON을 지음과 같은 경로로 CortexPack으로 내보낸 뒤,
-// 단청의 헤드리스 하네스(실제 Cortex 1.42.0 + 지음 확장)를 모의 모델로 구동해 엔딩까지 진행한다.
+// 단청의 헤드리스 하네스(실제 Cortex 1.42.0 + 지음 확장, 단청 v1.34.19 조립)를 모의 모델로 구동해 엔딩까지 진행한다.
 // 모델 응답은 고정 문장이므로 산문 품질이 아니라 사건 연결·분기·엔딩·수치 누적만 검증한다.
 //
 //   esbuild verify.ts --bundle --platform=node --format=esm --loader:.json=json \
@@ -27,7 +27,8 @@ console.log(`CortexPack ${output.blobBytes} bytes · 루트 ${canon.routes.map((
 
 const ctx: any = vm.createContext({ console, TextEncoder, TextDecoder, URL, crypto, structuredClone, setTimeout, clearTimeout, performance, AbortController });
 const scripts = [...fs.readFileSync(cortexHtml, "utf8").matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
-for (const i of [0, 1, 3]) vm.runInContext(scripts[i][1], ctx);
+// v1.34 조립 순서: [0] 저장 코덱·공개 시계·정사 복구·작가 출력, [1] Instant, [2] 발생+지음, [3]부터 Cortex 본체([4]에 Nexus 연결부).
+for (const i of [1, 2, 4]) vm.runInContext(scripts[i][1], ctx);
 const scenario = ctx.CortexNexusBridge.toCortexScenario(ctx.CortexNexusBridge.adaptPackage(files));
 ctx.CortexJieum.initialize(scenario);
 
