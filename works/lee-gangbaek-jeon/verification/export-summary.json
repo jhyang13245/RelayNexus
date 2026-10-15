@@ -1,0 +1,12 @@
+{
+  "zipBytes": 1475871,
+  "sha256": "302f22ec0e596a019076b3193866642811ff08635474afe87656ec83cb44eb3b",
+  "events": 100,
+  "characters": 25,
+  "factions": 10,
+  "foreshadowings": 14,
+  "roundtrip": {
+    "fullFidelity": true,
+    "events": 100
+  }
+}

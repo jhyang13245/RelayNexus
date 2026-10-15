@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../fonts/x_fontsource-noto-serif-tc-5.3.1/900.css">
+<link rel="stylesheet" href="../fonts/x_fontsource-noto-serif-tc-5.3.1/600.css">
+<link rel="stylesheet" href="../fonts/x_fontsource-noto-serif-kr-5.3.1/700.css">
+<link rel="stylesheet" href="../fonts/x_fontsource-noto-serif-kr-5.3.1/500.css">
+<style>
+html,body{margin:0;padding:0;background:#16130f}
+.cover{position:relative;width:1080px;height:1440px;overflow:hidden;background:#e9dcc0;font-family:'Noto Serif KR','Noto Serif TC',serif}
+.paper{position:absolute;inset:0}
+.title{position:absolute;right:70px;top:96px;writing-mode:vertical-rl;font-family:'Noto Serif TC';font-weight:900;font-size:212px;line-height:1;letter-spacing:6px;color:#16120d;text-shadow:0 0 1px rgba(22,18,13,.6)}
+.kor{position:absolute;right:300px;top:118px;writing-mode:vertical-rl;font-family:'Noto Serif KR';font-weight:700;font-size:46px;letter-spacing:22px;color:#2b241b}
+.seal{position:absolute;right:296px;top:470px;width:58px;height:58px;background:#a3271d;color:#f2e6cf;font-family:'Noto Serif TC';font-weight:900;font-size:40px;display:flex;align-items:center;justify-content:center;border-radius:4px;box-shadow:inset 0 0 0 3px #a3271d,inset 0 0 0 5px #f2e6cf55;transform:rotate(-3deg)}
+.foot{position:absolute;left:84px;bottom:92px;color:#2b241b}
+.foot .line{font-family:'Noto Serif KR';font-weight:500;font-size:30px;letter-spacing:3px;margin-bottom:18px;color:#3a3125}
+.foot .part{font-family:'Noto Serif KR';font-weight:700;font-size:34px;letter-spacing:6px}
+.foot .rule{width:96px;height:3px;background:#a3271d;margin:22px 0}
+</style></head>
+<body><div class="cover">
+<svg class="paper" width="1080" height="1440" viewBox="0 0 1080 1440" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.27  0 0 0 0 0.16  0 0 0 0.22 0"/>
+    </filter>
+    <filter id="fiber" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.08" numOctaves="2" seed="3" result="f"/>
+      <feColorMatrix in="f" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.36  0 0 0 0 0.22  0 0 0 0.18 0"/>
+    </filter>
+    <filter id="brush" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="9"/>
+    </filter>
+    <filter id="wash" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="3" seed="21" result="w"/>
+      <feDisplacementMap in="SourceGraphic" in2="w" scale="60"/>
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <radialGradient id="vignette" cx="50%" cy="45%" r="75%">
+      <stop offset="60%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#2a1d0e" stop-opacity="0.55"/>
+    </radialGradient>
+    <linearGradient id="tagwood" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#6b4a2b"/><stop offset="1" stop-color="#3d2814"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1440" fill="#e8dbbd"/>
+  <!-- distant mountains: ink wash -->
+  <g filter="url(#wash)" opacity="0.55">
+    <path d="M-60 1010 L120 820 L230 900 L380 700 L520 860 L640 760 L820 930 L1140 800 L1140 1500 L-60 1500 Z" fill="#7d6f5b"/>
+  </g>
+  <g filter="url(#wash)" opacity="0.7">
+    <path d="M-60 1140 L160 990 L300 1060 L470 930 L640 1080 L800 1000 L1140 1120 L1140 1500 L-60 1500 Z" fill="#4c4235"/>
+  </g>
+  <!-- road -->
+  <g filter="url(#brush)" opacity="0.75">
+    <path d="M330 1440 C 380 1300, 470 1220, 600 1170 C 700 1135, 780 1120, 860 1112" stroke="#2e271e" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M470 1440 C 500 1330, 560 1250, 660 1200 C 740 1162, 810 1146, 880 1138" stroke="#2e271e" stroke-width="5" fill="none" stroke-linecap="round" opacity=".6"/>
+  </g>
+  <!-- porter in profile, bent forward under a loaded jige, walking up the road -->
+  <g filter="url(#brush)" transform="translate(646 1150) scale(1.7)" fill="#14100c" stroke="#14100c" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-38 -146 C -44 -128 -38 -100 -24 -86 L 4 -94 C 8 -116 4 -138 -8 -150 C -16 -154 -30 -152 -38 -146 Z" stroke="none"/>
+    <path d="M4 -80 L -8 -66" stroke-width="3" fill="none"/>
+    <path d="M-36 -128 L -2 -138 M-32 -108 L 2 -116" stroke="#3a2f22" stroke-width="2" fill="none"/>
+    <path d="M-6 -104 L -30 0 M2 -102 L -22 2" stroke-width="3.5" fill="none"/>
+    <path d="M-16 -62 L -40 -66 M-12 -78 L -36 -84" stroke-width="3" fill="none"/>
+    <circle cx="16" cy="-90" r="8.5" stroke="none"/>
+    <path d="M10 -82 L 2 -78 L -10 -42 L -2 -38 L 12 -70 Z" stroke-width="7"/>
+    <path d="M-6 -42 L 6 -18 L 16 8" stroke-width="6.5" fill="none"/>
+    <path d="M-6 -42 L -16 -16 L -26 6" stroke-width="6.5" fill="none"/>
+    <path d="M8 -76 L 22 -58" stroke-width="5" fill="none"/>
+    <path d="M26 -74 L 38 8" stroke-width="3" fill="none"/>
+  </g>
+  <!-- the name tag (명패) hanging on a hemp cord -->
+  <g transform="translate(120 300) rotate(-4)">
+    <path d="M86 -330 C 92 -200, 70 -120, 86 -40" stroke="#8a6a3e" stroke-width="5" fill="none"/>
+    <path d="M78 -52 c -14 -8 -14 -22 6 -24 c 18 2 16 16 4 24 c 8 6 12 14 4 18 c -8 2 -12 -6 -14 -18" stroke="#8a6a3e" stroke-width="4" fill="none"/>
+    <path d="M86 -34 L86 0" stroke="#8a6a3e" stroke-width="4"/>
+    <path d="M0 60 A86 86 0 0 1 172 60 L172 330 L0 330 Z" fill="url(#tagwood)"/>
+    <path d="M10 62 A76 76 0 0 1 162 62 L162 320 L10 320 Z" fill="none" stroke="#c9a46a" stroke-opacity=".35" stroke-width="2"/>
+    <circle cx="86" cy="18" r="9" fill="#e8dbbd"/>
+    <text x="86" y="128" text-anchor="middle" font-family="Noto Serif TC" font-weight="900" font-size="74" fill="#e9d3a4">靑</text>
+    <g font-family="Noto Serif TC" font-weight="600" font-size="46" fill="#e9d3a4" text-anchor="middle">
+      <text x="80" y="208" transform="rotate(-4 80 208)">李</text>
+      <text x="92" y="258" transform="rotate(5 92 258)">江</text>
+      <text x="84" y="306" transform="rotate(-3 84 306)">白</text>
+    </g>
+  </g>
+  <!-- plum blossoms (매화) small accents -->
+  <g fill="#a3271d" opacity="0.9" transform="translate(20 70)">
+    <circle cx="884" cy="1004" r="7"/><circle cx="896" cy="992" r="5"/><circle cx="872" cy="992" r="4"/>
+    <circle cx="930" cy="1046" r="6"/><circle cx="942" cy="1036" r="4"/>
+  </g>
+  <g filter="url(#brush)" stroke="#16120d" fill="none" stroke-linecap="round" transform="translate(20 70)">
+    <path d="M1040 900 C 980 960, 930 990, 860 1012" stroke-width="7"/>
+    <path d="M960 968 C 950 1000, 936 1030, 924 1052" stroke-width="4"/>
+  </g>
+  <rect width="1080" height="1440" filter="url(#fiber)"/>
+  <rect width="1080" height="1440" filter="url(#grain)"/>
+  <rect width="1080" height="1440" fill="url(#vignette)"/>
+</svg>
+<div class="title">李江白傳</div>
+<div class="kor">이강백전</div>
+<div class="seal">傳</div>
+<div class="foot">
+  <div class="line">짐꾼은 무거운 걸 내려놓지 않는다</div>
+  <div class="rule"></div>
+  <div class="part">1부 · 낙양에서 경사까지</div>
+</div>
+</div></body></html>
